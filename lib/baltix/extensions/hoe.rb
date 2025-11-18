@@ -96,6 +96,10 @@ class Hoe
          @clean_globs ||= []
       end
 
+      def url= url
+         @url = /rubyforge/ !~ url ? url : nil
+      end
+
       def readme_file= file
          @readme_file = file
       end
@@ -176,11 +180,11 @@ class Hoe
          @spec.spec.summary ||= description.to_s.split(/[.(!]/).first
 
          /code ::(?<url>.*)|^\* (?<url>http.*)/ =~ readme
-         @spec.spec.metadata["source_code_uri"] = url&.strip
+         @spec.spec.metadata["source_code_uri"] = @url || url&.strip
 
          if /home ::(?<url>.*)|^\* (?<url>http.*)/ =~ readme
             @spec.spec.homepage = url.strip
-            @spec.spec.metadata["homepage_uri"] = url.strip
+            @spec.spec.metadata["homepage_uri"] = @url || url.strip
             @spec.spec.metadata["source_code_uri"] ||= /github.com|bitbucket.com/ =~ url && url.strip || nil
          end
          dependency("rdoc", ">= 4.0", :development) if @spec.spec.files.grep(/.rdoc$/).any? || /rdoc ::/ =~ readme
