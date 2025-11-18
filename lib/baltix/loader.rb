@@ -15,7 +15,7 @@ module Baltix::Loader
       alias_method :require_orig, :require
 
       def require path, *args
-         return true if require_embedded
+         return true if require_embedded(path)
 
          paths = $:.map {|x| patha = (x =~ /^\// ? x : File.join(Dir.pwd, x)) }.map {|p| File.expand_path(File.join(p, path + "*")) }
          files = paths.map {|x| Dir[x] }.flatten.uniq.select {|x| x =~ %r{#{@dir}}}
