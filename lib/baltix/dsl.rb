@@ -225,6 +225,14 @@ class Baltix::DSL
          end.flatten.select {|x| x.is_a?(Symbol) }
       end
 
+      def retype type_in
+         if %i(development runtime).include?(type_in)
+            type_in
+         else
+            :development
+         end
+      end
+
       def merge_dependencies *depses
          depses.reduce({}) do |res, deps|
             deps&.reduce(res.dup) do |r, x|
@@ -233,7 +241,7 @@ class Baltix::DSL
                      req = r[x.name].requirement.merge(x.requirement)
                      group = (x.groups || []) | r[x.name].groups
 
-                     Bundler::Dependency.new(x.name, req, "type" => r[x.name].type, "group" => group)
+                     Bundler::Dependency.new(x.name, req, "type" => retype(r[x.name].type), "group" => group)
                   else
                      x
                   end
