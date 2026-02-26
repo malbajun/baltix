@@ -1,7 +1,7 @@
 require 'baltix'
 
 class Baltix::Deps
-   attr_reader :project
+   attr_reader :space
 
    REQS = {
       'lib' => {
@@ -34,10 +34,10 @@ class Baltix::Deps
    }
 
    def targets
-      if name = project.config.current_package_name
-         project.targets.select { |target| target.source.has_name?(name) }
+      if name = space.config.current_package_name
+         space.targets.select { |target| target.source.has_name?(name) }
       else
-         project.targets
+         space.targets
       end
    end
 
@@ -116,12 +116,12 @@ class Baltix::Deps
    end
 
    def deps_dyno source, set, kind = nil
-      root = project.config.dep_sources[set]
+      root = space.config.dep_sources[set]
       name = (root[source.name] || root[nil]).first
       if name == 'auto'
          kind == :dsl && deps_gem_dsl(source.dsl, set) || deps_gem(source)
       else
-         project.select_source(name).map do |source|
+         space.select_source(name).map do |source|
             deps_gem_dsl(source.dsl)
          end
       end
@@ -174,11 +174,11 @@ class Baltix::Deps
    end
 
    def reqs
-      deps 'reqs', project.config.current_set
+      deps 'reqs', space.config.current_set
    end
 
    def provs
-      deps 'provs', project.config.current_set
+      deps 'provs', space.config.current_set
    end
 
    class << self
@@ -273,8 +273,8 @@ class Baltix::Deps
 
    protected
 
-   def initialize project: raise, options: {}
-      @project = project
+   def initialize space: raise, options: {}
+      @space = space
       @options = options
    end
 end
