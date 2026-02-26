@@ -36,6 +36,7 @@ class Baltix::Space
       disabled: '-',
       obsoleted: '\\',
       duplicated: '=',
+      regarded: 'R',
       valid: 'V',
    }
 
@@ -53,6 +54,17 @@ class Baltix::Space
    VERSIONS = {
       /nonrelease/ => false
    }
+
+   # tags:
+   # default,test,development,production,etc for gemfile
+   # runtime,development for gemspec
+   #
+   # for spec:
+   # library: gemspec:runtime
+   # binary: gemfile:default
+   # devel: gemfile:* + gemspec:runtime + gemspec:development
+   # build: 1) marked as required from extconf 2) marked by macro as build in spec
+   # check: devel - build
 
    @@space = {}
    @@options = {}
@@ -107,6 +119,44 @@ class Baltix::Space
          else
             Dir.pwd
          end
+   end
+
+   # +select_sources+ selects the sources matching their by name, types, and status etc combining found by arguments conjunctively.
+   # The statuses are: :valid, :obsoleted, :duplicated, :disabled, and the specific one is :active
+   # nil value is to just ignore argument
+   # examples:
+   # select_sources "name", :Gem, :valid # selects by name, type, and valid only
+   # select_sources /name/ # selects by name with the regexp, and both valid and invalid
+   # select_sources nil # selects all the source ignoring the name match
+   #
+   def select_sources *args
+      params = prepare_find_args(args)
+
+      stat_source_tree.reduce([]) do |res, (path_in, stated_sources)|
+         stated_sources.reduce(res) do |res, (source, status)|
+            next res unless params.all? do |param|
+               case param.type
+               when :match
+                  param.value === source.name
+               when :attribute
+                  anot, avalue = /not_(.*)/ =~ param.value ? [true, $1] : [false, param.value]
+
+                  ares =
+                     if avalue == :active
+                        !%i(disabled invalid obsoleted duplicated).include?(status)
+                     else
+                        avalue.to_sym == status
+                     end
+
+                  anot ? !ares : ares
+               when :class
+                  param.value === source
+               end
+            end
+
+            res | [source]
+         end
+      end
    end
 
    # +main_source+ selects main source from the list of sources when source root dir is the space's one and
@@ -171,19 +221,12 @@ class Baltix::Space
       @licenses = !licenses.blank? && licenses || spec&.licenses || []
    end
 
+   def grouped_dependencies
+      @grouped_dependencies ||= all_dependencies.group_by {|x| x.groups }.to_h
+   end
+
    # +dependencies+ returns all the valid source dependencies list as an array of Gem::Dependency
    # objects, otherwise returning blank array.
-#   def dependencies
-#      @dependencies ||= valid_sources.map do |source|
-#         source.respond_to?(:dependencies) && source.dependencies || []
-#      end.flatten.reject do |dep|
-#         match_platform?(dep) || sources.any? do |s|
-#            dep.name == s.name &&
-#            dep.requirement.satisfied_by?(Gem::Version.new(s.version))
-#         end
-#      end
-#   end
-
    def dependencies
       @dependencies ||=
          valid_sources.reduce({}) do |res, source|
@@ -251,17 +294,13 @@ class Baltix::Space
    #
    # space.valid_sources => # [#<Baltix::Source:...>, #<...>]
    #
-#   def valid_sources
-#      @valid_sources ||= sources.select do |source|
-#         source.valid? && is_regarded?(source)
-#      end
-#   end
    def valid_sources
-      @valid_sources ||= begin
-         sources = stat_sources.map {|(source, status)| status == :valid ? source : nil }.compact
-         main = sources.find { |source| source.rootdir == rootdir }
-         main && main.valid? ? sources : sources | [default_fake_source]
-      end
+      @valid_sources ||=
+         begin
+            sources = stat_sources.map {|(source, status)| %i(valid regarded).include?(status) ? source : nil }.compact
+            main = sources.find { |source| source.rootdir == rootdir }
+            main && main.valid? ? sources : sources | [default_fake_source]
+         end
    end
 
 #   def is_regarded? source
@@ -360,6 +399,25 @@ class Baltix::Space
 
    protected
 
+   # symbols like: valid, disabled, duplicated, obsoleted
+   # active: valid + !disabled + !duplicated + !obsoleted
+   def prepare_find_args args
+      args.map do |arg|
+         case arg
+         when Regexp, String
+            { type: :match, value: arg }.to_os
+         when Symbol
+            if arg.to_s == arg.to_s.downcase
+               { type: :attribute, value: arg }.to_os
+            else
+               { type: :class, value: "Baltix::Source::#{arg}".constantize }.to_os
+            end
+         when NilClass
+            nil
+         end
+      end.compact
+   end
+
    def gen_spec spec_in = nil
       spec_pre = spec_in || state.spec
 
@@ -407,15 +465,28 @@ class Baltix::Space
       end
    end
 
+   def pre_sources
+      @pre_sources ||=
+         Baltix::Source.search_in(rootdir, options).group_by do |x|
+            [x.name, x.version].compact.join(":")
+         end
+   end
+
    # returns all the sources with their statuses, and sorted by a its rootdir value
    #
    def stat_sources &block
       return @stat_sources if @stat_sources
 
-      @stat_sources =
-         read_attribute(:stat_sources) || Baltix::Source.search_in(rootdir, options).group_by do |x|
-            [x.name, x.version].compact.join(":")
-         end.reduce([[],[]]) do |(r, used_in), (_full_name, v)|
+      @stat_sources = read_attribute(:stat_sources) || proceed_sources
+
+      show_tree
+
+      @stat_sources
+   end
+
+   def proceed_sources
+      pre =
+         pre_sources.reduce([[],[],[]]) do |(r, used_in, deps_in), (_full_name, v)|
             sorten =
                v.sort do |x,y|
                   c0 = ::Baltix::Source.loaders.index(x.loader) <=> ::Baltix::Source.loaders.index(y.loader)
@@ -437,16 +508,26 @@ class Baltix::Space
                   [res | [[source, source_status(source, dup, obs)]], dup_index, base]
                end.first
 
+            deps = deps_in | sorten.map {|source, status| status == :valid ? source.dependencies : [] }.flatten
+
             sorten[1..-1].each { |x| sorten.first.first.alias_to(x.first) }
 
-            [r|[sorten], used_in]
-         end.first.flatten(1).sort_by {|(x, _)| x.rootdir.size }.each do |(source, status)|
-            block[source, status] if block_given?
+            [r|[sorten], used_in, deps]
          end
 
-      show_tree
-
-      @stat_sources
+      pre.first.flatten(1).map do |(source, status)|
+            if status == :disabled &&
+               pre[2].any? do |dep|
+                  dep.name == source.name && source.is_a?(Baltix::Source::Gem) &&
+                  dep.requirement.satisfied_by?(source.provide.requirement.requirements.last.last)
+               end
+               [source, :regarded]
+            else
+               [source, status]
+            end
+         end.sort_by {|(x, _)| x.rootdir.size }.each do |(source, status)|
+            block[source, status] if block_given?
+         end
    end
 
    # returns source tree, and sorted, and then grouped by a its rootdir value
