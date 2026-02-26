@@ -1,3 +1,5 @@
+require 'ostruct'
+
 module Extensions
    module Object
       def self.const_get c, inherit = true
@@ -24,27 +26,23 @@ module Extensions
          when ::Hash, ::Array
             !self.any?
          when ::OpenStruct
-           binding.pry
-            !self.to_h.any?
+            !self.eql?(OpenStruct.new)
          else
             self.to_s == ""
          end
       end
 
       def to_os hash: false, array: false
-         value =
-           self.to_h.map do |(x, y_in)|
-              y =
-                 if hash && y_in.is_a?(Hash) || array && y_in.is_a?(Array)
-                    y_in.to_os(hash: hash, array: array)
-                 else
-                    y_in
-                 end
+         self.to_h.reduce(::OpenStruct.new) do |res, (x, y_in)|
+            res[x.to_s] =
+               if hash && y_in.is_a?(Hash) || array && y_in.is_a?(Array)
+                  y_in.to_os(hash: hash, array: array)
+               else
+                  y_in
+               end
 
-              [x.to_s, y]
-            end.to_h
-
-         ::OpenStruct.new(value)
+            res
+         end
       end
    end
 
