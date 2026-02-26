@@ -548,7 +548,6 @@ class Baltix::Spec::Rpm
 
                secs | [Secondary.new(doc: self,
                              kind: sec.name.kind,#an.kind
-                             doc: self,
                              host: host,
                              state: sec,
                              source: source,

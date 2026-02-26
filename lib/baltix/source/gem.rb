@@ -156,7 +156,7 @@ class Baltix::Source::Gem < Baltix::Source::Base
 
       if aliases.any?
          @spec ||= aliases.reduce(original_spec) { |spec, als|
-           spec.merge(als.original_spec) }
+            spec.merge(als.original_spec) }
       else
          original_spec
       end

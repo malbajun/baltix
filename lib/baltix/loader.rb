@@ -226,7 +226,13 @@ module Baltix::Loader
    rescue Exception => e
       warn(e.message)
 
-      OpenStruct.new(mod: mod, object_hash: {}, log: tmpio.readlines, errlog: tmpio.readlines, object_ids: [])
+      log =
+         begin
+            tmpio.readlines
+         rescue IOError
+            ""
+         end
+      OpenStruct.new(mod: mod, object_hash: {}, log: log, errlog: log, object_ids: {})
    ensure
       $stderr = stderr
       $stdout = stdout

@@ -210,6 +210,10 @@ class Baltix::Source::Base
       dsl.all_dependencies
    end
 
+   def grouped_dependencies
+      @grouped_dependencies ||= all_dependencies.group_by {|x| x.groups }.to_h
+   end
+
    def replace_list
       @gem_version_replace ||= {}
    end
