@@ -112,3 +112,15 @@ progressbar - position of ruby-progressbar and progressbar based on 1. spec main
 source status - obsolete - (chef) and duplicate (progressbar)
 
 azure-for.ruby - compare old spec and newly generated, to ensure no avoid manual fixes
+
+
+ext - fast-xs
+update,structure,version - llhttp-ffi
+
+detect tag - rubocop-lts 24.0.2
+
+windows/mingw paltform filter - mixlib-shellout
+
+duplicated gem-gem- in names for gem-chef-licensing gem
+
+man file - rake
