@@ -239,7 +239,7 @@ class Baltix::DSL
                r[x.name] =
                   if r[x.name]
                      req = r[x.name].requirement.merge(x.requirement)
-                     group = (x.groups || []) | r[x.name].groups
+                     group = (x.groups || []) | (r[x.name].groups || [])
 
                      Bundler::Dependency.new(x.name, req, "type" => retype(r[x.name].type), "group" => group)
                   else
