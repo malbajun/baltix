@@ -3,7 +3,7 @@
 #
 module Baltix::Loader::Cmake
    def cmake file, dir
-      log_in = `cmake .`
+      log_in = `echo`
       debug(log_in)
    rescue Errno::ENOENT
       error "Error: cmake is required to properly detect the gem"

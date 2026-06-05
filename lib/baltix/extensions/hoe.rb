@@ -167,7 +167,7 @@ class Hoe
 
          version =
             if history_file
-               IO.read(history_file).split("\n").reduce(nil) { |res, x| res || /(=+|#+) v?(?<version>[^ ]+)/ =~ x && version }
+               IO.read(history_file).split("\n").reduce(nil) { |res, x| res || /(=+|#+) v?(?<version>[0-9\.]+)/ =~ x && version }
             else
                instance_eval(`grep VERSION . -r|sed s,.*:,,`.strip)
             end
@@ -205,8 +205,16 @@ class Hoe
       end
 
       def post_init
-         @extras&.each { |key, value|
-           @spec.spec.send("#{key}=", value) }
+         @extras.each do |key, value_in|
+            value =
+               if value_in.is_a?(Proc)
+                  value_in[key]
+               else
+                  value_in
+               end
+
+            @spec.spec.send("#{key}=", value)
+         end if @extras
          @extra_dev_deps&.each do |(name, dep)|
             dependency(name, dep, :development)
          end
