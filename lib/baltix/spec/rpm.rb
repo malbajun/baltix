@@ -164,7 +164,7 @@ class Baltix::Spec::Rpm
       },
       build_pre_requires: {
          seq: %w(of_options of_state of_default >_build_pre_requires),
-         default: [ "rpm-build-ruby" ],
+         default: [ "rpm-macros-ruby setup-rb rake" ],
       },
       changes: {
          seq: %w(of_options of_state of_source of_default >_collect_changes >_changes),

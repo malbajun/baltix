@@ -41,8 +41,6 @@ Source<%= i == :"0" && (i = "") || i %>:<%= " " * [ 8 - "#{i}".size, 1 ].max %><
 <% patches.each_pair do |i, patch| -%>
 Patch<%= i == :"0" && (i = "") || i %>:<%= " " * [ 9 - "#{i}".size, 1 ].max %><%= patch %>
 <% end -%>
-Autoprov:      yes,noruby
-Autoreq:       yes,noruby
 <% build_pre_requires.each do |dep| -%>
 BuildRequires(pre): <%= dep %>
 <% end -%>
@@ -117,8 +115,6 @@ Group:         <%= secondary.group %>
 BuildArch:     <%= secondary.build_arch %>
 <% end -%>
 
-Autoprov:      yes,noruby
-Autoreq:       yes,noruby
 <% secondary.requires.each do |dep| -%>
 Requires:      <%= dep %>
 <% end -%>
