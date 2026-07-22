@@ -10,6 +10,9 @@ module Baltix::Spec::Rpm::SpecCore
       end,
       /(?<proto>https?:\/\/)?github.com\/(?<user>[^\/]+)\/(?<page>[^\/\.#]+)/ => ->(m) do
          "https://github.com/#{m["user"]}/#{m["page"]}.git"
+      end,
+      /(?<proto>https?:\/\/)?gitlab.com\/(?<user>[^\/]+)\/(?<page>[^\/\.#]+)/ => ->(m) do
+         "https://gitlab.com/#{m["user"]}/#{m["page"]}.git"
       end
    }
 
