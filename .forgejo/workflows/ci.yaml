@@ -4,6 +4,7 @@ env:
   KEY2: value2
 jobs:
    test:
+      if: ${{ github.server_url != 'https://codeberg.org' }}
       runs-on: alt-sisyphus
       steps:
        - id: installing-ruby
