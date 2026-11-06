@@ -15,7 +15,7 @@ Packager:      Ruby Maintainers Team <ruby@packages.altlinux.org>
 BuildArch:     noarch
 
 Source:        %name-%version.tar
-BuildRequires(pre): rpm-build-ruby
+BuildRequires(pre): rpm-macros-ruby setup-rb rake
 BuildRequires: libgtk+2-devel
 BuildRequires: libgtk+3-devel
 BuildRequires: libpixman-devel

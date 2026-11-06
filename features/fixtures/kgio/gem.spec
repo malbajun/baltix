@@ -16,7 +16,7 @@ Packager:      Pavel Skrylev <majioa@altlinux.org>
 
 Source:        %name-%version.tar
 Source1:       kgio-2.11.2.gemspec
-BuildRequires(pre): rpm-build-ruby
+BuildRequires(pre): rpm-macros-ruby setup-rb rake
 BuildRequires: libruby-devel
 BuildRequires: strace
 BuildRequires: gem(ast) >= 2.0

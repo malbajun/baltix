@@ -13,7 +13,7 @@ Packager:      Ruby Maintainers Team <ruby@packages.altlinux.org>
 BuildArch:     noarch
 
 Source:        %name-%version.tar
-BuildRequires(pre): rpm-build-ruby
+BuildRequires(pre): rpm-macros-ruby setup-rb rake
 BuildRequires: gem(json) >= 1.8 gem(json) < 3
 BuildRequires: gem(simplecov) >= 0.16.1 gem(simplecov) < 1
 BuildRequires: gem(tins) >= 1.6 gem(tins) < 2
