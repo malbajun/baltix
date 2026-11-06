@@ -1538,7 +1538,7 @@ Feature: Spec actor
          BuildArch:     noarch
 
          Source:        %name-%version.tar
-         BuildRequires(pre): rpm-build-ruby
+         BuildRequires(pre): rpm-macros-ruby setup-rb rake
 
          %add_findreq_skiplist %ruby_gemslibdir/**/*
          %add_findprov_skiplist %ruby_gemslibdir/**/*
@@ -1808,7 +1808,7 @@ Feature: Spec actor
          Packager:      Spec Author <author@example.org>
 
          Source:        %name-%version.tar
-         BuildRequires(pre): rpm-build-ruby
+         BuildRequires(pre): rpm-macros-ruby setup-rb rake
          BuildRequires: gem(b_oofoo) = 5.2.4.4
 
          %add_findreq_skiplist %ruby_gemslibdir/**/*
@@ -2231,7 +2231,7 @@ Feature: Spec actor
          BuildArch:     noarch
 
          Source:        %name-%version.tar
-         BuildRequires(pre): rpm-build-ruby
+         BuildRequires(pre): rpm-macros-ruby setup-rb rake
          BuildRequires: gem(b_oofoo) = 5.2.4.4
          BuildRequires: gem(b_oofoo_dev) >= 5.2.4
 
@@ -2780,7 +2780,7 @@ Feature: Spec actor
          Source1:       source_file1.tar
          Patch:         patch.patch
          Patch1:        patch1.patch
-         BuildRequires(pre): rpm-build-ruby
+         BuildRequires(pre): rpm-macros-ruby setup-rb rake
          BuildRequires(pre): rpm-build-nonruby
          BuildRequires(pre): rpm-build-python
          BuildRequires: gem(c) >= 2.0

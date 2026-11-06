@@ -15,7 +15,7 @@ Vcs:           https://github.com/ruby-debug/ruby-debug-ide.git
 Packager:      Baltix Maintainers Team <baltix@packages.altlinux.org>
 
 Source:        %name-%version.tar
-BuildRequires(pre): rpm-build-ruby
+BuildRequires(pre): rpm-macros-ruby setup-rb rake
 %if_enabled check
 BuildRequires: gem(bundler) >= 0
 BuildRequires: gem(rake) >= 0.8.1
