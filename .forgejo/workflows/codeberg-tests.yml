@@ -1,0 +1,19 @@
+name: Ruby tests on Codeberg
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    if: ${{ github.server_url == 'https://codeberg.org' }}
+    runs-on: codeberg-small
+    container:
+      image: ruby:3.2
+    steps:
+      - uses: https://code.forgejo.org/actions/checkout@v4
+      - name: Install dependencies
+        run: bundle install
+      - name: Run tests
+        run: bundle exec cucumber --format progress
