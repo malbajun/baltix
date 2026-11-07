@@ -393,7 +393,13 @@ class Baltix::DSL
             s || name == dep.name && req
          end
 
-         new_req && Bundler::Dependency.new(dep.name, Gem::Requirement.new([new_req]), "type" => dep.type) || dep
+         if new_req
+            dep.dup.tap do |replacement|
+               replacement.instance_variable_set(:@requirement, Gem::Requirement.new([new_req]))
+            end
+         else
+            dep
+         end
       end.compact | append_list
    end
 

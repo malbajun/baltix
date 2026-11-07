@@ -1,0 +1,5 @@
+Upstream: https://github.com/postmodern/digest-crc
+Tag: v0.6.4
+Archive directory: postmodern-digest-crc-c6c97b3
+Unmodified subset: Gemfile, digest-crc.gemspec, gemspec.yml, LICENSE.txt.
+Used to test Gemfile/gemspec dependency processing.
