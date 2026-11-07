@@ -44,6 +44,7 @@ class Baltix::Source::Base
       alias_names: ->(o, name) { o.is_a?(Hash) && [ o[nil], o[name], o.values.map {|x|x.flatten}.select {|x|x.include?(name)}.map {|x|x.first}.flatten ].flatten.compact.uniq || o },
       version_replaces: true,
       gem_version_replace: true,
+      skip_platforms: true,
       source_file: ->(file, _name) { file.is_a?(String) && File.file?(file) && file || nil },
       loader: true,
       gemspec: true,
@@ -82,6 +83,13 @@ class Baltix::Source::Base
 
    attr_reader :options, :source_file, :loader
    attr_writer :replace_list, :source_names
+
+   # Updates platform hints shared with this source's dependency DSL.
+   # @param platforms [Hash<String, Array<Gem::Platform>>] inferred platforms by dependency name
+   # @return [Hash<String, Array<Gem::Platform>>] the updated platform hints
+   def dependency_platforms= platforms
+      (@dependency_platforms ||= {}).replace(platforms)
+   end
 
    class << self
       def opts
@@ -199,6 +207,8 @@ class Baltix::Source::Base
       @dsl ||= options[:dsl] ||
          Baltix::DSL.new(source_file,
             spec: spec,
+            dependency_platforms: (@dependency_platforms ||= {}),
+            skip_platforms: @skip_platforms || [],
             replace_list: replace_list,
             skip_list: (options[:gem_skip_list] || []) | [name],
             append_list: options[:gem_append_list])

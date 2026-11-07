@@ -1,5 +1,15 @@
 require 'baltix/dsl'
 
+Then('the project dependencies exclude:') do |table|
+   names = space.valid_sources.flat_map(&:all_dependencies).map(&:name)
+   table.hashes.each { |row| expect(names).to_not include(row['name']) }
+end
+
+Then('the project dependencies include {string}') do |name|
+   names = space.valid_sources.flat_map(&:all_dependencies).map(&:name)
+   expect(names).to include(name)
+end
+
 Given('the dependency DSL from the {string} fixture Gemfile') do |name|
    @dependency_gemfile = File.expand_path("features/fixtures/#{name}/Gemfile")
 end

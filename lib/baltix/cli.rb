@@ -32,7 +32,7 @@ class Baltix::CLI
       debug_io: 'stderr',
       high_default_dependencies_priority: false,
       autorender_name: false,
-      skip_platforms: %i(jruby).freeze
+      skip_platforms: %i(jruby mingw mswin).freeze
    }.to_os.freeze
 
    def option_parser *default_argv

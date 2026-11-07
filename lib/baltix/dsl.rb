@@ -171,12 +171,33 @@ class Baltix::DSL
    # gemfile group for development, binaries and tests; explicit groups are
    # preserved. If there is no gemspec,
    # returns the original dependencies so application runtime groups are kept.
+   # If every inferred platform of a dependency is ignored by skip_platforms,
+   # that Gemfile dependency is omitted before dependencies are merged.
    def gemfile_dependencies
       return dsl.dependencies if gemspecs.empty?
 
-      dsl.dependencies.map do |dep|
+      dsl.dependencies.filter_map do |dep|
+         platforms = @dependency_platforms[dep.name]
+         next if platforms && !platforms.empty? && platforms.all? { |platform| ignored_dependency_platform?(platform) }
+
          dep.dup.tap do |dependency|
             dependency.groups = dep.groups.map { |group| group == :default ? :gemfile : group }.uniq
+         end
+      end
+   end
+
+   # Checks an inferred gemspec platform against the configured ignore list.
+   # @param platform [Gem::Platform] a platform declared by a gemspec variant
+   # @return [Boolean] true when the platform matches an ignored OS or platform
+   # If an entry is jruby, it matches the Java OS. Other entries match an OS
+   # prefix (mingw includes mingw32) or the complete platform string.
+   def ignored_dependency_platform? platform
+      @skip_platforms.any? do |ignored|
+         name = ignored.to_s
+         if name == 'jruby'
+            platform.os == 'java'
+         else
+            platform.os.to_s.start_with?(name) || platform.to_s == name
          end
       end
    end
@@ -427,6 +448,8 @@ class Baltix::DSL
 
       @source_file = source_file
       @spec = options[:spec]
+      @dependency_platforms = options[:dependency_platforms] || {}
+      @skip_platforms = options[:skip_platforms] || []
       @replace_list = options[:replace_list] || {}
       @skip_list = options[:skip_list] || []
       @append_list = options[:append_list] || []
