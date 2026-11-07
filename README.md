@@ -53,7 +53,7 @@ info_io: 'stdout'
 debug_io:
 high_default_dependencies_priority: false
 autorender_name: false
-skip_platforms: [:jruby]
+skip_platforms: [:jruby, :mingw, :mswin]
 ```
 
 ### From a Command Line

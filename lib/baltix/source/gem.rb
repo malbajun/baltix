@@ -117,6 +117,33 @@ class Baltix::Source::Gem < Baltix::Source::Base
                self.new(source_options(options_in.merge(spec: gemspec, source_file: f, loader: data[:loader])))
             end
          end.flatten.compact
+
+         infer_dependency_platforms(specs)
+      end
+
+      # Infers dependency platforms from variants of the same gem.
+      # @param sources [Array<Baltix::Source::Gem>] discovered gem sources
+      # @return [Array<Baltix::Source::Gem>] the supplied sources with platform hints
+      # Sources are compared only within the same root, name and version. If a
+      # dependency occurs in any generic gemspec, it remains unrestricted. If it
+      # occurs only in platform variants, their declared platforms are recorded
+      # on the generic sources, including variants unavailable on the host.
+      def infer_dependency_platforms sources
+         sources.group_by { |source| [source.rootdir, source.name, source.version] }.each_value do |variants|
+            generic, specific = variants.partition { |source| source.platform.to_s == Gem::Platform::RUBY }
+            shared_names = generic.flat_map { |source| source.spec.dependencies.map(&:name) }.uniq
+            platforms = specific.each_with_object({}) do |source, result|
+               source.spec.dependencies.each do |dependency|
+                  next if shared_names.include?(dependency.name)
+
+                  result[dependency.name] ||= []
+                  result[dependency.name] |= [Gem::Platform.new(source.platform.to_s)]
+               end
+            end
+            generic.each { |source| source.dependency_platforms = platforms }
+         end
+
+         sources
       end
    end
 
