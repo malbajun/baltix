@@ -694,7 +694,8 @@ class Baltix::Spec::Rpm
       build_pre_requires = value_in.dup || []
       stated_name = of_state(:name)
 
-      if stated_name && stated_name.prefix != name.prefix
+      legacy_ruby = build_pre_requires.delete("rpm-build-ruby")
+      if legacy_ruby || stated_name && stated_name.prefix != name.prefix
          default = of_default(:build_pre_requires)[0]
 
          build_pre_requires.unshift(default) unless build_pre_requires.include?(default)

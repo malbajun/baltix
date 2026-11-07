@@ -2462,6 +2462,7 @@ Feature: Spec actor
                 - gem(b) < 0.1
                 - gem(c) >= 2
                build_pre_requires:
+                - rpm-build-ruby
                 - rpm-build-nonruby
                 - rpm-build-python
                obsoletes:
