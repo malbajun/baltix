@@ -1,12 +1,18 @@
 require 'baltix/dsl'
 
 When('the {string} gem dependency DSL is merged into the project DSL') do |name|
-   @dependency_dsl = space.main_source.dsl
+   project = space.sources.find { |item| item.is_a?(Baltix::Source::Gemfile) && item.rootdir == space.rootdir }
+   @dependency_dsl = project.dsl
    @dependency_gemfile = @dependency_dsl.original_gemfile.to_s
    @dependency_dsl.to_gemfile
    @dependency_dsl.definition
    source = space.valid_sources.find { |item| item.name == name }
    @dependency_dsl.merge_in(source.dsl)
+end
+
+Then('the main source is the {string} gem') do |name|
+   expect(space.main_source).to be_a(Baltix::Source::Gem)
+   expect(space.main_source.name).to eql(name)
 end
 
 When('the {string} gem dependency DSL is merged into the {string} gem DSL') do |other, name|

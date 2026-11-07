@@ -18,7 +18,10 @@ BuildArch:     noarch
 Source:        %name-%version.tar
 BuildRequires(pre): rpm-macros-ruby setup-rb rake
 %if_enabled check
+BuildRequires: gem(hansi) >= 0.2.0
 BuildRequires: gem(ruby2_keywords) >= 0.0.1
+BuildRequires: gem(support) >= 0
+BuildConflicts: gem(hansi) >= 0.3
 BuildConflicts: gem(ruby2_keywords) >= 0.1
 %endif
 
@@ -31,6 +34,44 @@ Provides:      gem(mustermann) = 2.0.2
 
 %description
 A library implementing patterns that behave like regular expressions.
+
+
+%package       -n gem-mustermann-contrib
+Version:       2.0.2
+Release:       alt1
+Summary:       Collection of extensions for Mustermann
+Group:         Development/Ruby
+BuildArch:     noarch
+
+Requires:      ruby >= 2.2.0
+Requires:      gem(hansi) >= 0.2.0
+Requires:      gem(mustermann) = 2.0.2
+Conflicts:     gem(hansi) >= 0.3
+Provides:      gem(mustermann-contrib) = 2.0.2
+
+%description   -n gem-mustermann-contrib
+Adds many plugins to Mustermann
+
+
+%if_enabled    devel
+%package       -n gem-mustermann-contrib-devel
+Version:       2.0.2
+Release:       alt1
+Summary:       Collection of extensions for Mustermann development package
+Summary(ru_RU.UTF-8): Файлы для разработки самоцвета mustermann-contrib
+Group:         Development/Ruby
+BuildArch:     noarch
+
+Requires:      gem(mustermann-contrib) = 2.0.2
+
+%description   -n gem-mustermann-contrib-devel
+Collection of extensions for Mustermann development package.
+
+Adds many plugins to Mustermann
+
+%description   -n gem-mustermann-contrib-devel -l ru_RU.UTF-8
+Файлы для разработки самоцвета mustermann-contrib.
+%endif
 
 
 %if_enabled    doc
@@ -90,6 +131,16 @@ A library implementing patterns that behave like regular expressions.
 %files
 %ruby_gemspec
 %ruby_gemlibdir
+
+%files         -n gem-mustermann-contrib
+%doc mustermann-contrib.gemspec
+%ruby_gemspecdir/mustermann-contrib-2.0.2.gemspec
+%ruby_gemslibdir/mustermann-contrib-2.0.2
+
+%if_enabled    devel
+%files         -n gem-mustermann-contrib-devel
+%doc mustermann-contrib.gemspec
+%endif
 
 %if_enabled    doc
 %files         -n gem-mustermann-doc

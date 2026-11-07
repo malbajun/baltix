@@ -159,8 +159,12 @@ class Baltix::Space
       end
    end
 
-   # +main_source+ selects main source from the list of sources when source root dir is the space's one and
-   # source's name contains minimum name size among the matching sources
+   # Selects the main source without changing the repository root directory.
+   # Takes no parameters and returns a source, or nil when no candidate exists.
+   # If the loaded spec names a real source, that source takes precedence. If
+   # the root source is synthetic, a nested gem matching the repository name
+   # is preferred, or the sole real source is used. Otherwise the root source
+   # is retained. A previously selected source is returned from the cache.
    #
    def main_source
       return @main_source if @main_source
@@ -173,8 +177,12 @@ class Baltix::Space
 
       root_source ||= valid_sources.sort {|x, y| x.name.size <=> y.name.size }.find { |source| source.rootdir == rootdir }
 
+      if root_source.is_a?(Baltix::Source::Fake)
+         nested_source = reals.find { |source| source.is_a?(Baltix::Source::Gem) && source.name == root_source.name }
+      end
+
       @main_source =
-         specen_source || root_source.is_a?(Baltix::Source::Fake) && reals.size == 1 && reals.first || root_source
+         specen_source || nested_source || root_source.is_a?(Baltix::Source::Fake) && reals.size == 1 && reals.first || root_source
    end
 
    def default_fake_source
