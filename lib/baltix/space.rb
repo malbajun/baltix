@@ -374,16 +374,17 @@ class Baltix::Space
    end
 
    def is_disabled? source
+      source_path = source.source_file && "/#{Pathname.new(source.source_file).relative_path_from(Pathname.new(rootdir))}"
       !is_platform_allowed?(source.platform) || !is_version_allowed?(source.version) ||
          regarded_path_tokens.map do |t|
             t.is_a?(Regexp) && %r{/[^/]*#{t}[^/]*/} || %r{/#{t}/}
          end.all? do |t|
-            t !~ source.source_file
+            t !~ source_path
          end &&
          ignored_path_tokens.map do |t|
             t.is_a?(Regexp) && %r{/[^/]*#{t}[^/]*/} || %r{/#{t}/}
          end.any? do |t|
-            t =~ source.source_file
+            t =~ source_path
          end ||
          options.regarded_names.all? { |i| !i.match?(source.name) } &&
          options.ignored_names.any? { |i| i === source.name }
