@@ -520,7 +520,7 @@ module Gem
 
          Bundler::Dependency.new(self.name, orig_merge(dep_in).requirement.expand.merge(dep_in.requirement), options)
       rescue
-        binding.pry
+        # binding.pry
       end
    end
 

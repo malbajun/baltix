@@ -203,7 +203,7 @@ class Baltix::CLI
       end
    rescue SystemExit, Interrupt
    rescue Exception => e
-      binding.pry
+      # binding.pry
       error("[#{e.class}]: #{e.message}\n\t#{e.backtrace.join("\n\t")}")
    end
 

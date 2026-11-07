@@ -201,7 +201,7 @@ class Hoe
             send("initialize_#{@spec.spec.name}")
          end
       rescue Exception
-         binding.pry
+         # binding.pry
       end
 
       def post_init
