@@ -22,7 +22,13 @@ module Baltix::Loader
 
          @requires.push(path)
          if files.empty?
-            require_orig(path, *args)
+            begin
+               require_orig(path, *args)
+            rescue LoadError => e
+               raise unless e.path == path
+
+               false
+            end
          else
             file = files.first
             _file = File.basename(file)
