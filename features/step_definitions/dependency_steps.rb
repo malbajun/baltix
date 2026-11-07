@@ -9,6 +9,13 @@ When('the {string} gem dependency DSL is merged into the project DSL') do |name|
    @dependency_dsl.merge_in(source.dsl)
 end
 
+When('the {string} gem dependency DSL is merged into the {string} gem DSL') do |other, name|
+   source = space.valid_sources.find { |item| item.name == name }
+   incoming = space.valid_sources.find { |item| item.name == other }
+   @dependency_dsl = source.dsl
+   @dependency_dsl.merge_in(incoming.dsl)
+end
+
 Then('the generated dependency requirement for {string} is {string}') do |name, requirement|
    generated = Bundler::Dsl.new
    generated.eval_gemfile(@dependency_gemfile, @dependency_dsl.to_gemfile)

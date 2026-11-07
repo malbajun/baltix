@@ -401,11 +401,11 @@ class Baltix::DSL
    # Merges another source's dependencies into this DSL and refreshes derived data.
    # @param other_dsl [Baltix::DSL] the source whose dependencies are imported
    # @return [Baltix::DSL] self, including the imported dependency requirements and groups
-   # If the original Gemfile paths differ, dependencies are retained as additional
-   # dependencies and cached views are invalidated. If the paths are equal,
-   # returns self without changing its dependencies.
+   # If both sources read the same existing Gemfile, no merge is needed. Otherwise,
+   # including when neither source has a Gemfile, dependencies are retained as
+   # additional dependencies and cached dependency views are invalidated.
    def merge_in other_dsl
-      if original_gemfile.to_s != other_dsl.original_gemfile.to_s
+      if !original_gemfile || original_gemfile.to_s != other_dsl.original_gemfile.to_s
          @additional_dependencies = self.class.merge_dependencies(additional_dependencies, other_dsl.all_dependencies)
          @original_deps = @edsl = @definition = nil
       end

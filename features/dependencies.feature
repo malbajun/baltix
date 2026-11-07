@@ -9,6 +9,16 @@ Feature: Dependencies from real Ruby projects
       And the generated dependency requirement for "ruby2_keywords" is ">= 0.0.1, < 0.1"
       And the definition dependency requirement for "ruby2_keywords" is ">= 0.0.1, < 0.1"
 
+   Scenario: Merge two gemspec sources which have no Gemfile
+      Given blank space
+      When he sets the space option "rootdir" to fixture "mustermann"
+      And the "mustermann-contrib" gem dependency DSL is merged into the "mustermann" gem DSL
+      Then the runtime dependency names are:
+         | name           |
+         | ruby2_keywords |
+         | mustermann     |
+         | hansi          |
+
    # Original build metadata from chef/mixlib-shellout, tag v3.2.7.
    Scenario: Infer Windows-only dependencies from platform gemspecs
       Given blank space
