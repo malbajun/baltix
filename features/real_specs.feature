@@ -2,6 +2,21 @@
 Feature: Spec actor
 
    @scratch @blank_setup @main_is_gem
+   Scenario: Generate a spec for the core gem in the mustermann repository
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options          | value                                    |
+         | rootdir          | features/fixtures/mustermann/mustermann   |
+         | spec_type        | rpm                                      |
+         | packager.name    | Ruby Maintainers Team                    |
+         | packager.email   | ruby@packages.altlinux.org                |
+         | maintainer.name  | Pavel Skrylev                            |
+         | maintainer.email | majioa@altlinux.org                       |
+      And he applies "spec" actor to the baltix setup
+      Then he acquires an "mustermann/mustermann" fixture spec for the baltix setup
+
+   @scratch @blank_setup @main_is_gem
    Scenario: Generate a mixlib-shellout spec without inferred Windows dependencies
       Given blank space
       When developer locks the time to "13.12.2022"
