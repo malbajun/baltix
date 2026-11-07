@@ -368,6 +368,8 @@ class Baltix::Space
    end
 
    def is_version_allowed? version
+      return true if version.nil?
+
       if /^[0-9\.]+(\.(?<post>[a-z]*|))?$/ =~ version
          !post || VERSIONS.reduce(true) {|res, (re, v)| res && (re =~ post ? v : false) }
       end

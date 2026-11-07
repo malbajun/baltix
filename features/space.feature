@@ -17,3 +17,8 @@ Feature: Space
       Then a source at "turn.gemspec" is enabled
       And a source at "test/fixtures/example.gemspec" is disabled
 
+   Scenario: A source without a version remains available
+      Given blank space
+      When he sets the space option "rootdir" to fixture "ruby-gnome2"
+      Then a versionless source at "Gemfile" is enabled
+

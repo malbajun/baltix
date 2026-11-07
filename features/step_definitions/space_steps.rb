@@ -13,6 +13,11 @@ Then('a source at {string} is disabled') do |path|
    expect(space.is_disabled?(source)).to be_truthy
 end
 
+Then('a versionless source at {string} is enabled') do |path|
+   source = Struct.new(:source_file, :platform, :version, :name).new(File.join(space.rootdir, path), 'ruby', nil, 'example')
+   expect(space.is_disabled?(source)).to be_falsey
+end
+
 When('developer loads the space') do
    @space = Baltix::Space.load_from(state: @space_in)
 end
