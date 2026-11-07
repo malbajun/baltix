@@ -11,6 +11,7 @@ class Baltix::DSL
    # group to kinds mapping
    GROUP_MAPPING = {
       default: [:devel, :runtime, :binary, :test],
+      gemfile: [:devel, :binary, :test],
       integration: [:devel, :test],
       development: [:devel, :test],
       test: [:test, :devel],
@@ -140,7 +141,7 @@ class Baltix::DSL
    end
 
    def spec_dependencies
-      (spec&.dependencies || []).map do |dep|
+      gemspecs.flat_map(&:dependencies).map do |dep|
          group_in = :test
          options = {
             "group" => dep.type == :development ? [group_in] : [:runtime, group_in],
@@ -161,7 +162,23 @@ class Baltix::DSL
    end
 
    def all_dependencies
-      Baltix::DSL.merge_dependencies(additional_dependencies, external_dependencies, dsl.dependencies, spec_dependencies)
+      Baltix::DSL.merge_dependencies(additional_dependencies, external_dependencies, gemfile_dependencies, spec_dependencies)
+   end
+
+   # Returns Gemfile dependencies with groups appropriate to the project type.
+   # Takes no parameters and returns an Array of Bundler::Dependency objects.
+   # If a gemspec is present, default Gemfile dependencies are copied into the
+   # gemfile group for development, binaries and tests; explicit groups are
+   # preserved. If there is no gemspec,
+   # returns the original dependencies so application runtime groups are kept.
+   def gemfile_dependencies
+      return dsl.dependencies if gemspecs.empty?
+
+      dsl.dependencies.map do |dep|
+         dep.dup.tap do |dependency|
+            dependency.groups = dep.groups.map { |group| group == :default ? :gemfile : group }.uniq
+         end
+      end
    end
 
    def all_dependencies_for kinds_in: [], kinds_out: []

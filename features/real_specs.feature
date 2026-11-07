@@ -1,6 +1,21 @@
 @actor @spec @gem
 Feature: Spec actor
 
+   @scratch @blank_setup @main_is_gem
+   Scenario: Generate a spec for rails-html-sanitizer with Gemfile development dependencies
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options          | value                                   |
+         | rootdir          | features/fixtures/rails-html-sanitizer   |
+         | spec_type        | rpm                                     |
+         | packager.name    | Ruby Maintainers Team                   |
+         | packager.email   | ruby@packages.altlinux.org               |
+         | maintainer.name  | Pavel Skrylev                           |
+         | maintainer.email | majioa@altlinux.org                      |
+      And he applies "spec" actor to the baltix setup
+      Then he acquires an "rails-html-sanitizer" fixture spec for the baltix setup
+
    @policy1_0 @gem_change @main_is_gem
    Scenario: Apply the Spec actor to setup for ucf gem and old Ruby Policy 1.0 setup
       - blank packager
