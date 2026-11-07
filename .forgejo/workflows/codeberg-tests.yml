@@ -7,7 +7,6 @@ on:
 
 jobs:
   test:
-    if: ${{ github.server_url == 'https://codeberg.org' }}
     runs-on: codeberg-small
     container:
       image: ruby:3.2
