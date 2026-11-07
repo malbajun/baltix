@@ -120,7 +120,7 @@ module Bones
       def method_missing *args
         Kernel.puts args.inspect
          super
-        binding.pry
+        # binding.pry
       end
    end
 
