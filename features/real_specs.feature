@@ -485,6 +485,7 @@ Feature: Spec actor
       - autoskip packages when they lost gemspecs like ruby-gnome2 *-no-gi packages or gem-vte defined in the original spec
       - since the top source is an application / group, so it doesn't parse a prefix, and use no prefix then
       - retain explicit header-package build requirements without the cairo-devel dependency cycle
+      - preserve source dependency groups and runtime/development requirements across repeated updates
       - blank packager
       Given blank space
       And a spec from fixture "ruby-gnome2"
@@ -505,6 +506,7 @@ Feature: Spec actor
       When the generated spec is refreshed 2 times
       Then the generated spec contains the lines:
          | BuildRequires: gem-cairo-headers-devel |
+      And the generated dependency sections match "gem.spec" from fixture "ruby-gnome2"
 
    @scratch @hoe @blank_setup
    Scenario: Apply the Spec actor to setup for oedipus-lex gem to blank setup
