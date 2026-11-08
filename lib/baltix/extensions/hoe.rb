@@ -21,6 +21,14 @@ class Hoe
    end
 
    class << self
+      # Clears project metadata before importing another Hoe Rakefile.
+      # Takes no parameters.
+      # @return [Class<Hoe>] this adapter with no cached specification or settings
+      def reset
+         instance_variables.each { |name| remove_instance_variable(name) }
+         self
+      end
+
       def plugin plugin
          @plugins = plugins | [plugin.to_s]
       end
@@ -74,6 +82,13 @@ class Hoe
 
       def spec_extras
          @extras ||= {}
+      end
+
+      # Stores additional gemspec attributes assigned by a Hoe Rakefile.
+      # @param attributes [Hash{Symbol => Object}] RubyGems attribute names and values
+      # @return [Hash{Symbol => Object}] attributes applied during post_init
+      def spec_extras= attributes
+         @extras = attributes
       end
 
       def extra_rdoc_files

@@ -45,8 +45,14 @@ class Baltix::Rake
    end
 
    class << self
-      # preload callback
+      # Clears cached build metadata before a Rakefile is imported.
+      # Takes no parameters.
+      # @return [nil] the cleared Rake application
+      # If the loaded Hoe implementation supports resetting, its project state
+      # is cleared too.
+      # An unused Hoe autoload is left untouched.
       def preload
+         ::Hoe.reset if Object.const_defined?(:Hoe) && !Object.autoload?(:Hoe) && ::Hoe.respond_to?(:reset)
          Rake.instance_variable_set(:@application, nil)
       end
 

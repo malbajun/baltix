@@ -4,6 +4,7 @@ require 'date'
 
 require 'baltix/source/base'
 require 'baltix/loader'
+require 'baltix/rake'
 require 'baltix/loader/yaml'
 require 'baltix/loader/pom'
 require 'baltix/loader/rookbook'

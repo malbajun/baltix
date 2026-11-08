@@ -93,3 +93,10 @@ Then('source {string} has dependency declarations:') do |name, table|
    expected = table.hashes.map { |row| row.values_at('name', 'type', 'requirement') }.sort
    expect(actual).to eql(expected)
 end
+
+Given('the {string} fixture has already been imported') do |name|
+   options = space.options.deep_dup
+   options.rootdir = "features/fixtures/#{name}"
+   previous = Baltix::Space.new(options: options)
+   expect(previous.valid_sources.any? { |source| source.is_a?(Baltix::Source::Gem) && source.name == name }).to eql(true)
+end
