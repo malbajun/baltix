@@ -1,5 +1,8 @@
-@actor @spec @gem
+@actor @spec @gem @policy2_1
 Feature: Spec actor
+   All generated specs target the Ruby Policy 2.1 draft currently under development.
+   Tags @policy1_0 and @policy2_0 identify obsolete input policies being migrated.
+   The obsolete rpm-build-ruby prerequisite is replaced by rpm-macros-ruby, setup-rb and rake.
 
    @available_gem_list
    Scenario: Generate a complete mustermann spec with adjusted dependency requirements
@@ -30,7 +33,9 @@ Feature: Spec actor
          | maintainer.email   | majioa@altlinux.org                       |
       And he applies "spec" actor to the baltix setup
       And the generated spec is refreshed <updates> times
-      Then the generated spec contains the lines:
+      Then the generated build prerequisites are:
+         | rpm-macros-ruby setup-rb rake |
+      And the generated spec contains the lines:
          | %ruby_use_gem_dependency hansi >= 0.2.0,hansi < 2                   |
          | %ruby_use_gem_dependency ruby2_keywords >= 0.0.1,ruby2_keywords < 1 |
          | BuildRequires: gem(hansi) >= 0.2.0                                  |
@@ -101,7 +106,7 @@ Feature: Spec actor
       Then he acquires an "rails-html-sanitizer" fixture spec for the baltix setup
 
    @policy1_0 @gem_change @main_is_gem
-   Scenario: Apply the Spec actor to setup for ucf gem and old Ruby Policy 1.0 setup
+   Scenario: Migrate ucf from obsolete Ruby Policy 1.0 to 2.1
       - blank packager
       - both gem dependencies are runtime and development
       - there is a dependency to ruby
@@ -116,7 +121,7 @@ Feature: Spec actor
       Then he acquires an "ucf" fixture spec for the baltix setup
 
    @policy1_0 @gem_change @gem_obsolete_list @main_is_gem
-   Scenario: Apply the Spec actor to setup for zip-container gem and old Ruby Policy 1.0 setup
+   Scenario: Migrate zip-container from obsolete Ruby Policy 1.0 to 2.1
       - blank packager
       - both gem dependencies are runtime and development
       - there is a dependency to ruby
@@ -134,9 +139,8 @@ Feature: Spec actor
       Then he acquires an "zip-container" fixture spec for the baltix setup
 
    @policy1_0 @gem_change @olddoc @wrongdoc @main_is_gem
-   Scenario: Apply the Spec actor to setup for kgio gem with Olddoc/Wrongdoc specification
-         and old Ruby Policy 1.0 setup, where root main source is a gem so it doesnt parse
-         the the prefix, and suffix, and just use a default in output spec
+   Scenario: Migrate kgio with Olddoc/Wrongdoc from obsolete Ruby Policy 1.0 to 2.1
+      - use the default prefix and suffix because the main source is a gem at the repository root
       - blank packager
       - gem dependencies are development only
       - has extension containing call to #gem dep
@@ -153,11 +157,11 @@ Feature: Spec actor
       Then he acquires an "kgio" fixture spec for the baltix setup
 
    @policy2_0 @gem_change @main_is_gem
-   Scenario: Apply the Spec actor to setup for rbvmomi gem and manual Ruby Policy 2.0 setup
-         with optimize available gem list feature
+   Scenario: Migrate rbvmomi from obsolete Ruby Policy 2.0 to 2.1 using available gem versions
       - blank packager
       - both gem dependencies are runtime and development
       - there is a dependency to ruby
+      - migrate rpm-build-ruby to rpm-macros-ruby, setup-rb and rake
       - replace legacy gem_replace_version constraints using current sources and available versions
       - use identical rake requirements in the override macro and RPM dependency fields
       Given blank space
@@ -172,6 +176,8 @@ Feature: Spec actor
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "rbvmomi" fixture spec for the baltix setup
+      And the generated build prerequisites are:
+         | rpm-macros-ruby setup-rb rake |
       And the generated spec contains the lines:
          | %ruby_use_gem_dependency rake >= 10.5,rake < 16 |
          | BuildRequires: gem(rake) >= 10.5                |
@@ -181,8 +187,8 @@ Feature: Spec actor
          | Conflicts:     gem(rake) >= 16   |
 
    @policy2_0 @release_change @main_is_gem
-   Scenario: Apply the Spec actor to setup for rspec-support gem and manual Ruby Policy 2.0 setup
-         with no gem version upgrade and skipping devel package
+   Scenario: Migrate rspec-support from obsolete Ruby Policy 2.0 to 2.1
+      - retain the gem version and skip the devel package
       - blank packager
       - "more than" condition dependency for gem
       Given blank space
@@ -199,8 +205,8 @@ Feature: Spec actor
       Then he acquires an "rspec-support" fixture spec for the baltix setup
 
    @policy2_0 @gem_change @main_is_gem
-   Scenario: Apply the Spec actor to setup for parser gem and manual Ruby Policy 2.0 setup
-         with no gem version upgrade
+   Scenario: Migrate parser from obsolete Ruby Policy 2.0 to 2.1
+      - retain the gem version
       - blank packager
       Given blank space
       And a spec from fixture "parser"
@@ -248,7 +254,7 @@ Feature: Spec actor
          | {minitest: 5.14.0} | gem.spec    |
 
    @policy2_0 @gem_change
-   Scenario: Apply the Spec actor to setup for ruby-gnome2 gemset and Ruby Policy pre 2.0 setup
+   Scenario: Migrate ruby-gnome2 from obsolete Ruby Policy pre-2.0 to 2.1
       - expand %summary in descriptions
       - pickup core version from common versions of submodules
       - proper detection of host rpm name line ruby-gnome2 not to rename to gem-gnome2
@@ -337,7 +343,7 @@ Feature: Spec actor
       Then he acquires an "echoe" fixture spec for the baltix setup
 
    @policy2_0 @gem_change @rename @baltix_packager
-   Scenario: Apply the Spec actor to setup for ruby-debug-ide gem and Ruby Policy 2.0 setup
+   Scenario: Migrate ruby-debug-ide from obsolete Ruby Policy 2.0 to 2.1
       - rename to proper name defined by gem spec
       - use baltix team as packager
       - filter out gems (debase) not required by an allowed (currently ruby) platform

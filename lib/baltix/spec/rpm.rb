@@ -747,18 +747,35 @@ class Baltix::Spec::Rpm
       source_files
    end
 
+   # Normalizes Ruby build prerequisites while retaining explicit version constraints.
+   # @param value_in [Array<String>, nil] grouped or individually parsed prerequisites
+   # @return [Array<String>] canonical prerequisite lines without duplicate Ruby entries
+   # Obsolete Ruby Policy 2.0's rpm-build-ruby is replaced with the Ruby Policy 2.1
+   # prerequisites rpm-macros-ruby, setup-rb and rake. If that legacy prerequisite
+   # is present or the package prefix changes, missing
+   # defaults are added. If a default package already has a versioned requirement,
+   # that requirement is kept instead of adding an unversioned one. Remaining
+   # unversioned defaults are grouped so parsing and rendering stay consistent.
    def _build_pre_requires value_in
-      build_pre_requires = value_in.dup || []
+      build_pre_requires = Array(value_in).flat_map { |line| line.scan(/[^\s]+(?:\s+[<=>]+\s+[^\s]+)?/) }.uniq
       stated_name = of_state(:name)
+      defaults = of_default(:build_pre_requires)[0].split
 
       legacy_ruby = build_pre_requires.delete("rpm-build-ruby")
       if legacy_ruby || stated_name && stated_name.prefix != name.prefix
-         default = of_default(:build_pre_requires)[0]
-
-         build_pre_requires.unshift(default) unless build_pre_requires.include?(default)
+         defaults.each do |dependency|
+            unless build_pre_requires.any? { |entry| entry == dependency || entry.start_with?("#{dependency} ") }
+               build_pre_requires << dependency
+            end
+         end
       end
 
-      build_pre_requires
+      plain_defaults = defaults.select { |dependency| build_pre_requires.delete(dependency) }
+      plain_defaults.reject! do |dependency|
+         build_pre_requires.any? { |entry| entry.start_with?("#{dependency} ") }
+      end
+      grouped_defaults = plain_defaults.empty? ? [] : [plain_defaults.join(' ')]
+      grouped_defaults + build_pre_requires
    end
 
    def _licenses value_in

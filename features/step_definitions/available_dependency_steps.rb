@@ -2,6 +2,17 @@ Then('the generated spec contains the lines:') do |table|
    expect(@spec.lines.map(&:strip)).to include(*table.raw.flatten)
 end
 
+When('the input spec has build prerequisites:') do |table|
+   @spec_in = @spec_in.gsub(/^BuildRequires\(pre\):[^\n]*\n/, '')
+   declarations = table.raw.flatten.map { |requirement| "BuildRequires(pre): #{requirement}\n" }.join
+   @spec_in = @spec_in.sub(/^Name:/, "#{declarations}Name:")
+end
+
+Then('the generated build prerequisites are:') do |table|
+   actual = @spec.lines.grep(/^BuildRequires\(pre\):/).map { |line| line.sub(/^BuildRequires\(pre\):\s*/, '').strip }
+   expect(actual).to eql(table.raw.flatten)
+end
+
 Then('the source {string} dependency {string} has version compatibility:') do |source_name, name, table|
    source = space.valid_sources.find { |item| item.name == source_name && item.is_a?(Baltix::Source::Gem) }
    expect(source).to_not be_nil

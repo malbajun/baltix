@@ -1,5 +1,26 @@
 Feature: Available gem versions and dependency override macros
 
+   @policy2_0 @policy2_1
+   Scenario: Upgrade mixed obsolete Ruby Policy 2.0 prerequisites to 2.1 without duplicates
+      - replace the obsolete rpm-build-ruby prerequisite with Ruby Policy 2.1 prerequisites
+      - retain explicit version constraints and unrelated prerequisites across updates
+      Given blank space
+      And a spec from fixture "rbvmomi"
+      When developer locks the time to "21.04.2021"
+      And he sets the space option "rootdir" to fixture "rbvmomi"
+      And the input spec has build prerequisites:
+         | rpm-build-ruby                |
+         | rpm-macros-ruby setup-rb rake |
+         | rake >= 12                    |
+         | gcc >= 10                     |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      And the generated spec is refreshed 2 times
+      Then the generated build prerequisites are:
+         | rpm-macros-ruby setup-rb |
+         | rake >= 12               |
+         | gcc >= 10                |
+
    Scenario Outline: Preserve configured rake tasks while refreshing dependency overrides
       Given blank space
       And a spec from fixture "rbvmomi"

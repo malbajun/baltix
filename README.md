@@ -33,6 +33,20 @@ Or install it yourself as:
 
 ## Usage
 
+### Ruby packaging policy
+
+Ruby Policy 2.0 is obsolete. Baltix is being updated for Ruby Policy 2.1,
+which is currently a draft.
+
+The 2.1 draft replaces the obsolete `rpm-build-ruby` build prerequisite with:
+
+```spec
+BuildRequires(pre): rpm-macros-ruby setup-rb rake
+```
+
+When updating an existing spec, Baltix migrates the old prerequisite to this
+replacement. Legacy prerequisites remain in test input fixtures to verify migration.
+
 ### Confguration file
 
 Create default config file for baltix, placed it to: ~/.baltix.yaml
