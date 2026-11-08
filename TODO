@@ -42,7 +42,6 @@ gettext-setup - invalid ruby_alias_names when genspec
 async-rspec - blank description
 gem-treetop - break epoch
 gem-nokogiri - crop changelog, fix gem deps on the file  (example for mini_portile2, see patch)
-prometheus-client - invalid dep tags when is in available list
 ruby-rc4 - ruby isnt prefix, leads to ruby-ruby-rc4
 ffi - 1. git describe --tags command to fix in gemspec; 2. update to 1.15.5 add the wrnog tag
 passenger - minon require list check, because when rebuild spec it losts some things
@@ -54,7 +53,6 @@ hoe-bunder - crop long patch number for v.5.0
 oj - expand and crop summary when update to 3.13.11
 hoe-travis - lost description on update
 ruby-shadow - lost license on update unlicense replace with specified default + license replace list args
-rdoc - update to new version break generate a valid new spec if the gem in available gem list adding unnecesary tag
 
 
 fix build dep for ruby-gnome2 -> gem-cairo-devel -> gem-poppler(ruby-gnome2)
