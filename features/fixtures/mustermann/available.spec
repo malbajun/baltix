@@ -18,8 +18,8 @@ BuildArch:     noarch
 Source:        %name-%version.tar
 BuildRequires(pre): rpm-macros-ruby setup-rb rake
 %if_enabled check
-BuildRequires: gem(hansi) >= 1.0.0
-BuildRequires: gem(ruby2_keywords) >= 0.1.0
+BuildRequires: gem(hansi) >= 0.2.0
+BuildRequires: gem(ruby2_keywords) >= 0.0.1
 BuildRequires: gem(support) >= 0
 BuildConflicts: gem(hansi) >= 2
 BuildConflicts: gem(ruby2_keywords) >= 1
@@ -27,10 +27,10 @@ BuildConflicts: gem(ruby2_keywords) >= 1
 
 %add_findreq_skiplist %ruby_gemslibdir/**/*
 %add_findprov_skiplist %ruby_gemslibdir/**/*
-%ruby_use_gem_dependency hansi >= 1.0.0,hansi < 2
-%ruby_use_gem_dependency ruby2_keywords >= 0.1.0,ruby2_keywords < 1
+%ruby_use_gem_dependency hansi >= 0.2.0,hansi < 2
+%ruby_use_gem_dependency ruby2_keywords >= 0.0.1,ruby2_keywords < 1
 Requires:      ruby >= 2.2.0
-Requires:      gem(ruby2_keywords) >= 0.1.0
+Requires:      gem(ruby2_keywords) >= 0.0.1
 Conflicts:     gem(ruby2_keywords) >= 1
 Provides:      gem(mustermann) = 2.0.2
 
@@ -46,7 +46,7 @@ Group:         Development/Ruby
 BuildArch:     noarch
 
 Requires:      ruby >= 2.2.0
-Requires:      gem(hansi) >= 1.0.0
+Requires:      gem(hansi) >= 0.2.0
 Requires:      gem(mustermann) = 2.0.2
 Conflicts:     gem(hansi) >= 2
 Provides:      gem(mustermann-contrib) = 2.0.2

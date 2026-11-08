@@ -22,7 +22,7 @@ BuildRequires: gem(builder) >= 3.0
 BuildRequires: gem(json) >= 1.8
 BuildRequires: gem(nokogiri) >= 1.5
 BuildRequires: gem(optimist) >= 3.0
-BuildRequires: gem(rake) >= 10.0
+BuildRequires: gem(rake) >= 10.5
 BuildRequires: gem(simplecov) >= 0.12.0
 BuildRequires: gem(test-unit) >= 2.5
 BuildRequires: gem(yard) >= 0.9.5
@@ -36,7 +36,7 @@ BuildConflicts: gem(yard) >= 0.10
 
 %add_findreq_skiplist %ruby_gemslibdir/**/*
 %add_findprov_skiplist %ruby_gemslibdir/**/*
-%ruby_use_gem_dependency rake >= 10.0,rake < 16
+%ruby_use_gem_dependency rake >= 10.5,rake < 16
 %ruby_alias_names rbvmomi,rbvmomish
 Requires:      ruby >= 1.8.7
 Requires:      gem(builder) >= 3.0
@@ -113,7 +113,7 @@ Group:         Development/Ruby
 BuildArch:     noarch
 
 Requires:      gem(rbvmomi) = 2.4.1
-Requires:      gem(rake) >= 10.0
+Requires:      gem(rake) >= 10.5
 Requires:      gem(simplecov) >= 0.12.0
 Requires:      gem(test-unit) >= 2.5
 Requires:      gem(yard) >= 0.9.5

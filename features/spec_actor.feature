@@ -2876,6 +2876,8 @@ Feature: Spec actor
          """
 
    Scenario: Space option available gem list validation
+      - select the greatest source minimum and the least source maximum
+      - allow availability to widen upper bounds without raising source minimums
       Given space file:
          """
          ---
@@ -2917,6 +2919,23 @@ Feature: Spec actor
                          - - '>='
                            - !ruby/object:Gem::Version
                               version: "2"
+                   - !ruby/object:Gem::Dependency
+                     name: bounded
+                     requirement: !ruby/object:Gem::Requirement
+                        requirements:
+                         - - '>='
+                           - !ruby/object:Gem::Version
+                              version: "12"
+                         - - '>='
+                           - !ruby/object:Gem::Version
+                              version: "13"
+                         - - '<'
+                           - !ruby/object:Gem::Version
+                              version: "16"
+                         - - '<'
+                           - !ruby/object:Gem::Version
+                              version: "15"
+                     type: :development
             - :valid
          """
       When developer loads the space
@@ -2927,6 +2946,7 @@ Feature: Spec actor
           - 12.0.1
           - 13.0.1
          json: 2.3.1
+         bounded: 13.0
          """
       And developer renders the template:
          """
@@ -2951,10 +2971,12 @@ Feature: Spec actor
       Then he gets the RPM spec
          """
          Name:          gem-foo-boo
-         BuildRequires: gem(json) >= 2.3.1
-         BuildRequires: gem(rake) >= 12.0.1
+         BuildRequires: gem(bounded) >= 13
+         BuildRequires: gem(json) >= 1.3.0
+         BuildRequires: gem(rake) >= 2.0.1
+         BuildConflicts: gem(bounded) >= 15
          BuildConflicts: gem(json) >= 3
          BuildConflicts: gem(rake) >= 14
-         %ruby_use_gem_dependency rake >= 12.0.1,rake < 14
-         %ruby_use_gem_dependency json >= 2.3.1,json < 3
+         %ruby_use_gem_dependency rake >= 2.0.1,rake < 14
+         %ruby_use_gem_dependency json >= 1.3.0,json < 3
          """

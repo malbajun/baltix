@@ -26,7 +26,7 @@ BuildRequires: gem(cliver) >= 0.3.2
 BuildRequires: gem(gauntlet) >= 0
 BuildRequires: gem(kramdown) >= 0
 BuildRequires: gem(minitest) >= 5.10
-BuildRequires: gem(racc) >= 1.5.1
+BuildRequires: gem(racc) >= 1.4.15
 BuildRequires: gem(rake) >= 13.0.1
 BuildRequires: gem(simplecov) >= 0.15.1
 BuildRequires: gem(yard) >= 0
@@ -41,7 +41,7 @@ BuildConflicts: gem(simplecov) >= 0.16
 
 %add_findreq_skiplist %ruby_gemslibdir/**/*
 %add_findprov_skiplist %ruby_gemslibdir/**/*
-%ruby_use_gem_dependency racc >= 1.5.1,racc < 2
+%ruby_use_gem_dependency racc >= 1.4.15,racc < 2
 %ruby_alias_names parser,ruby-parse,ruby-rewrite
 Requires:      ruby >= 2.0.0
 Requires:      gem(ast) >= 2.4.1
@@ -124,7 +124,7 @@ Requires:      gem(cliver) >= 0.3.2
 Requires:      gem(gauntlet) >= 0
 Requires:      gem(kramdown) >= 0
 Requires:      gem(minitest) >= 5.10
-Requires:      gem(racc) >= 1.5.1
+Requires:      gem(racc) >= 1.4.15
 Requires:      gem(rake) >= 13.0.1
 Requires:      gem(simplecov) >= 0.15.1
 Requires:      gem(yard) >= 0

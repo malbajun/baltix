@@ -21,16 +21,16 @@ BuildRequires(pre): rpm-macros-ruby setup-rb rake
 BuildRequires: gem(ansi) >= 0
 BuildRequires: gem(indexer) >= 0
 BuildRequires: gem(mast) >= 0
-BuildRequires: gem(minitest) >= 5.14.0
+BuildRequires: gem(minitest) >= 4
 BuildRequires: gem(rake) >= 0
 BuildConflicts: gem(minitest) >= 6
 %endif
 
 %add_findreq_skiplist %ruby_gemslibdir/**/*
 %add_findprov_skiplist %ruby_gemslibdir/**/*
-%ruby_use_gem_dependency minitest >= 5.14.0,minitest < 6
+%ruby_use_gem_dependency minitest >= 4,minitest < 6
 Requires:      gem(ansi) >= 0
-Requires:      gem(minitest) >= 5.14.0
+Requires:      gem(minitest) >= 4
 Conflicts:     gem(minitest) >= 6
 Provides:      gem(turn) = 0.9.7
 
