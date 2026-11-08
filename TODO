@@ -54,9 +54,7 @@ hoe-bunder - crop long patch number for v.5.0
 oj - expand and crop summary when update to 3.13.11
 hoe-travis - lost description on update
 ruby-shadow - lost license on update unlicense replace with specified default + license replace list args
-unf_ext - invalid dep ruby_use_gem_dependency
 rdoc - update to new version break generate a valid new spec if the gem in available gem list adding unnecesary tag
-hiredis - invalid ruby_use_gem_dependency when generated updated spec
 
 glu,glut,kpeg - development deps, merge them correct
 data-objects - main source valid detection
@@ -95,7 +93,6 @@ rails - requires for gem-rails
 
 snowglobe,warnings_logger,addressable,autoprefixer-rails,graphql,packethost,jquery-ui-rails,gitlab-sidekiq-fetcher - erroneouse require list for gem
 byebug - erroneouse devel require list for gem
-gitlab-sidekiq-fetcher - invalid ruby_use_gem_dependency
 packethost - erroneous alias
 
 
