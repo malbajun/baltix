@@ -849,10 +849,18 @@ class Baltix::Spec::Rpm
       changes.last ? changes.last.release : nil
    end
 
+   # Preserves rake tasks configured in options or an existing spec.
+   # @param value_in [String, Array<String>, nil] tasks supplied by options or source state
+   # @return [Array<String>] unique configured task names in their original order
+   # If the spec uses ruby_on_build_rake_tasks, its values are retained. If it
+   # uses the legacy ruby_build --pre option, those tasks are retained as well.
+   # Missing declarations contribute no tasks; duplicates are emitted once.
    def _rake_build_tasks value_in
-      /--pre=(?<list>[^\s]*)/ =~ %w(context __macros ruby_build).reduce(state) {|r, a| r&.[](a) }
+      /--pre=(?<list>[^\s]*)/ =~ Array(variables.ruby_build).join(' ')
 
-      value_in.split(",") | (of_state(:ruby_on_build_rake_tasks) || list || "").split(",")
+      [value_in, of_state(:ruby_on_build_rake_tasks), variables.ruby_on_build_rake_tasks, list].flatten.compact.flat_map do |tasks|
+         tasks.to_s.split(',')
+      end.reject(&:empty?).uniq
    end
 
    def initialize state: {}, options: {}, space: nil

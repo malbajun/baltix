@@ -1,5 +1,26 @@
 Feature: Available gem versions and dependency override macros
 
+   Scenario Outline: Preserve configured rake tasks while refreshing dependency overrides
+      Given blank space
+      And a spec from fixture "rbvmomi"
+      When developer locks the time to "21.04.2021"
+      And the input spec configures rake tasks "build:prepare,assets:compile" through "<form>"
+      And he sets the space options as:
+         | options            | value                     |
+         | rootdir            | features/fixtures/rbvmomi |
+         | available_gem_list | {rake: '15.0'}            |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      And the generated spec is refreshed 2 times
+      Then the generated spec contains the line "%ruby_on_build_rake_tasks build:prepare,assets:compile"
+      And the generated spec contains the line "%ruby_use_gem_dependency rake >= 10.5,rake < 16"
+      And package "gem-rbvmomi-devel" contains dependency line "Requires:      gem(rake) >= 10.5"
+
+      Examples:
+         | form         |
+         | macro        |
+         | build option |
+
    Scenario: Keep the source minimum when available versions straddle it
       Given blank space
       And a spec from fixture "rbvmomi"

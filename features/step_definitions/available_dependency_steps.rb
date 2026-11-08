@@ -2,6 +2,14 @@ Then('the generated spec contains the line {string}') do |line|
    expect(@spec.lines.map(&:strip)).to include(line)
 end
 
+When('the input spec configures rake tasks {string} through {string}') do |tasks, form|
+   if form == 'macro'
+      @spec_in = @spec_in.sub(/^%prep/, "%ruby_on_build_rake_tasks #{tasks}\n\n%prep")
+   else
+      @spec_in = @spec_in.sub(/^%ruby_build[^\n]*/) { |line| "#{line} --pre=#{tasks}" }
+   end
+end
+
 Then('the generated spec contains no dependency override macros') do
    expect(@spec).to_not match(/^%ruby_use_gem_dependency /)
 end

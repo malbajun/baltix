@@ -6,13 +6,13 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options            | value                                         |
-         | rootdir            | features/fixtures/mustermann                   |
-         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'}       |
-         | packager.name      | Ruby Maintainers Team                         |
-         | packager.email     | ruby@packages.altlinux.org                     |
-         | maintainer.name    | Pavel Skrylev                                 |
-         | maintainer.email   | majioa@altlinux.org                            |
+         | options            | value                                     |
+         | rootdir            | features/fixtures/mustermann              |
+         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'} |
+         | packager.name      | Ruby Maintainers Team                     |
+         | packager.email     | ruby@packages.altlinux.org                |
+         | maintainer.name    | Pavel Skrylev                             |
+         | maintainer.email   | majioa@altlinux.org                       |
       And he applies "spec" actor to the baltix setup
       Then the generated spec matches "available.spec" from fixture "mustermann"
 
@@ -21,13 +21,13 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options            | value                                         |
-         | rootdir            | features/fixtures/mustermann                   |
-         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'}       |
-         | packager.name      | Ruby Maintainers Team                         |
-         | packager.email     | ruby@packages.altlinux.org                     |
-         | maintainer.name    | Pavel Skrylev                                 |
-         | maintainer.email   | majioa@altlinux.org                            |
+         | options            | value                                     |
+         | rootdir            | features/fixtures/mustermann              |
+         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'} |
+         | packager.name      | Ruby Maintainers Team                     |
+         | packager.email     | ruby@packages.altlinux.org                |
+         | maintainer.name    | Pavel Skrylev                             |
+         | maintainer.email   | majioa@altlinux.org                       |
       And he applies "spec" actor to the baltix setup
       And the generated spec is refreshed <updates> times
       Then the generated spec contains the line "%ruby_use_gem_dependency hansi >= 0.2.0,hansi < 2"
