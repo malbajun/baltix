@@ -152,11 +152,13 @@ class Baltix::DSL
       end
    end
 
+   # Selects original dependencies for the requested package kinds.
+   # @param kinds_in [Symbol, Array<Symbol>, nil] runtime, development or other kinds
+   # @return [Array<Bundler::Dependency>] matching dependencies on supported platforms
+   # Custom groups use the default development/test mapping.
    def original_deps_for kinds_in = nil
-      groups = self.class.defined_groups_for(kinds_in)
-
       original_deps.select do |dep|
-         (dep.groups & groups).any? &&
+         self.class.match_kind_dep(dep, kinds_in) &&
          (dep.platforms.blank? || dep.platforms.any? {|p| PLATFORMS[p] })
       end
    end
@@ -202,12 +204,14 @@ class Baltix::DSL
       end
    end
 
+   # Selects merged dependencies by included and excluded package kinds.
+   # @param kinds_in [Symbol, Array<Symbol>] kinds to include
+   # @param kinds_out [Symbol, Array<Symbol>] kinds whose dependencies are excluded
+   # @return [Array<Bundler::Dependency>] matching dependencies on supported platforms
+   # Custom groups use the default development/test mapping; exclusions take priority.
    def all_dependencies_for kinds_in: [], kinds_out: []
-      groups_out = Baltix::DSL.defined_groups_for(kinds_out)
-      groups_in = Baltix::DSL.defined_groups_for(kinds_in) - groups_out
-
       all_dependencies.select do |dep|
-         (dep.groups & groups_in).any? && !(dep.groups & groups_out).any? &&
+         self.class.match_kind_dep(dep, kinds_in) && !self.class.match_kind_dep(dep, kinds_out) &&
          (dep.platforms.blank? || dep.platforms.any? {|p| PLATFORMS[p] })
       end
    end
@@ -249,10 +253,14 @@ class Baltix::DSL
    end
 
    class << self
+      # Checks a dependency's actual groups against requested package kinds.
+      # @param dep [Bundler::Dependency] the dependency whose groups are classified
+      # @param kinds_in [Array<Symbol, Array<Symbol>>] runtime, development or other kinds
+      # @return [Boolean] whether any group maps to a requested kind
+      # Custom groups use GROUP_MAPPING's default development/test kinds.
       def match_kind_dep dep, *kinds_in
-         groups = defined_groups_for(kinds_in)
-
-         (dep.groups & groups).any?
+         kinds = kinds_in.flatten
+         dep.groups.any? { |group| (GROUP_MAPPING[group] & kinds).any? }
       end
 
       def defined_groups_for *kinds_in

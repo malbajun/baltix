@@ -29,6 +29,36 @@ Feature: Spec actor
       When he applies "spec" actor to the baltix setup
       Then he acquires an "facets" fixture spec for the baltix setup
 
+   # BytecodeAlliance/wasmtime-rb: 8b7a7bbc69bd64248f8ed636d3fd36607c7b5d5a.
+   # redis-rb/redis-client: 773ff6284cd78167034ddce405baf3364ffedd5c.
+   # byroot/megatest: aebecf133ee581aaa4565150aa2b88a5f9b9e4ed.
+   @scratch @blank_setup @main_is_gem
+   Scenario Outline: Retain development dependencies from standard and custom Gemfile groups
+      - merge the repository Gemfile with gemspec runtime declarations
+      - classify custom groups as development and test dependencies
+      - retain internal requirements for the nested hiredis-client gem
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options          | value               |
+         | rootdir          | <rootdir>           |
+         | spec_type        | rpm                 |
+         | maintainer.name  | Pavel Skrylev       |
+         | maintainer.email | majioa@altlinux.org |
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains the lines:
+         | BuildRequires: gem(<dependency>) >= <minimum> |
+      And package "gem-<fixture>-devel" contains dependency lines:
+         | Requires:      gem(<dependency>) >= <minimum> |
+      And package "gem-<fixture>" does not require "<dependency>"
+      And he acquires an "<fixture>" fixture spec for the baltix setup
+
+      Examples:
+         | fixture      | rootdir                        | dependency | minimum |
+         | wasmtime     | features/fixtures/wasmtime     | rspec      | 3.13    |
+         | redis-client | features/fixtures/redis-client | rubocop    | 0       |
+         | megatest     | features/fixtures/megatest     | rubocop    | 1.21    |
+
    @available_gem_list
    Scenario: Generate a complete mustermann spec with adjusted dependency requirements
       Given blank space
