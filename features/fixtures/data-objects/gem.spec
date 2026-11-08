@@ -196,5 +196,5 @@ Provide a standard and simplified API for communicating with RDBMS from Ruby
 
 %changelog
 * Tue Dec 13 2022 Pavel Skrylev <majioa@altlinux.org> 0.10.17-alt1
-- + packaged gem with Ruby Policy 2.0
+- + packaged gem with Ruby Policy 2.1
 - * define explicit dependencies

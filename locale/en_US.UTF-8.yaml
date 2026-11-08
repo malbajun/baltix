@@ -4,7 +4,7 @@ spec:
       change:
          upgrade: "- ^ %previous_version -> %version"
          fix: "- ! spec"
-         new: "- + packaged gem with Ruby Policy 2.0"
+         new: "- + packaged gem with Ruby Policy 2.1"
          rename: "- * renamed package with subpackages"
          explicit_deps: "- * define explicit dependencies"
       app:

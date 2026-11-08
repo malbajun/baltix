@@ -171,5 +171,5 @@ Simple low-level client for Redis 6+ development package.
 
 %changelog
 * Tue Dec 13 2022 Pavel Skrylev <majioa@altlinux.org> 0.31.0-alt1
-- + packaged gem with Ruby Policy 2.0
+- + packaged gem with Ruby Policy 2.1
 - * define explicit dependencies

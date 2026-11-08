@@ -160,5 +160,5 @@ memoization}[http://www.vpri.org/pdf/tr2008003_experimenting.pdf] trick.
 
 %changelog
 * Tue Dec 13 2022 Pavel Skrylev <majioa@altlinux.org> 1.3.3-alt1
-- + packaged gem with Ruby Policy 2.0
+- + packaged gem with Ruby Policy 2.1
 - * define explicit dependencies
