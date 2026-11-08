@@ -1,5 +1,41 @@
 require 'baltix/dsl'
 
+When('the {string} gem dependency DSL is merged into the project DSL') do |name|
+   project = space.sources.find { |item| item.is_a?(Baltix::Source::Gemfile) && item.rootdir == space.rootdir }
+   @dependency_dsl = project.dsl
+   @dependency_gemfile = @dependency_dsl.original_gemfile.to_s
+   @dependency_dsl.to_gemfile
+   @dependency_dsl.definition
+   source = space.valid_sources.find { |item| item.name == name }
+   @dependency_dsl.merge_in(source.dsl)
+end
+
+Then('the main source is the {string} gem') do |name|
+   expect(space.main_source).to be_a(Baltix::Source::Gem)
+   expect(space.main_source.name).to eql(name)
+end
+
+When('the {string} gem dependency DSL is merged into the {string} gem DSL') do |other, name|
+   source = space.valid_sources.find { |item| item.name == name }
+   incoming = space.valid_sources.find { |item| item.name == other }
+   @dependency_dsl = source.dsl
+   @dependency_dsl.merge_in(incoming.dsl)
+end
+
+Then('the generated dependency requirement for {string} is {string}') do |name, requirement|
+   generated = Bundler::Dsl.new
+   generated.eval_gemfile(@dependency_gemfile, @dependency_dsl.to_gemfile)
+   dependency = generated.dependencies.find { |dep| dep.name == name }
+   expect(dependency).to_not be_nil
+   expect(dependency.requirement.to_s).to eql(Gem::Requirement.new(requirement.split(/,\s*/)).to_s)
+end
+
+Then('the definition dependency requirement for {string} is {string}') do |name, requirement|
+   dependency = @dependency_dsl.definition.dependencies.find { |dep| dep.name == name }
+   expect(dependency).to_not be_nil
+   expect(dependency.requirement.to_s).to eql(Gem::Requirement.new(requirement.split(/,\s*/)).to_s)
+end
+
 Then('the project dependencies exclude:') do |table|
    names = space.valid_sources.flat_map(&:all_dependencies).map(&:name)
    table.hashes.each { |row| expect(names).to_not include(row['name']) }
@@ -38,7 +74,7 @@ end
 Then('the development dependencies include {string} with requirement {string}') do |name, requirement|
    dependency = @dependency_dsl.all_dependencies_for(kinds_in: :devel).find { |dep| dep.name == name }
    expect(dependency).to_not be_nil
-   expect(dependency.requirement.to_s).to eql(Gem::Requirement.new(requirement).to_s)
+   expect(dependency.requirement.to_s).to eql(Gem::Requirement.new(requirement.split(/,\s*/)).to_s)
 end
 
 Then('the generated Gemfile declares {string} in group {string} with requirement {string}') do |name, group, requirement|
