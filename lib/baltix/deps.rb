@@ -188,10 +188,15 @@ class Baltix::Deps
          end
       end
 
+      # Converts the strictest source maximum into an RPM conflict boundary.
+      # @param req [Gem::Requirement] combined dependency requirements
+      # @return [Array] conflict operator and version, or an empty array without a maximum
+      # If several upper bounds exist, the lowest version is selected. At equal
+      # versions an inclusive conflict wins because it excludes the stricter range.
       def upper_negate_to_rpm req
-         req.requirements.reduce([]) do |res, r|
-            merge(res, negate(r))
-         end
+         req.requirements.filter_map { |requirement| negate(requirement) }.min_by do |operator, version|
+            [version, operator == '>=' ? 0 : 1]
+         end || []
       end
 
       # TODO for requirement

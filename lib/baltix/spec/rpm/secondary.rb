@@ -171,6 +171,14 @@ class Baltix::Spec::Rpm::Secondary
 
    protected
 
+   # Applies the document's dependency overrides to this secondary's runtime gems.
+   # @param value_in [Array<Gem::Dependency>] runtime dependencies from existing state
+   # @return [Array<Gem::Dependency>] source dependencies with effective requirements
+   # Internal gem requirements are preserved by the shared replacement logic.
+   def _runtime_dependencies value_in
+      replace_versioning(super)
+   end
+
    def _group value_in
       value_in || (is_exec? || is_app?) && of_state(:group)
    end

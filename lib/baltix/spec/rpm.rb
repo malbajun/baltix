@@ -441,15 +441,72 @@ class Baltix::Spec::Rpm
       end || value_in
    end
 
-   def _versioned_gem_list value_in
-      dep_list = dep_list_intersect(value_in.to_os, available_gem_ranges, gem_versionings)
+   # Selects dependency overrides required by any packaged source.
+   # @param _value_in [OpenStruct, Hash, nil] historical overrides, superseded by current inputs
+   # @return [OpenStruct] override requirements keyed by dependency name
+   # An override is retained when it changes a dependency of the main source or
+   # another packaged source, so secondary gems also receive a build-time macro.
+   # If a gem is itself packaged from these sources, it is excluded from external
+   # version overrides and retains its source version.
+   def _versioned_gem_list _value_in
+      packaged_sources = Array(sources) | [source].compact
+      packaged_names = packaged_sources.grep(Baltix::Source::Gem).map(&:name)
+      dependencies = packaged_sources.flat_map(&:all_dependencies)
 
-      dep_list.select do |n, dep_in|
-         source.all_dependencies.select { |dep| dep.name == n.to_s }.any? do |dep|
-            dep_ver = combine_deps(dep, dep_in)
-            dep_ver.requirement.requirements != dep.requirement.expand.requirements
+      available_gem_ranges.reduce({}.to_os) do |result, name, available|
+         next result if packaged_names.include?(name.to_s)
+
+         matching = dependencies.select { |dep| dep.name == name.to_s }
+         next result if matching.empty?
+
+         override = _available_dependency_override(available, matching)
+         if override && matching.any? { |dep| combine_deps(dep, override).requirement.requirements != dep.requirement.expand.requirements }
+            result[name] = override
+         end
+
+         result
+      end
+   end
+
+   # Builds an availability override without lowering any source minimum.
+   # @param available [Gem::Dependency] range inferred from the available gem list
+   # @param dependencies [Array<Gem::Dependency>] current source requirements for this gem
+   # @return [Gem::Dependency, nil] the corrected range, or nil when all available versions are too old
+   # The lower bound is the greatest source minimum, independent of availability.
+   # The source upper bound is the least source maximum; availability may raise
+   # it, but cannot narrow it. If sources have no maximum, it stays unbounded.
+   # If a source uses >, its exclusive minimum is preserved; = and ~> supply
+   # inclusive minimums. If no available version reaches the source minimum,
+   # no override is produced. Historical spec macros do not participate.
+   def _available_dependency_override available, dependencies
+      minimums = dependencies.flat_map do |dependency|
+         dependency.requirement.requirements.filter_map do |operator, version|
+            case operator
+            when '>=', '>' then [operator, version]
+            when '=', '~>' then ['>=', version]
+            end
          end
       end
+      minimum = minimums.max_by { |operator, version| [version, operator == '>' ? 1 : 0] } || ['>=', Gem::Version.new(0)]
+      versions = Array(available_gem_list[available.name]).map { |version| Gem::Version.new(version.to_s) }
+      return nil unless versions.any? { |version| minimum[0] == '>' ? version > minimum[1] : version >= minimum[1] }
+
+      maximums = dependencies.flat_map do |dependency|
+         dependency.requirement.requirements.filter_map do |operator, version|
+            case operator
+            when '<', '<=' then [operator, version]
+            when '=' then ['<=', version]
+            when '~>' then ['<', version.bump]
+            end
+         end
+      end
+      maximum = maximums.min_by { |operator, version| [version, operator == '<' ? 0 : 1] }
+      requirements = [minimum]
+      if maximum
+         available_maximums = available.requirement.requirements.select { |operator, _| %w(< <=).include?(operator) }
+         requirements << ([maximum] + available_maximums).max_by { |operator, version| [version, operator == '<=' ? 1 : 0] }
+      end
+      Gem::Dependency.new(available.name, Gem::Requirement.new(requirements.map { |pair| pair.join(' ') }))
    end
 
    def _gem_versionings_with_use value_in
@@ -792,10 +849,18 @@ class Baltix::Spec::Rpm
       changes.last ? changes.last.release : nil
    end
 
+   # Preserves rake tasks configured in options or an existing spec.
+   # @param value_in [String, Array<String>, nil] tasks supplied by options or source state
+   # @return [Array<String>] unique configured task names in their original order
+   # If the spec uses ruby_on_build_rake_tasks, its values are retained. If it
+   # uses the legacy ruby_build --pre option, those tasks are retained as well.
+   # Missing declarations contribute no tasks; duplicates are emitted once.
    def _rake_build_tasks value_in
-      /--pre=(?<list>[^\s]*)/ =~ %w(context __macros ruby_build).reduce(state) {|r, a| r&.[](a) }
+      /--pre=(?<list>[^\s]*)/ =~ Array(variables.ruby_build).join(' ')
 
-      value_in.split(",") | (of_state(:ruby_on_build_rake_tasks) || list || "").split(",")
+      [value_in, of_state(:ruby_on_build_rake_tasks), variables.ruby_on_build_rake_tasks, list].flatten.compact.flat_map do |tasks|
+         tasks.to_s.split(',')
+      end.reject(&:empty?).uniq
    end
 
    def initialize state: {}, options: {}, space: nil

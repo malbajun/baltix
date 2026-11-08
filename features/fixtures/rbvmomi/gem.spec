@@ -36,7 +36,7 @@ BuildConflicts: gem(yard) >= 0.10
 
 %add_findreq_skiplist %ruby_gemslibdir/**/*
 %add_findprov_skiplist %ruby_gemslibdir/**/*
-%ruby_use_gem_dependency rake >= 10.0,rake < 16
+%ruby_use_gem_dependency rake >= 10.5,rake < 16
 %ruby_alias_names rbvmomi,rbvmomish
 Requires:      ruby >= 1.8.7
 Requires:      gem(builder) >= 3.0

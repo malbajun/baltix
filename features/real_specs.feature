@@ -1,6 +1,59 @@
 @actor @spec @gem
 Feature: Spec actor
 
+   @available_gem_list
+   Scenario: Generate a complete mustermann spec with adjusted dependency requirements
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options            | value                                     |
+         | rootdir            | features/fixtures/mustermann              |
+         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'} |
+         | packager.name      | Ruby Maintainers Team                     |
+         | packager.email     | ruby@packages.altlinux.org                |
+         | maintainer.name    | Pavel Skrylev                             |
+         | maintainer.email   | majioa@altlinux.org                       |
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec matches "available.spec" from fixture "mustermann"
+
+   @available_gem_list
+   Scenario Outline: Keep RPM requirements aligned with override macros during updates
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options            | value                                     |
+         | rootdir            | features/fixtures/mustermann              |
+         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'} |
+         | packager.name      | Ruby Maintainers Team                     |
+         | packager.email     | ruby@packages.altlinux.org                |
+         | maintainer.name    | Pavel Skrylev                             |
+         | maintainer.email   | majioa@altlinux.org                       |
+      And he applies "spec" actor to the baltix setup
+      And the generated spec is refreshed <updates> times
+      Then the generated spec contains the lines:
+         | %ruby_use_gem_dependency hansi >= 0.2.0,hansi < 2                   |
+         | %ruby_use_gem_dependency ruby2_keywords >= 0.0.1,ruby2_keywords < 1 |
+         | BuildRequires: gem(hansi) >= 0.2.0                                  |
+         | BuildConflicts: gem(hansi) >= 2                                     |
+         | BuildRequires: gem(ruby2_keywords) >= 0.0.1                         |
+         | BuildConflicts: gem(ruby2_keywords) >= 1                            |
+      And package "gem-mustermann" does not require "hansi"
+      And package "gem-mustermann" contains dependency lines:
+         | Requires:      gem(ruby2_keywords) >= 0.0.1 |
+         | Conflicts:     gem(ruby2_keywords) >= 1     |
+      And package "gem-mustermann-contrib" contains dependency lines:
+         | Requires:      gem(hansi) >= 0.2.0     |
+         | Conflicts:     gem(hansi) >= 2         |
+         | Requires:      gem(mustermann) = 2.0.2 |
+
+      And the generated dependency sections match "available.spec" from fixture "mustermann"
+
+      Examples:
+         | updates |
+         | 0       |
+         | 1       |
+         | 2       |
+
    @scratch @blank_setup
    Scenario: Generate a spec from the root of the mustermann repository
       Given blank space
@@ -105,6 +158,8 @@ Feature: Spec actor
       - blank packager
       - both gem dependencies are runtime and development
       - there is a dependency to ruby
+      - replace legacy gem_replace_version constraints using current sources and available versions
+      - use identical rake requirements in the override macro and RPM dependency fields
       Given blank space
       And a spec from fixture "rbvmomi"
       When developer locks the time to "21.04.2021"
@@ -117,6 +172,13 @@ Feature: Spec actor
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "rbvmomi" fixture spec for the baltix setup
+      And the generated spec contains the lines:
+         | %ruby_use_gem_dependency rake >= 10.5,rake < 16 |
+         | BuildRequires: gem(rake) >= 10.5                |
+         | BuildConflicts: gem(rake) >= 16                 |
+      And package "gem-rbvmomi-devel" contains dependency lines:
+         | Requires:      gem(rake) >= 10.5 |
+         | Conflicts:     gem(rake) >= 16   |
 
    @policy2_0 @release_change @main_is_gem
    Scenario: Apply the Spec actor to setup for rspec-support gem and manual Ruby Policy 2.0 setup
@@ -155,21 +217,35 @@ Feature: Spec actor
       And he applies "spec" actor to the baltix setup
       Then he acquires an "parser" fixture spec for the baltix setup
 
-   @scratch @index_gemspec @blank_setup
-   Scenario: Apply the Spec actor to setup for turn gem to blank setup
+   @scratch @index_gemspec @blank_setup @main_is_gem
+   Scenario Outline: Apply the Spec actor to setup for turn gem to blank setup
       - blank setup
       - blank packager
+      - interpret the original 4~ requirement as >= 4 and < 5
+      - widen the upper bound only when the available list explicitly requests it
       Given blank space
       When developer locks the time to "21.04.2021"
       And he sets the space options as:
-         | options               | value                             |
-         | rootdir               | features/fixtures/turn            |
-         | available_gem_list    | {minitest: 5.14.0}                |
-         | spec_type             | rpm                               |
-         | maintainer.name       | Pavel Skrylev                     |
-         | maintainer.email      | majioa@altlinux.org               |
-      And he applies "spec" actor to the baltix setup
-      Then he acquires an "turn" fixture spec for the baltix setup
+         | options            | value                  |
+         | rootdir            | features/fixtures/turn |
+         | available_gem_list | <available>            |
+         | spec_type          | rpm                    |
+         | maintainer.name    | Pavel Skrylev          |
+         | maintainer.email   | majioa@altlinux.org    |
+      Then the source "turn" dependency "minitest" has version compatibility:
+         | version | allowed |
+         | 3.9     | no      |
+         | 4.0     | yes     |
+         | 4.99    | yes     |
+         | 5.0     | no      |
+         | 5.14.0  | no      |
+      When he applies "spec" actor to the baltix setup
+      Then the generated spec matches "<expected>" from fixture "turn"
+
+      Examples:
+         | available          | expected    |
+         | {}                 | source.spec |
+         | {minitest: 5.14.0} | gem.spec    |
 
    @policy2_0 @gem_change
    Scenario: Apply the Spec actor to setup for ruby-gnome2 gemset and Ruby Policy pre 2.0 setup

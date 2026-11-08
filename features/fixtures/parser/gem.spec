@@ -41,7 +41,7 @@ BuildConflicts: gem(simplecov) >= 0.16
 
 %add_findreq_skiplist %ruby_gemslibdir/**/*
 %add_findprov_skiplist %ruby_gemslibdir/**/*
-%ruby_use_gem_dependency racc >= 1.5.1,racc < 2
+%ruby_use_gem_dependency racc >= 1.4.15,racc < 2
 %ruby_alias_names parser,ruby-parse,ruby-rewrite
 Requires:      ruby >= 2.0.0
 Requires:      gem(ast) >= 2.4.1

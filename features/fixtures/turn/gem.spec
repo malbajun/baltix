@@ -28,7 +28,7 @@ BuildConflicts: gem(minitest) >= 6
 
 %add_findreq_skiplist %ruby_gemslibdir/**/*
 %add_findprov_skiplist %ruby_gemslibdir/**/*
-%ruby_use_gem_dependency minitest >= 5.14.0,minitest < 6
+%ruby_use_gem_dependency minitest >= 4,minitest < 6
 Requires:      gem(ansi) >= 0
 Requires:      gem(minitest) >= 4
 Conflicts:     gem(minitest) >= 6
