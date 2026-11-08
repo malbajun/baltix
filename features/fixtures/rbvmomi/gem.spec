@@ -22,7 +22,7 @@ BuildRequires: gem(builder) >= 3.0
 BuildRequires: gem(json) >= 1.8
 BuildRequires: gem(nokogiri) >= 1.5
 BuildRequires: gem(optimist) >= 3.0
-BuildRequires: gem(rake) >= 10.5
+BuildRequires: gem(rake) >= 10.0
 BuildRequires: gem(simplecov) >= 0.12.0
 BuildRequires: gem(test-unit) >= 2.5
 BuildRequires: gem(yard) >= 0.9.5
@@ -113,7 +113,7 @@ Group:         Development/Ruby
 BuildArch:     noarch
 
 Requires:      gem(rbvmomi) = 2.4.1
-Requires:      gem(rake) >= 10.5
+Requires:      gem(rake) >= 10.0
 Requires:      gem(simplecov) >= 0.12.0
 Requires:      gem(test-unit) >= 2.5
 Requires:      gem(yard) >= 0.9.5

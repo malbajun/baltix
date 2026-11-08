@@ -1,6 +1,56 @@
 @actor @spec @gem
 Feature: Spec actor
 
+   @available_gem_list
+   Scenario: Generate a complete mustermann spec with adjusted dependency requirements
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options            | value                                         |
+         | rootdir            | features/fixtures/mustermann                   |
+         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'}       |
+         | packager.name      | Ruby Maintainers Team                         |
+         | packager.email     | ruby@packages.altlinux.org                     |
+         | maintainer.name    | Pavel Skrylev                                 |
+         | maintainer.email   | majioa@altlinux.org                            |
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec matches "available.spec" from fixture "mustermann"
+
+   @available_gem_list
+   Scenario Outline: Keep RPM requirements aligned with override macros during updates
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options            | value                                         |
+         | rootdir            | features/fixtures/mustermann                   |
+         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'}       |
+         | packager.name      | Ruby Maintainers Team                         |
+         | packager.email     | ruby@packages.altlinux.org                     |
+         | maintainer.name    | Pavel Skrylev                                 |
+         | maintainer.email   | majioa@altlinux.org                            |
+      And he applies "spec" actor to the baltix setup
+      And the generated spec is refreshed <updates> times
+      Then the generated spec contains the line "%ruby_use_gem_dependency hansi >= 1.0.0,hansi < 2"
+      And the generated spec contains the line "%ruby_use_gem_dependency ruby2_keywords >= 0.1.0,ruby2_keywords < 1"
+      And the generated spec contains the line "BuildRequires: gem(hansi) >= 1.0.0"
+      And the generated spec contains the line "BuildConflicts: gem(hansi) >= 2"
+      And the generated spec contains the line "BuildRequires: gem(ruby2_keywords) >= 0.1.0"
+      And the generated spec contains the line "BuildConflicts: gem(ruby2_keywords) >= 1"
+      And package "gem-mustermann" does not require "hansi"
+      And package "gem-mustermann" contains dependency line "Requires:      gem(ruby2_keywords) >= 0.1.0"
+      And package "gem-mustermann" contains dependency line "Conflicts:     gem(ruby2_keywords) >= 1"
+      And package "gem-mustermann-contrib" contains dependency line "Requires:      gem(hansi) >= 1.0.0"
+      And package "gem-mustermann-contrib" contains dependency line "Conflicts:     gem(hansi) >= 2"
+      And package "gem-mustermann-contrib" contains dependency line "Requires:      gem(mustermann) = 2.0.2"
+
+      And the generated dependency sections match "available.spec" from fixture "mustermann"
+
+      Examples:
+         | updates |
+         | 0       |
+         | 1       |
+         | 2       |
+
    @scratch @blank_setup
    Scenario: Generate a spec from the root of the mustermann repository
       Given blank space

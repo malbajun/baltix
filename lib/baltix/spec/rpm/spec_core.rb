@@ -565,18 +565,21 @@ module Baltix::Spec::Rpm::SpecCore
       end.values
    end
 
-   # +replace_versioning+ replaces version of the +external+ libraties to align the any requires.
-   # It is not affects to an in-sourced gem/lib versions
+   # Applies the same dependency requirements that are emitted in override macros.
+   # @param deps_in [Array<Gem::Dependency, String>] dependencies to render
+   # @return [Array<Gem::Dependency, String>] dependencies with effective requirements
+   # If an external gem has an override, its dependency is copied with that exact
+   # requirement. Otherwise it is retained. Non-gem entries and the current
+   # package's own provided gem are retained without replacement.
    def replace_versioning deps_in
-      versioning_list = available_gem_ranges # NOTE removed merge with gem_versionings
-#      versioning_list = available_gem_ranges.merge(gem_versionings)
+      versioning_list = doc.versioned_gem_list
 
       deps_in.map do |dep_in|
          if dep_in.is_a?(Gem::Dependency) && provide_dep&.name != dep_in.name
             dep = versioning_list[dep_in.name]
 
             if dep
-               combine_deps(dep_in, dep)
+               dep_in.dup.tap { |replacement| replacement.instance_variable_set(:@requirement, dep.requirement) }
             else
                dep_in
             end
