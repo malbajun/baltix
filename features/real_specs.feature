@@ -15,6 +15,7 @@ Feature: Spec actor
       - preserve the repository root and retain its shared build dependencies
       - package the core gem once, with its SQLite driver as a secondary
       - cover the runtime/development dependency separation also reported for byebug
+      - inherit the target architecture for native drivers; blank build_arch means no BuildArch declaration
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
@@ -26,7 +27,8 @@ Feature: Spec actor
       Then the main source is the "data_objects" gem
       And the project root remains the "data-objects" fixture
       When he applies "spec" actor to the baltix setup
-      Then he acquires an "data-objects" fixture spec for the baltix setup
+      Then stringified property "has_compilables?" of space's spec is "false"
+      And he acquires an "data-objects" fixture spec for the baltix setup
       And the generated package names are unique
       And the generated spec contains the lines:
          | Name:          gem-data-objects          |
@@ -38,11 +40,23 @@ Feature: Spec actor
          | Conflicts:     gem(addressable) >= 3   |
       And package "gem-do-sqlite3" contains dependency lines:
          | Requires:      gem(data_objects) = 0.10.17 |
+      And the generated package build architectures are:
+         | package              | build_arch |
+         | gem-data-objects     |            |
+         | gem-do-sqlite3       |            |
+         | gem-do-sqlite3-doc   | noarch     |
+         | gem-do-sqlite3-devel | noarch     |
       When the generated spec is refreshed 2 times
       Then the main source is the "data_objects" gem
       And the project root remains the "data-objects" fixture
       And the generated package names are unique
       And the generated dependency sections match "gem.spec" from fixture "data-objects"
+      And the generated package build architectures are:
+         | package              | build_arch |
+         | gem-data-objects     |            |
+         | gem-do-sqlite3       |            |
+         | gem-do-sqlite3-doc   | noarch     |
+         | gem-do-sqlite3-devel | noarch     |
 
    # Published glu/glut 8.3.0 and kpeg 1.3.3 source packages from RubyGems.
    # Hoe reads the retained manifests, readmes and histories while importing Rakefiles.
@@ -112,6 +126,7 @@ Feature: Spec actor
       - merge the repository Gemfile with gemspec runtime declarations
       - classify custom groups as development and test dependencies
       - retain internal requirements for the nested hiredis-client gem
+      - avoid a global noarch declaration when the main gem or a nested gem has native extensions
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
@@ -126,13 +141,17 @@ Feature: Spec actor
       And package "gem-<fixture>-devel" contains dependency lines:
          | Requires:      gem(<dependency>) >= <minimum> |
       And package "gem-<fixture>" does not require "<dependency>"
+      And the generated package build architectures are:
+         | package       | build_arch   |
+         | gem-<fixture> | <build_arch> |
+      And stringified property "has_compilables?" of space's spec is "<local_compilable>"
       And he acquires an "<fixture>" fixture spec for the baltix setup
 
       Examples:
-         | fixture      | rootdir                        | dependency | minimum |
-         | wasmtime     | features/fixtures/wasmtime     | rspec      | 3.13    |
-         | redis-client | features/fixtures/redis-client | rubocop    | 0       |
-         | megatest     | features/fixtures/megatest     | rubocop    | 1.21    |
+         | fixture      | rootdir                        | dependency | minimum | build_arch | local_compilable |
+         | wasmtime     | features/fixtures/wasmtime     | rspec      | 3.13    |            | true             |
+         | redis-client | features/fixtures/redis-client | rubocop    | 0       |            | false            |
+         | megatest     | features/fixtures/megatest     | rubocop    | 1.21    | noarch     | false            |
 
    # redis/hiredis-rb: eb27295facd5473a54585e06a043bebf5c80bb5b.
    @scratch @blank_setup @main_is_gem

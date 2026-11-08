@@ -78,7 +78,6 @@ gem-turbolinks-source from oold name ruby-turbolinks-source-gem
 
 
 syntax-tree - multiple versions of the same gem
-redis-client - auto noarch is error
    
 loofah,rails-html-sanitizer - gems in Gemfile under condition/unknown group
 

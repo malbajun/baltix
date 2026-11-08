@@ -31,7 +31,7 @@ Url:           <%= uri %>
 Vcs:           <%= vcs %>
 <% end -%>
 Packager:      <%= packager.name %> <<%= packager.email %>>
-<% unless is_lib? and has_compilables? -%>
+<% unless has_compilables?(:with_children) -%>
 BuildArch:     <%= build_arch %>
 <% end -%>
 
