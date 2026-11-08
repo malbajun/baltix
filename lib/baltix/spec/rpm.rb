@@ -710,9 +710,17 @@ class Baltix::Spec::Rpm
       end
    end
 
+   # Removes Ruby build requirements that are reconstructed from source metadata.
+   # @param value_in [Array<Gem::Dependency, String>] parsed RPM build requirements
+   # @return [Array<Gem::Dependency, String>] requirements retained before reconstruction
+   # If a Ruby-prefixed string names a separate -headers-devel package, it is
+   # retained because gem(name) does not identify that header package. Other
+   # Ruby-prefixed strings are removed; non-string entries and unrelated RPM
+   # requirements are retained.
    def _filter_out_build_auto_requires value_in
       value_in.reject do |value|
-         value.is_a?(String) and /^(#{Baltix::Spec::Rpm::Name::PREFICES.join('|')})[\-(]/ =~ value
+         value.is_a?(String) && /^(#{Baltix::Spec::Rpm::Name::PREFICES.join('|')})[\-(]/ =~ value &&
+            !value.match?(/\A\S+-headers-devel(?:\s|\z)/)
       end
    end
 

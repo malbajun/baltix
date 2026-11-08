@@ -484,21 +484,27 @@ Feature: Spec actor
       - proper detection of host rpm name line ruby-gnome2 not to rename to gem-gnome2
       - autoskip packages when they lost gemspecs like ruby-gnome2 *-no-gi packages or gem-vte defined in the original spec
       - since the top source is an application / group, so it doesn't parse a prefix, and use no prefix then
+      - retain explicit header-package build requirements without the cairo-devel dependency cycle
       - blank packager
       Given blank space
       And a spec from fixture "ruby-gnome2"
       When developer locks the time to "09.03.2022"
       And he sets the space options as:
-         | options               | value                             |
-         | rootdir               | features/fixtures/ruby-gnome2     |
-         | available_gem_list    | {minitest: 5.14.0}                |
-         | spec_type             | rpm                               |
-         | ignored_names         | [rake]                            |
-         | maintainer.name       | Pavel Skrylev                     |
-         | maintainer.email      | majioa@altlinux.org               |
+         | options            | value                         |
+         | rootdir            | features/fixtures/ruby-gnome2 |
+         | available_gem_list | {minitest: 5.14.0}            |
+         | spec_type          | rpm                           |
+         | ignored_names      | [rake]                        |
+         | maintainer.name    | Pavel Skrylev                 |
+         | maintainer.email   | majioa@altlinux.org           |
+      And the input spec has extra build requirements:
+         | gem-cairo-headers-devel |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "ruby-gnome2" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated spec contains the lines:
+         | BuildRequires: gem-cairo-headers-devel |
 
    @scratch @hoe @blank_setup
    Scenario: Apply the Spec actor to setup for oedipus-lex gem to blank setup

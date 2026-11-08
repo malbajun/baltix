@@ -78,3 +78,8 @@ Then('the generated package names are unique') do
    names = @spec.scan(/^(?:Name:\s+|%package\s+-n\s+)(\S+)/).flatten
    expect(names).to eql(names.uniq)
 end
+
+When('the input spec has extra build requirements:') do |table|
+   declarations = table.raw.flatten.map { |requirement| "BuildRequires: #{requirement}\n" }.join
+   @spec_in = @spec_in.sub(/^Name:/, "#{declarations}Name:")
+end
