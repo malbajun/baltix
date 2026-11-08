@@ -16,6 +16,7 @@ BuildArch:     noarch
 
 Source:        %name-%version.tar
 BuildRequires(pre): rpm-macros-ruby setup-rb rake
+BuildRequires: gem-cairo-headers-devel
 BuildRequires: libgtk+2-devel
 BuildRequires: libgtk+3-devel
 BuildRequires: libpixman-devel
