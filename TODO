@@ -88,7 +88,6 @@ rails - requires for gem-rails
 
 
 snowglobe,warnings_logger,addressable,autoprefixer-rails,graphql,packethost,jquery-ui-rails,gitlab-sidekiq-fetcher - erroneouse require list for gem
-byebug - erroneouse devel require list for gem
 packethost - erroneous alias
 
 

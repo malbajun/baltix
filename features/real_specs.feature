@@ -14,6 +14,7 @@ Feature: Spec actor
       - treat the data-objects repository name as an alias of data_objects
       - preserve the repository root and retain its shared build dependencies
       - package the core gem once, with its SQLite driver as a secondary
+      - cover the runtime/development dependency separation also reported for byebug
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
