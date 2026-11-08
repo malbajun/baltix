@@ -161,10 +161,12 @@ class Baltix::Space
 
    # Selects the main source without changing the repository root directory.
    # Takes no parameters and returns a source, or nil when no candidate exists.
-   # If the loaded spec names a real source, that source takes precedence. If
-   # the root source is synthetic, a nested gem matching the repository name
-   # is preferred, or the sole real source is used. Otherwise the root source
-   # is retained. A previously selected source is returned from the cache.
+   # If the loaded spec names a real source, that source takes precedence;
+   # a gem is preferred over repository metadata matching the same name.
+   # If the root source is not a gem, a nested gem matching its RPM name aliases
+   # is preferred. If the root is synthetic and no matching gem exists, the sole
+   # real source is used. Otherwise the root source is retained. A previously
+   # selected source is returned from the cache.
    #
    def main_source
       return @main_source if @main_source
@@ -172,13 +174,14 @@ class Baltix::Space
       reals = valid_sources.select { |source| !source.is_a?(Baltix::Source::Fake) }
 
       if spec && !spec.state.blank?
-         specen_source = reals.find { |real| spec.state["name"] === real.name }
+         specen_source = (reals.grep(Baltix::Source::Gem) | reals).find { |real| spec.state["name"] === real.name }
       end
 
       root_source ||= valid_sources.sort {|x, y| x.name.size <=> y.name.size }.find { |source| source.rootdir == rootdir }
 
-      if root_source.is_a?(Baltix::Source::Fake)
-         nested_source = reals.find { |source| source.is_a?(Baltix::Source::Gem) && source.name == root_source.name }
+      if root_source && !root_source.is_a?(Baltix::Source::Gem)
+         repository_name = Baltix::Spec::Rpm::Name.parse(root_source.name)
+         nested_source = reals.find { |source| source.is_a?(Baltix::Source::Gem) && repository_name === source.name }
       end
 
       @main_source =

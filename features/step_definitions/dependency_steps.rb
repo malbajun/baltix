@@ -100,3 +100,7 @@ Given('the {string} fixture has already been imported') do |name|
    previous = Baltix::Space.new(options: options)
    expect(previous.valid_sources.any? { |source| source.is_a?(Baltix::Source::Gem) && source.name == name }).to eql(true)
 end
+
+Then('the project root remains the {string} fixture') do |name|
+   expect(space.rootdir).to eql(File.expand_path("features/fixtures/#{name}"))
+end
