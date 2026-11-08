@@ -441,11 +441,23 @@ class Baltix::Spec::Rpm
       end || value_in
    end
 
+   # Selects dependency overrides required by any packaged source.
+   # @param value_in [OpenStruct, Hash, nil] previously supplied overrides
+   # @return [OpenStruct] override requirements keyed by dependency name
+   # An override is retained when it changes a dependency of the main source or
+   # another packaged source, so secondary gems also receive a build-time macro.
+   # If a gem is itself packaged from these sources, it is excluded from external
+   # version overrides and retains its source version.
    def _versioned_gem_list value_in
       dep_list = dep_list_intersect(value_in.to_os, available_gem_ranges, gem_versionings)
+      packaged_sources = Array(sources) | [source].compact
+      packaged_names = packaged_sources.grep(Baltix::Source::Gem).map(&:name)
+      dependencies = packaged_sources.flat_map(&:all_dependencies)
 
       dep_list.select do |n, dep_in|
-         source.all_dependencies.select { |dep| dep.name == n.to_s }.any? do |dep|
+         next false if packaged_names.include?(n.to_s)
+
+         dependencies.select { |dep| dep.name == n.to_s }.any? do |dep|
             dep_ver = combine_deps(dep, dep_in)
             dep_ver.requirement.requirements != dep.requirement.expand.requirements
          end
