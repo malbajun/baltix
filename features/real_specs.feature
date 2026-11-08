@@ -4,6 +4,31 @@ Feature: Spec actor
    Tags @policy1_0 and @policy2_0 identify obsolete input policies being migrated.
    The obsolete rpm-build-ruby prerequisite is replaced by rpm-macros-ruby, setup-rb and rake.
 
+   # rubyworks/facets 3.1.0, revision 86e44b354b0008c32bebb305fae7b1848cfd13a6.
+   # The manifest is reduced to files retained for importing the fixture.
+   @scratch @blank_setup @main_is_gem
+   Scenario: Keep facets index test dependencies out of runtime requirements
+      - preserve dependency groups and complete version requirements from the index
+      - agree with the original gemspec declarations
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options          | value                    |
+         | rootdir          | features/fixtures/facets |
+         | spec_type        | rpm                      |
+         | maintainer.name  | Pavel Skrylev            |
+         | maintainer.email | majioa@altlinux.org      |
+      Then source "facets" has dependency declarations:
+         | name         | type        | requirement |
+         | guard        | development | >= 0        |
+         | lemon        | development | >= 0        |
+         | qed          | development | >= 0        |
+         | rake         | development | >= 0        |
+         | rubytest-cli | development | >= 0        |
+         | simplecov    | development | >= 0        |
+      When he applies "spec" actor to the baltix setup
+      Then he acquires an "facets" fixture spec for the baltix setup
+
    @available_gem_list
    Scenario: Generate a complete mustermann spec with adjusted dependency requirements
       Given blank space

@@ -44,7 +44,10 @@ module Baltix::Loader::Mast
       _add_dependency_with_type: ->(this) do
          if this['requirements']
             this["requirements"].map do |dep|
-               [dep['name'], dep['development'] ? :development : :runtime, [transform_version(dep['version'])].compact]
+               groups = Array(dep['groups'])
+               development = dep['development'] || groups.any? && !groups.include?('runtime')
+
+               [dep['name'], development ? :development : :runtime, [transform_version(dep['version'])].compact]
             end
          end
       end
@@ -117,23 +120,23 @@ module Baltix::Loader::Mast
    end
 
    class << self
+      # Converts an index version requirement into RubyGems requirement syntax.
+      # @param version [String, nil] a RubyGems requirement or legacy suffix notation
+      # @return [String, nil] the complete requirement, or nil when none is supplied
+      # If the requirement already uses RubyGems syntax, it is preserved. Otherwise,
+      # legacy suffixes are expanded without discarding dotted version components.
+      # If no supported suffix matches, the original requirement is returned.
       def transform_version version
-         if version
-            /(?<number>[\d]+)(?<approx>[~><=])?/ =~ version
-            part1 =
-               case approx
-               when '~'
-                  '~> '
-               when '>'
-                  '>= '
-               when '<'
-                  '<= '
-               when '='
-                  '= '
-               end
+         return unless version
 
-            [part1, number].join(' ')
-         end
+         requirement = version.to_s.strip
+         return requirement if Gem::Requirement::PATTERN.match?(requirement)
+
+         match = /\A(?<number>\d+(?:\.[0-9A-Za-z]+)*)(?<suffix>[~+><=\-])\z/.match(requirement)
+         return requirement unless match
+
+         operator = { '~' => '~>', '+' => '>=', '-' => '<', '>' => '>=', '<' => '<=', '=' => '=' }[match[:suffix]]
+         "#{operator} #{match[:number]}"
       end
    end
 end

@@ -85,3 +85,11 @@ Then('the generated Gemfile declares {string} in group {string} with requirement
    expect(dependency.groups).to eql([group.to_sym])
    expect(dependency.requirement.to_s).to eql(Gem::Requirement.new(requirement).to_s)
 end
+
+Then('source {string} has dependency declarations:') do |name, table|
+   source = space.valid_sources.find { |item| item.is_a?(Baltix::Source::Gem) && item.name == name }
+   expect(source).to_not be_nil
+   actual = source.spec.dependencies.map { |dep| [dep.name, dep.type.to_s, dep.requirement.to_s] }.sort
+   expected = table.hashes.map { |row| row.values_at('name', 'type', 'requirement') }.sort
+   expect(actual).to eql(expected)
+end
