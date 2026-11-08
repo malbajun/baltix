@@ -217,21 +217,35 @@ Feature: Spec actor
       And he applies "spec" actor to the baltix setup
       Then he acquires an "parser" fixture spec for the baltix setup
 
-   @scratch @index_gemspec @blank_setup
-   Scenario: Apply the Spec actor to setup for turn gem to blank setup
+   @scratch @index_gemspec @blank_setup @main_is_gem
+   Scenario Outline: Apply the Spec actor to setup for turn gem to blank setup
       - blank setup
       - blank packager
+      - interpret the original 4~ requirement as >= 4 and < 5
+      - widen the upper bound only when the available list explicitly requests it
       Given blank space
       When developer locks the time to "21.04.2021"
       And he sets the space options as:
-         | options               | value                             |
-         | rootdir               | features/fixtures/turn            |
-         | available_gem_list    | {minitest: 5.14.0}                |
-         | spec_type             | rpm                               |
-         | maintainer.name       | Pavel Skrylev                     |
-         | maintainer.email      | majioa@altlinux.org               |
-      And he applies "spec" actor to the baltix setup
-      Then he acquires an "turn" fixture spec for the baltix setup
+         | options            | value                  |
+         | rootdir            | features/fixtures/turn |
+         | available_gem_list | <available>            |
+         | spec_type          | rpm                    |
+         | maintainer.name    | Pavel Skrylev          |
+         | maintainer.email   | majioa@altlinux.org    |
+      Then the source "turn" dependency "minitest" has version compatibility:
+         | version | allowed |
+         | 3.9     | no      |
+         | 4.0     | yes     |
+         | 4.99    | yes     |
+         | 5.0     | no      |
+         | 5.14.0  | no      |
+      When he applies "spec" actor to the baltix setup
+      Then the generated spec matches "<expected>" from fixture "turn"
+
+      Examples:
+         | available          | expected    |
+         | {}                 | source.spec |
+         | {minitest: 5.14.0} | gem.spec    |
 
    @policy2_0 @gem_change
    Scenario: Apply the Spec actor to setup for ruby-gnome2 gemset and Ruby Policy pre 2.0 setup

@@ -2,6 +2,17 @@ Then('the generated spec contains the lines:') do |table|
    expect(@spec.lines.map(&:strip)).to include(*table.raw.flatten)
 end
 
+Then('the source {string} dependency {string} has version compatibility:') do |source_name, name, table|
+   source = space.valid_sources.find { |item| item.name == source_name && item.is_a?(Baltix::Source::Gem) }
+   expect(source).to_not be_nil
+   dependency = source.spec.dependencies.find { |item| item.name == name }
+   expect(dependency).to_not be_nil
+   table.hashes.each do |row|
+      accepted = dependency.requirement.satisfied_by?(Gem::Version.new(row['version']))
+      expect(accepted).to eql(row['allowed'] == 'yes')
+   end
+end
+
 When('the input spec configures rake tasks {string} through {string}') do |tasks, form|
    if form == 'macro'
       @spec_in = @spec_in.sub(/^%prep/, "%ruby_on_build_rake_tasks #{tasks}\n\n%prep")
