@@ -686,19 +686,23 @@ class Baltix::Spec::Rpm
       dep_hash.values | space.all_dependencies_for(kinds_in: :test)
    end
 
+   # Adjusts test groups for dependencies declared as build requirements.
+   # @param value_in [Array<Gem::Dependency>] dependencies with Bundler group metadata
+   # @return [Array<Gem::Dependency>] dependencies with copied entries where groups change
+   # If default dependency priority is disabled and the input spec names a
+   # dependency as a build requirement, its copy omits groups used for tests.
+   # Otherwise the original entry is retained. Source dependency objects and
+   # their group arrays are never modified.
    def _fix_dependencies_groups value_in
       state_build_requires_names = state.build_requires&.select {|x| x.is_a?(Gem::Dependency) }&.map {|x| x.name } || []
 
       value_in.map do |dep|
          if !options.high_default_dependencies_priority && state_build_requires_names.include?(dep.name)
-            dep.groups -= Baltix::DSL.defined_groups_for(:test)
-
-            dep
+            dep.dup.tap do |dependency|
+               dependency.groups = dep.groups - Baltix::DSL.defined_groups_for(:test)
+            end
          else
             dep
-            #Baltix::DSL::DEFAULT_GEM_GROUP.reduce(dep) do |d, (group, names)|
-            #   names.find {|n| n === d.name } ? (d.groups = [group]; d) : d
-            #end
          end
       end
    end
