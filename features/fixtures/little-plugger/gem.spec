@@ -112,5 +112,5 @@ loading and initializing of plugins provided by other gems.
 
 %changelog
 * Wed Apr 21 2021 Pavel Skrylev <majioa@altlinux.org> 1.1.4-alt1
-- + packaged gem with Ruby Policy 2.0
+- + packaged gem with Ruby Policy 2.1
 - * define explicit dependencies

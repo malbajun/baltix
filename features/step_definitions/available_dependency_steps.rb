@@ -73,3 +73,8 @@ Then('package {string} does not require {string}') do |name, dependency|
    expect(package).to_not be_nil
    expect(package).to_not match(/^Requires:\s+gem\(#{Regexp.escape(dependency)}\)/)
 end
+
+Then('the generated package names are unique') do
+   names = @spec.scan(/^(?:Name:\s+|%package\s+-n\s+)(\S+)/).flatten
+   expect(names).to eql(names.uniq)
+end

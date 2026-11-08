@@ -56,7 +56,6 @@ hoe-travis - lost description on update
 ruby-shadow - lost license on update unlicense replace with specified default + license replace list args
 rdoc - update to new version break generate a valid new spec if the gem in available gem list adding unnecesary tag
 
-data-objects - main source valid detection
 
 fix build dep for ruby-gnome2 -> gem-cairo-devel -> gem-poppler(ruby-gnome2)
 

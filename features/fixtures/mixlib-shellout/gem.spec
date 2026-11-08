@@ -114,5 +114,5 @@ Run external commands on Unix or Windows development package.
 
 %changelog
 * Tue Dec 13 2022 Pavel Skrylev <majioa@altlinux.org> 3.2.7-alt1
-- + packaged gem with Ruby Policy 2.0
+- + packaged gem with Ruby Policy 2.1
 - * define explicit dependencies

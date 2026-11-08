@@ -107,5 +107,5 @@ compiling, testing, and deployment development package.
 
 %changelog
 * Wed Apr 21 2021 Pavel Skrylev <majioa@altlinux.org> 4.6.6-alt1
-- + packaged gem with Ruby Policy 2.0
+- + packaged gem with Ruby Policy 2.1
 - * define explicit dependencies

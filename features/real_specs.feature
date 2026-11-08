@@ -4,6 +4,42 @@ Feature: Spec actor
    Tags @policy1_0 and @policy2_0 identify obsolete input policies being migrated.
    The obsolete rpm-build-ruby prerequisite is replaced by rpm-macros-ruby, setup-rb and rake.
 
+   # datamapper/do: 16564e6dba587e92e41aba376b46ef765f3bffea.
+   # Retain the core gem, one native driver and repository-level build metadata.
+   @scratch @blank_setup
+   Scenario: Select the nested data_objects gem through the repository's RPM name
+      - treat the data-objects repository name as an alias of data_objects
+      - preserve the repository root and retain its shared build dependencies
+      - package the core gem once, with its SQLite driver as a secondary
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options          | value                          |
+         | rootdir          | features/fixtures/data-objects |
+         | spec_type        | rpm                            |
+         | maintainer.name  | Pavel Skrylev                  |
+         | maintainer.email | majioa@altlinux.org            |
+      Then the main source is the "data_objects" gem
+      And the project root remains the "data-objects" fixture
+      When he applies "spec" actor to the baltix setup
+      Then he acquires an "data-objects" fixture spec for the baltix setup
+      And the generated package names are unique
+      And the generated spec contains the lines:
+         | Name:          gem-data-objects          |
+         | Version:       0.10.17                   |
+         | BuildRequires: gem(rake-compiler) >= 0.7 |
+         | BuildConflicts: gem(rake-compiler) >= 1  |
+      And package "gem-data-objects" contains dependency lines:
+         | Requires:      gem(addressable) >= 2.1 |
+         | Conflicts:     gem(addressable) >= 3   |
+      And package "gem-do-sqlite3" contains dependency lines:
+         | Requires:      gem(data_objects) = 0.10.17 |
+      When the generated spec is refreshed 2 times
+      Then the main source is the "data_objects" gem
+      And the project root remains the "data-objects" fixture
+      And the generated package names are unique
+      And the generated dependency sections match "gem.spec" from fixture "data-objects"
+
    # Published glu/glut 8.3.0 and kpeg 1.3.3 source packages from RubyGems.
    # Hoe reads the retained manifests, readmes and histories while importing Rakefiles.
    @scratch @blank_setup @main_is_gem

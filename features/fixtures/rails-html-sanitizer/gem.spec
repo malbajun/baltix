@@ -116,5 +116,5 @@ HTML sanitization for Rails applications
 
 %changelog
 * Tue Dec 13 2022 Pavel Skrylev <majioa@altlinux.org> 1.4.4-alt1
-- + packaged gem with Ruby Policy 2.0
+- + packaged gem with Ruby Policy 2.1
 - * define explicit dependencies

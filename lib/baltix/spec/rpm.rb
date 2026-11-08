@@ -569,7 +569,10 @@ class Baltix::Spec::Rpm
       secondaries_in = of_state(:secondaries) || []
 
       # binding.pry
-      to_ignore = ([source&.name] | ignored_names).flatten.compact
+      # Match the main source through RPM aliases so its repository metadata
+      # cannot produce a second package with the same normalized name.
+      main_name = source && Name.parse(source.name)
+      to_ignore = ([main_name] | ignored_names).flatten.compact
       secondaries = valid_sources.reject do |source_in|
          to_ignore.any? { |i| i === source_in.name }
       end.map do |source|

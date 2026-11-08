@@ -1568,7 +1568,7 @@ Feature: Spec actor
 
          %changelog
          * Mon Jan 01 2001 Spec Author <author@example.org> 5.2-alt1
-         - + packaged gem with Ruby Policy 2.0
+         - + packaged gem with Ruby Policy 2.1
          - * define explicit dependencies
          """
 
@@ -1897,7 +1897,7 @@ Feature: Spec actor
 
          %changelog
          * Mon Jan 01 2001 Spec Author <author@example.org> 5.2-alt1
-         - + packaged gem with Ruby Policy 2.0
+         - + packaged gem with Ruby Policy 2.1
          - * define explicit dependencies
          """
 
@@ -2409,7 +2409,7 @@ Feature: Spec actor
 
          %changelog
          * Mon Jan 01 2001 Spec Author <author@example.org> 5.2-alt1
-         - + packaged gem with Ruby Policy 2.0
+         - + packaged gem with Ruby Policy 2.1
          - * define explicit dependencies
          """
 
