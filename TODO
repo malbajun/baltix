@@ -53,7 +53,6 @@ hoe-bunder - crop long patch number for v.5.0
 oj - expand and crop summary when update to 3.13.11
 hoe-travis - lost description on update
 ruby-shadow - lost license on update unlicense replace with specified default + license replace list args
-rdoc - update to new version break generate a valid new spec if the gem in available gem list adding unnecesary tag
 
 
 fix build dep for ruby-gnome2 -> gem-cairo-devel -> gem-poppler(ruby-gnome2)
