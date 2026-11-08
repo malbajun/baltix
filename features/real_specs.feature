@@ -4,6 +4,155 @@ Feature: Spec actor
    Tags @policy1_0 and @policy2_0 identify obsolete input policies being migrated.
    The obsolete rpm-build-ruby prerequisite is replaced by rpm-macros-ruby, setup-rb and rake.
 
+   # rubyworks/facets 3.1.0, revision 86e44b354b0008c32bebb305fae7b1848cfd13a6.
+   # The manifest is reduced to files retained for importing the fixture.
+   @scratch @blank_setup @main_is_gem
+   Scenario: Keep facets index test dependencies out of runtime requirements
+      - preserve dependency groups and complete version requirements from the index
+      - agree with the original gemspec declarations
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options          | value                    |
+         | rootdir          | features/fixtures/facets |
+         | spec_type        | rpm                      |
+         | maintainer.name  | Pavel Skrylev            |
+         | maintainer.email | majioa@altlinux.org      |
+      Then source "facets" has dependency declarations:
+         | name         | type        | requirement |
+         | guard        | development | >= 0        |
+         | lemon        | development | >= 0        |
+         | qed          | development | >= 0        |
+         | rake         | development | >= 0        |
+         | rubytest-cli | development | >= 0        |
+         | simplecov    | development | >= 0        |
+      When he applies "spec" actor to the baltix setup
+      Then he acquires an "facets" fixture spec for the baltix setup
+
+   # BytecodeAlliance/wasmtime-rb: 8b7a7bbc69bd64248f8ed636d3fd36607c7b5d5a.
+   # redis-rb/redis-client: 773ff6284cd78167034ddce405baf3364ffedd5c.
+   # byroot/megatest: aebecf133ee581aaa4565150aa2b88a5f9b9e4ed.
+   @scratch @blank_setup @main_is_gem
+   Scenario Outline: Retain development dependencies from standard and custom Gemfile groups
+      - merge the repository Gemfile with gemspec runtime declarations
+      - classify custom groups as development and test dependencies
+      - retain internal requirements for the nested hiredis-client gem
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options          | value               |
+         | rootdir          | <rootdir>           |
+         | spec_type        | rpm                 |
+         | maintainer.name  | Pavel Skrylev       |
+         | maintainer.email | majioa@altlinux.org |
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains the lines:
+         | BuildRequires: gem(<dependency>) >= <minimum> |
+      And package "gem-<fixture>-devel" contains dependency lines:
+         | Requires:      gem(<dependency>) >= <minimum> |
+      And package "gem-<fixture>" does not require "<dependency>"
+      And he acquires an "<fixture>" fixture spec for the baltix setup
+
+      Examples:
+         | fixture      | rootdir                        | dependency | minimum |
+         | wasmtime     | features/fixtures/wasmtime     | rspec      | 3.13    |
+         | redis-client | features/fixtures/redis-client | rubocop    | 0       |
+         | megatest     | features/fixtures/megatest     | rubocop    | 1.21    |
+
+   # redis/hiredis-rb: eb27295facd5473a54585e06a043bebf5c80bb5b.
+   @scratch @blank_setup @main_is_gem
+   Scenario: Keep hiredis development overrides aligned with build requirements and conflicts
+      - widen upper bounds using available versions without raising source minimums
+      - preserve the same dependency ranges across repeated spec updates
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options            | value                               |
+         | rootdir            | features/fixtures/hiredis           |
+         | available_gem_list | {minitest: 6.0, rake-compiler: 1.2} |
+         | spec_type          | rpm                                 |
+         | maintainer.name    | Pavel Skrylev                       |
+         | maintainer.email   | majioa@altlinux.org                 |
+      And he applies "spec" actor to the baltix setup
+      Then he acquires an "hiredis" fixture spec for the baltix setup
+      And the generated spec contains the lines:
+         | %ruby_use_gem_dependency minitest >= 5.5.1,minitest < 7           |
+         | %ruby_use_gem_dependency rake-compiler >= 0.7.1,rake-compiler < 2 |
+         | BuildRequires: gem(minitest) >= 5.5.1                             |
+         | BuildConflicts: gem(minitest) >= 7                                |
+         | BuildRequires: gem(rake-compiler) >= 0.7.1                        |
+         | BuildConflicts: gem(rake-compiler) >= 2                           |
+      And package "gem-hiredis-devel" contains dependency lines:
+         | Requires:      gem(minitest) >= 5.5.1      |
+         | Conflicts:     gem(minitest) >= 7          |
+         | Requires:      gem(rake-compiler) >= 0.7.1 |
+         | Conflicts:     gem(rake-compiler) >= 2     |
+      And package "gem-hiredis" does not require "minitest"
+      And package "gem-hiredis" does not require "rake-compiler"
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "hiredis"
+
+   # gitlab-sidekiq-fetcher 0.9.0 release; input spec from altlinux/specs.
+   @policy2_0 @main_is_gem
+   Scenario: Recompute gitlab-sidekiq-fetcher overrides without raising source minimums
+      - replace historical macro constraints with current source and availability bounds
+      - keep runtime and build conflicts aligned with the sidekiq macro
+      Given blank space
+      And a spec from fixture "gitlab-sidekiq-fetcher"
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options            | value                                    |
+         | rootdir            | features/fixtures/gitlab-sidekiq-fetcher |
+         | available_gem_list | {sidekiq: 7.3.8, json: 2.10}             |
+         | maintainer.name    | Pavel Skrylev                            |
+         | maintainer.email   | majioa@altlinux.org                      |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then he acquires an "gitlab-sidekiq-fetcher" fixture spec for the baltix setup
+      And the generated spec contains the lines:
+         | %ruby_use_gem_dependency sidekiq >= 6.1,sidekiq < 8 |
+         | BuildRequires: gem(sidekiq) >= 6.1                  |
+         | BuildConflicts: gem(sidekiq) >= 8                   |
+         | BuildRequires: gem(json) >= 2.5                     |
+      And package "gem-gitlab-sidekiq-fetcher" contains dependency lines:
+         | Requires:      gem(sidekiq) >= 6.1 |
+         | Conflicts:     gem(sidekiq) >= 8   |
+         | Requires:      gem(json) >= 2.5    |
+      And the generated spec contains no override for "json"
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "gitlab-sidekiq-fetcher"
+
+   # knu/ruby-unf_ext: c72a36d0a5ea9fe3950611b0f289fc68a2595fcf.
+   @scratch @blank_setup @main_is_gem
+   Scenario Outline: Keep unf_ext unbounded requirements when available versions already satisfy them
+      - preserve exclusive and inclusive source minimums
+      - avoid redundant macros and artificial conflicts for unbounded source requirements
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options            | value                     |
+         | rootdir            | features/fixtures/unf_ext |
+         | available_gem_list | <available>               |
+         | spec_type          | rpm                       |
+         | maintainer.name    | Pavel Skrylev             |
+         | maintainer.email   | majioa@altlinux.org       |
+      And he applies "spec" actor to the baltix setup
+      Then he acquires an "unf_ext" fixture spec for the baltix setup
+      And the generated spec contains no dependency override macros
+      And the generated spec contains the lines:
+         | BuildRequires: gem(rdoc) > 2.4.2           |
+         | BuildRequires: gem(rake-compiler) >= 1.2.1 |
+      And package "gem-unf-ext-devel" contains dependency lines:
+         | Requires:      gem(rdoc) > 2.4.2           |
+         | Requires:      gem(rake-compiler) >= 1.2.1 |
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "unf_ext"
+
+      Examples:
+         | available                       |
+         | {}                              |
+         | {rdoc: 6.6, rake-compiler: 1.3} |
+
    @available_gem_list
    Scenario: Generate a complete mustermann spec with adjusted dependency requirements
       Given blank space

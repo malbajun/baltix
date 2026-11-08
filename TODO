@@ -44,7 +44,6 @@ gem-treetop - break epoch
 gem-nokogiri - crop changelog, fix gem deps on the file  (example for mini_portile2, see patch)
 prometheus-client - invalid dep tags when is in available list
 ruby-rc4 - ruby isnt prefix, leads to ruby-ruby-rc4
-facets - new spec invalid type dependencies runtime  instead devel
 ffi - 1. git describe --tags command to fix in gemspec; 2. update to 1.15.5 add the wrnog tag
 passenger - minon require list check, because when rebuild spec it losts some things
 digest-crc - lost rake task on update to 0.6.4
@@ -55,9 +54,7 @@ hoe-bunder - crop long patch number for v.5.0
 oj - expand and crop summary when update to 3.13.11
 hoe-travis - lost description on update
 ruby-shadow - lost license on update unlicense replace with specified default + license replace list args
-unf_ext - invalid dep ruby_use_gem_dependency
 rdoc - update to new version break generate a valid new spec if the gem in available gem list adding unnecesary tag
-hiredis - invalid ruby_use_gem_dependency when generated updated spec
 
 glu,glut,kpeg - development deps, merge them correct
 data-objects - main source valid detection
@@ -86,7 +83,6 @@ gem-turbolinks-source from oold name ruby-turbolinks-source-gem
 
 
 syntax-tree - multiple versions of the same gem
-wasmtime,redis-client,megatest - strange grouping for gemspec and gemfile, try on pure spec
 redis-client - auto noarch is error
    
 loofah,rails-html-sanitizer - gems in Gemfile under condition/unknown group
@@ -97,7 +93,6 @@ rails - requires for gem-rails
 
 snowglobe,warnings_logger,addressable,autoprefixer-rails,graphql,packethost,jquery-ui-rails,gitlab-sidekiq-fetcher - erroneouse require list for gem
 byebug - erroneouse devel require list for gem
-gitlab-sidekiq-fetcher - invalid ruby_use_gem_dependency
 packethost - erroneous alias
 
 

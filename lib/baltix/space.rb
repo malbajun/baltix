@@ -244,25 +244,29 @@ class Baltix::Space
          end.values.sort_by {|dep| dep.name }
    end
 
+   # Collects valid sources' dependencies for included package kinds.
+   # @param kinds_in [Symbol, Array<Symbol>] kinds to include
+   # @param kinds_out [Symbol, Array<Symbol>] kinds whose dependencies are excluded
+   # @return [Array<Bundler::Dependency>] merged dependencies on supported platforms
+   # Custom groups map to development/test kinds; exclusions take priority.
    def all_dependencies_for kinds_in: [], kinds_out: []
-      groups_out = Baltix::DSL.defined_groups_for(kinds_out)
-      groups_in = Baltix::DSL.defined_groups_for(kinds_in) - groups_out
-
       valid_sources.reduce([]) do |deps,x|
          deps_in = x.all_dependencies
          Baltix::DSL.merge_dependencies(deps, deps_in).sort_by {|x| x.name }
       end.select do |dep|
-         (dep.groups & groups_in).any? && !(dep.groups & groups_out).any? &&
+         Baltix::DSL.match_kind_dep(dep, kinds_in) && !Baltix::DSL.match_kind_dep(dep, kinds_out) &&
          (dep.platforms.blank? || dep.platforms.any? {|p| PLATFORMS[p.to_sym] })
       end
    end
 
+   # Filters the space's dependency list by included and excluded package kinds.
+   # @param kinds_in [Symbol, Array<Symbol>] kinds to include
+   # @param kinds_out [Symbol, Array<Symbol>] kinds whose dependencies are excluded
+   # @return [Array<Bundler::Dependency>] matching dependencies on supported platforms
+   # Custom groups map to development/test kinds; exclusions take priority.
    def dependencies_for kinds_in: [], kinds_out: []
-      groups_out = Baltix::DSL.defined_groups_for(kinds_out)
-      groups_in = Baltix::DSL.defined_groups_for(kinds_in) - groups_out
-
       dependencies.select do |dep|
-         (dep.groups & groups_in).any? && !(dep.groups & groups_out).any? &&
+         Baltix::DSL.match_kind_dep(dep, kinds_in) && !Baltix::DSL.match_kind_dep(dep, kinds_out) &&
          (dep.platforms.blank? || dep.platforms.any? {|p| PLATFORMS[p.to_sym] })
       end
    end
