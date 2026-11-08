@@ -30,18 +30,21 @@ Feature: Spec actor
          | maintainer.email   | majioa@altlinux.org                       |
       And he applies "spec" actor to the baltix setup
       And the generated spec is refreshed <updates> times
-      Then the generated spec contains the line "%ruby_use_gem_dependency hansi >= 0.2.0,hansi < 2"
-      And the generated spec contains the line "%ruby_use_gem_dependency ruby2_keywords >= 0.0.1,ruby2_keywords < 1"
-      And the generated spec contains the line "BuildRequires: gem(hansi) >= 0.2.0"
-      And the generated spec contains the line "BuildConflicts: gem(hansi) >= 2"
-      And the generated spec contains the line "BuildRequires: gem(ruby2_keywords) >= 0.0.1"
-      And the generated spec contains the line "BuildConflicts: gem(ruby2_keywords) >= 1"
+      Then the generated spec contains the lines:
+         | %ruby_use_gem_dependency hansi >= 0.2.0,hansi < 2                   |
+         | %ruby_use_gem_dependency ruby2_keywords >= 0.0.1,ruby2_keywords < 1 |
+         | BuildRequires: gem(hansi) >= 0.2.0                                  |
+         | BuildConflicts: gem(hansi) >= 2                                     |
+         | BuildRequires: gem(ruby2_keywords) >= 0.0.1                         |
+         | BuildConflicts: gem(ruby2_keywords) >= 1                            |
       And package "gem-mustermann" does not require "hansi"
-      And package "gem-mustermann" contains dependency line "Requires:      gem(ruby2_keywords) >= 0.0.1"
-      And package "gem-mustermann" contains dependency line "Conflicts:     gem(ruby2_keywords) >= 1"
-      And package "gem-mustermann-contrib" contains dependency line "Requires:      gem(hansi) >= 0.2.0"
-      And package "gem-mustermann-contrib" contains dependency line "Conflicts:     gem(hansi) >= 2"
-      And package "gem-mustermann-contrib" contains dependency line "Requires:      gem(mustermann) = 2.0.2"
+      And package "gem-mustermann" contains dependency lines:
+         | Requires:      gem(ruby2_keywords) >= 0.0.1 |
+         | Conflicts:     gem(ruby2_keywords) >= 1     |
+      And package "gem-mustermann-contrib" contains dependency lines:
+         | Requires:      gem(hansi) >= 0.2.0     |
+         | Conflicts:     gem(hansi) >= 2         |
+         | Requires:      gem(mustermann) = 2.0.2 |
 
       And the generated dependency sections match "available.spec" from fixture "mustermann"
 
@@ -169,11 +172,13 @@ Feature: Spec actor
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "rbvmomi" fixture spec for the baltix setup
-      And the generated spec contains the line "%ruby_use_gem_dependency rake >= 10.5,rake < 16"
-      And the generated spec contains the line "BuildRequires: gem(rake) >= 10.5"
-      And the generated spec contains the line "BuildConflicts: gem(rake) >= 16"
-      And package "gem-rbvmomi-devel" contains dependency line "Requires:      gem(rake) >= 10.5"
-      And package "gem-rbvmomi-devel" contains dependency line "Conflicts:     gem(rake) >= 16"
+      And the generated spec contains the lines:
+         | %ruby_use_gem_dependency rake >= 10.5,rake < 16 |
+         | BuildRequires: gem(rake) >= 10.5                |
+         | BuildConflicts: gem(rake) >= 16                 |
+      And package "gem-rbvmomi-devel" contains dependency lines:
+         | Requires:      gem(rake) >= 10.5 |
+         | Conflicts:     gem(rake) >= 16   |
 
    @policy2_0 @release_change @main_is_gem
    Scenario: Apply the Spec actor to setup for rspec-support gem and manual Ruby Policy 2.0 setup

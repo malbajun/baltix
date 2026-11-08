@@ -1,5 +1,5 @@
-Then('the generated spec contains the line {string}') do |line|
-   expect(@spec.lines.map(&:strip)).to include(line)
+Then('the generated spec contains the lines:') do |table|
+   expect(@spec.lines.map(&:strip)).to include(*table.raw.flatten)
 end
 
 When('the input spec configures rake tasks {string} through {string}') do |tasks, form|
@@ -38,12 +38,12 @@ When('the generated spec is refreshed {int} times') do |count|
    end
 end
 
-Then('package {string} contains dependency line {string}') do |name, line|
+Then('package {string} contains dependency lines:') do |name, table|
    package = @spec.split(/(?=^%package\s)/).find do |section|
       section.match?(/^Name:\s+#{Regexp.escape(name)}$/) || section.match?(/^%package\s+-n\s+#{Regexp.escape(name)}$/)
    end
    expect(package).to_not be_nil
-   expect(package.lines.map(&:strip)).to include(line)
+   expect(package.lines.map(&:strip)).to include(*table.raw.flatten)
 end
 
 Then('package {string} does not require {string}') do |name, dependency|
