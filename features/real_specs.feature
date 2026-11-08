@@ -3,6 +3,8 @@ Feature: Spec actor
    All generated specs target the Ruby Policy 2.1 draft currently under development.
    Tags @policy1_0 and @policy2_0 identify obsolete input policies being migrated.
    The obsolete rpm-build-ruby prerequisite is replaced by rpm-macros-ruby, setup-rb and rake.
+   Shared availability checks cover the dependency-tag behavior reported for prometheus-client:
+   source minimums are preserved and RPM dependency tags remain consistent across updates.
 
    # datamapper/do: 16564e6dba587e92e41aba376b46ef765f3bffea.
    # Retain the core gem, one native driver and repository-level build metadata.
