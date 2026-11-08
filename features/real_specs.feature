@@ -4,6 +4,41 @@ Feature: Spec actor
    Tags @policy1_0 and @policy2_0 identify obsolete input policies being migrated.
    The obsolete rpm-build-ruby prerequisite is replaced by rpm-macros-ruby, setup-rb and rake.
 
+   # Published glu/glut 8.3.0 and kpeg 1.3.3 source packages from RubyGems.
+   # Hoe reads the retained manifests, readmes and histories while importing Rakefiles.
+   @scratch @blank_setup @main_is_gem
+   Scenario Outline: Preserve complete development dependencies from Hoe and gemspec sources
+      - import Hoe spec_extras assignments before collecting development dependencies
+      - isolate each project's metadata from previously imported Rakefiles
+      - keep development requirements and upper bounds out of the runtime package
+      - retain dependency ranges after parsing and updating the generated spec
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And the "<previous>" fixture has already been imported
+      And he sets the space options as:
+         | options          | value               |
+         | rootdir          | <rootdir>           |
+         | spec_type        | rpm                 |
+         | maintainer.name  | Pavel Skrylev       |
+         | maintainer.email | majioa@altlinux.org |
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains the lines:
+         | BuildRequires: gem(<dependency>) >= <minimum> |
+         | BuildConflicts: gem(<dependency>) >= <upper>  |
+      And package "gem-<fixture>-devel" contains dependency lines:
+         | Requires:      gem(<dependency>) >= <minimum> |
+         | Conflicts:     gem(<dependency>) >= <upper>   |
+      And package "gem-<fixture>" does not require "<dependency>"
+      And he acquires an "<fixture>" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "<fixture>"
+
+      Examples:
+         | fixture | previous | rootdir                | dependency    | minimum | upper |
+         | glu     | glut     | features/fixtures/glu  | rake-compiler | 1.0     | 2     |
+         | glut    | glu      | features/fixtures/glut | mini_portile2 | 2.1     | 3     |
+         | kpeg    | glu      | features/fixtures/kpeg | rdoc          | 4.0     | 7     |
+
    # rubyworks/facets 3.1.0, revision 86e44b354b0008c32bebb305fae7b1848cfd13a6.
    # The manifest is reduced to files retained for importing the fixture.
    @scratch @blank_setup @main_is_gem

@@ -1,0 +1,21 @@
+=== 8.3.0 / 2017-06-25
+
+* Support ruby-2.0 to 2.4 with binary windows gems.
+
+=== 8.2.2 / 2016-01-21
+
+* Add ruby-2.2 and 2.3 to binary windows gems.
+
+=== 8.2.1 / 2014-10-06
+
+* Add ruby-2.1 to binary windows gems.
+* Fix build on OSX
+
+=== 8.2.0 / 2014-03-14
+
+* Add x64-mingw platform for cross build and add ruby-2.0.0 to binary gems.
+* Don't pollute the global namespace. Use GLU namespace.
+
+=== 8.1.0 / 2013-03-03
+
+Split Glu into a separate gem.
