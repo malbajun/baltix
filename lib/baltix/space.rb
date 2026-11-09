@@ -333,12 +333,24 @@ class Baltix::Space
       @regarded_names ||= read_attribute(:regarded_names) || []
    end
 
+   # Collects source path exclusions from options, the input spec and defaults.
+   # Takes no parameters.
+   # @return [Array<String, Regexp>] the merged exclusion tokens
+   # If a spec contains explicit path settings, they supplement configured tokens;
+   # otherwise only the configured tokens and built-in defaults are returned.
    def ignored_path_tokens
-      @ignored_path_tokens ||= (read_attribute(:ignored_path_tokens) || []) | DEFAULT_IGNORE_PATH_TOKES
+      @ignored_path_tokens ||= (read_attribute(:ignored_path_tokens) || []) |
+         Array(spec&.ignored_path_tokens) | DEFAULT_IGNORE_PATH_TOKES
    end
 
+   # Collects explicit source path inclusions from options and the input spec.
+   # Takes no parameters.
+   # @return [Array<String, Regexp>] inclusion tokens overriding path exclusions
+   # If a spec contains explicit path settings, they supplement configured tokens;
+   # otherwise only configured tokens are returned.
    def regarded_path_tokens
-      @regarded_path_tokens ||= (read_attribute(:regarded_path_tokens) || [])
+      @regarded_path_tokens ||= (read_attribute(:regarded_path_tokens) || []) |
+         Array(spec&.regarded_path_tokens)
    end
 
    def spec_type

@@ -9,3 +9,16 @@ Then('the generated library package names are:') do |table|
    names = names.reject { |name| name.match?(/-(?:doc|devel)\z/) }
    expect(names.sort).to eql(table.raw.flatten.sort)
 end
+
+When('the generated spec is refreshed without path options') do
+   options = space.options.deep_dup
+   options.ignored_path_tokens = []
+   options.regarded_path_tokens = []
+   @space = Baltix::Space.new(options: options)
+   @space.spec = Baltix::Spec.load_from(source: @spec, options: options, space: @space)
+   @spec = Baltix::Actor.for('spec', @space).apply_to(@space)
+end
+
+When('he adds the case-insensitive ignored path pattern {string}') do |pattern|
+   space.options.ignored_path_tokens |= [Regexp.new(pattern, Regexp::IGNORECASE)]
+end
