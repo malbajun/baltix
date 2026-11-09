@@ -21,7 +21,6 @@ lost runtime deps
  - grpc - custom root - grpc, and not gem-grpc
  - googleauth - alias to google-auth
  - google-api-ruby-client: correct spec, filter by regexp to ignore-names, validate build
- - digest-crc - developmnt gems from Gemfile, valid loading the Gemfile with fixed deps
  - gapic-generator-ruby
   - filterout README.erb, alow pure, or .md/rdoc/.../
   - add README with offset paths to the root source
