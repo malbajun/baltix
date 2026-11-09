@@ -577,6 +577,44 @@ Feature: Spec actor
       When he applies "spec" actor to the baltix setup
       Then he acquires an "mustermann" fixture spec for the baltix setup
 
+   # bryanp/llhttp, ALT 60d6f26; preserve its existing gem-llhttp-ffi ignore entry.
+   @scratch
+   Scenario Outline: Preserve ignored names when updating modern and legacy specs
+      - parse the full ignore macro name rather than treating its suffix as an entry
+      - migrate old macro and build option forms to ruby_ignore_names
+      - preserve the list through repeated updates of a nested native project
+      Given blank space
+      And a spec from fixture "llhttp-ffi"
+      When developer locks the time to "09.11.2026"
+      And the input spec uses "<form>" for its ignore list
+      And he sets the space options as:
+         | options          | value                        |
+         | rootdir          | features/fixtures/llhttp-ffi |
+         | maintainer.name  | Pavel Skrylev                |
+         | maintainer.email | majioa@altlinux.org          |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then he acquires an "llhttp-ffi" fixture spec for the baltix setup
+      And the parsed ignored names are:
+         | gem-llhttp-ffi |
+      And the generated spec contains each line once:
+         | %ruby_ignore_names gem-llhttp-ffi          |
+         | %ruby_use_gem_version llhttp:0.6.1.16      |
+         | %ruby_use_gem_version llhttp-ffi:0.5.1.16  |
+      When the generated spec is refreshed 2 times
+      Then the parsed ignored names are:
+         | gem-llhttp-ffi |
+      And the generated spec contains each line once:
+         | %ruby_ignore_names gem-llhttp-ffi          |
+         | %ruby_use_gem_version llhttp:0.6.1.16      |
+         | %ruby_use_gem_version llhttp-ffi:0.5.1.16  |
+
+      Examples:
+         | form         |
+         | macro        |
+         | legacy macro |
+         | build option |
+
    @scratch @blank_setup @main_is_gem
    Scenario: Generate a mixlib-shellout spec without inferred Windows dependencies
       Given blank space
