@@ -37,8 +37,9 @@ Or install it yourself as:
 
 [Ruby Policy 2.0](https://en.altlinux.org/Ruby/Policy_2.0) is obsolete.
 Baltix is being updated for [Ruby Policy 2.1](docs/ruby-policy-2.1.md),
-which is currently a draft. Its Versioning section documents module versions,
-upstream snapshots, local code patches, and RPM package revisions.
+which is currently a draft. Its Versioning and Dependencies sections document
+module versions, upstream snapshots, local code patches, RPM package revisions,
+and explicit dependency declarations at spec generation time.
 
 The 2.1 draft replaces the obsolete `rpm-build-ruby` build prerequisite with:
 

@@ -53,3 +53,21 @@ and `alt0.1.2`.
 
 Keep the main package, its subpackages, and the changelog entry consistent
 with the selected versions and revisions.
+
+## Dependencies
+
+Ruby dependencies and their version constraints must be determined and written
+explicitly into the RPM spec at spec generation time. This includes runtime
+and build dependencies, together with applicable version conflicts. Write them
+in `Requires`, `BuildRequires`, `Conflicts`, and `BuildConflicts`, as appropriate;
+do not defer Ruby dependency declaration to automatic detection during the RPM
+package build.
+
+For gem dependencies, prefer the `gem(gem_name)` capability over the RPM package
+name. Specify constraints using the gem version, rather than the package EVR.
+For example, depend on `gem(ruby-next-parser) = 3.4.4.0` rather than
+`gem-ruby-next-parser = 3.4.4.0-alt1`.
+
+Development packages containing headers needed for compilation may be addressed
+by their RPM package names, for example `gem-gem-name-devel = %EVR` when an exact
+matching package build is required.
