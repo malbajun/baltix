@@ -45,7 +45,6 @@ gem-nokogiri - crop changelog, fix gem deps on the file  (example for mini_porti
 ruby-rc4 - ruby isnt prefix, leads to ruby-ruby-rc4
 ffi - 1. git describe --tags command to fix in gemspec; 2. update to 1.15.5 add the wrnog tag
 passenger - minon require list check, because when rebuild spec it losts some things
-digest-crc - lost rake task on update to 0.6.4
 io-event - erroneous update form event
 idn-ruby - can't detect extension
 net-http-persistent - invalid update to 4.0.1

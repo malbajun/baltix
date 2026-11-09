@@ -22,27 +22,38 @@ Feature: Available gem versions and dependency override macros
          | gcc >= 10                |
 
    Scenario Outline: Preserve configured rake tasks while refreshing dependency overrides
+      - retain the build:c_exts task needed by digest-crc when upgrading to Ruby Policy 2.1
+      - migrate legacy ruby_build --pre declarations to ruby_on_build_rake_tasks
+      - preserve external-task markers such as ruby_parser's @generate across updates
       Given blank space
       And a spec from fixture "rbvmomi"
       When developer locks the time to "21.04.2021"
-      And the input spec configures rake tasks "build:prepare,assets:compile" through "<form>"
+      And the input spec configures rake tasks "<tasks>" through "<form>"
       And he sets the space options as:
          | options            | value                     |
          | rootdir            | features/fixtures/rbvmomi |
          | available_gem_list | {rake: '15.0'}            |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
-      And the generated spec is refreshed 2 times
       Then the generated spec contains the lines:
-         | %ruby_on_build_rake_tasks build:prepare,assets:compile |
-         | %ruby_use_gem_dependency rake >= 10.5,rake < 16        |
+         | %ruby_on_build_rake_tasks <tasks>               |
+         | %ruby_use_gem_dependency rake >= 10.5,rake < 16 |
+         | %ruby_build                                     |
+      When the generated spec is refreshed 2 times
+      Then the generated spec contains the lines:
+         | %ruby_on_build_rake_tasks <tasks>               |
+         | %ruby_use_gem_dependency rake >= 10.5,rake < 16 |
       And package "gem-rbvmomi-devel" contains dependency lines:
          | Requires:      gem(rake) >= 10.5 |
 
       Examples:
-         | form         |
-         | macro        |
-         | build option |
+         | form         | tasks                        |
+         | macro        | build:prepare,assets:compile |
+         | build option | build:prepare,assets:compile |
+         | macro        | build:c_exts                 |
+         | build option | build:c_exts                 |
+         | macro        | @generate                    |
+         | build option | @generate                    |
 
    Scenario: Keep the source minimum when available versions straddle it
       Given blank space
