@@ -5,18 +5,20 @@
 %define        gemname hiredis
 
 Name:          gem-hiredis
-Version:       0.6.3
-Release:       alt1
-Summary:       Ruby wrapper for hiredis (protocol serialization/deserialization and blocking I/O)
+Version:       0.6.3.14.1
+Release:       alt0.1
+Summary:       Ruby wrapper for hiredis
 License:       BSD-3-Clause
 Group:         Development/Ruby
 Url:           http://github.com/redis/hiredis-rb
 Vcs:           https://github.com/redis/hiredis-rb.git
-Packager:      Pavel Skrylev <majioa@altlinux.org>
+Packager:      Ruby Maintainers Team <ruby@packages.altlinux.org>
 BuildArch:     noarch
 
 Source:        %name-%version.tar
 BuildRequires(pre): rpm-macros-ruby setup-rb rake
+BuildRequires(pre): libruby-devel
+BuildRequires: pkgconfig(hiredis)
 %if_enabled check
 BuildRequires: gem(minitest) >= 5.5.1
 BuildRequires: gem(rake) >= 0
@@ -29,30 +31,36 @@ BuildConflicts: gem(rake-compiler) >= 2
 %add_findprov_skiplist %ruby_gemslibdir/**/*
 %ruby_use_gem_dependency minitest >= 5.5.1,minitest < 7
 %ruby_use_gem_dependency rake-compiler >= 0.7.1,rake-compiler < 2
-Provides:      gem(hiredis) = 0.6.3
+Obsoletes:     ruby-hiredis < %EVR
+Provides:      ruby-hiredis = %EVR
+Provides:      hiredis = %EVR
+Provides:      gem(hiredis) = 0.6.3.14.1
+
+%ruby_use_gem_version hiredis:0.6.3.14.1
 
 %description
-Ruby wrapper for hiredis (protocol serialization/deserialization and blocking
-I/O)
+Ruby extension that wraps hiredis. Both the synchronous connection API and a
+separate protocol reader are supported. It is primarily intended to speed up
+parsing multi bulk replies.
 
 
 %if_enabled    doc
 %package       -n gem-hiredis-doc
-Version:       0.6.3
-Release:       alt1
-Summary:       Ruby wrapper for hiredis (protocol serialization/deserialization and blocking I/O) documentation files
+Version:       0.6.3.14.1
+Release:       alt0.1
+Summary:       Ruby wrapper for hiredis documentation files
 Summary(ru_RU.UTF-8): Файлы сведений для самоцвета hiredis
 Group:         Development/Documentation
 BuildArch:     noarch
 
-Requires:      gem(hiredis) = 0.6.3
+Requires:      gem(hiredis) = 0.6.3.14.1
 
 %description   -n gem-hiredis-doc
-Ruby wrapper for hiredis (protocol serialization/deserialization and blocking
-I/O) documentation files.
+Ruby wrapper for hiredis documentation files.
 
-Ruby wrapper for hiredis (protocol serialization/deserialization and blocking
-I/O)
+Ruby extension that wraps hiredis. Both the synchronous connection API and a
+separate protocol reader are supported. It is primarily intended to speed up
+parsing multi bulk replies.
 
 %description   -n gem-hiredis-doc -l ru_RU.UTF-8
 Файлы сведений для самоцвета hiredis.
@@ -61,14 +69,15 @@ I/O)
 
 %if_enabled    devel
 %package       -n gem-hiredis-devel
-Version:       0.6.3
-Release:       alt1
-Summary:       Ruby wrapper for hiredis (protocol serialization/deserialization and blocking I/O) development package
+Version:       0.6.3.14.1
+Release:       alt0.1
+Summary:       Ruby wrapper for hiredis development package
 Summary(ru_RU.UTF-8): Файлы для разработки самоцвета hiredis
 Group:         Development/Ruby
 BuildArch:     noarch
 
-Requires:      gem(hiredis) = 0.6.3
+Requires:      pkgconfig(hiredis)
+Requires:      gem(hiredis) = 0.6.3.14.1
 Requires:      gem(minitest) >= 5.5.1
 Requires:      gem(rake) >= 0
 Requires:      gem(rake-compiler) >= 0.7.1
@@ -76,11 +85,11 @@ Conflicts:     gem(minitest) >= 7
 Conflicts:     gem(rake-compiler) >= 2
 
 %description   -n gem-hiredis-devel
-Ruby wrapper for hiredis (protocol serialization/deserialization and blocking
-I/O) development package.
+Ruby wrapper for hiredis development package.
 
-Ruby wrapper for hiredis (protocol serialization/deserialization and blocking
-I/O)
+Ruby extension that wraps hiredis. Both the synchronous connection API and a
+separate protocol reader are supported. It is primarily intended to speed up
+parsing multi bulk replies.
 
 %description   -n gem-hiredis-devel -l ru_RU.UTF-8
 Файлы для разработки самоцвета hiredis.
@@ -117,6 +126,31 @@ I/O)
 
 
 %changelog
-* Tue Dec 13 2022 Pavel Skrylev <majioa@altlinux.org> 0.6.3-alt1
-- + packaged gem with Ruby Policy 2.1
-- * define explicit dependencies
+* Wed Aug 19 2026 Pavel Skrylev <majioa@altlinux.org> 0.6.3.14.1-alt0.1
+- ^ 0.6.3[2] -> 0.6.3p14.1
+
+* Wed Sep 21 2022 Pavel Skrylev <majioa@altlinux.org> 0.6.3.2-alt0.1
+- ^ 0.6.3[1] -> 0.6.3[2]
+
+* Wed Apr 06 2022 Pavel Skrylev <majioa@altlinux.org> 0.6.3.1-alt0.1
+- ^ 0.6.3 -> 0.6.3[1]
+
+* Wed Apr 01 2020 Pavel Skrylev <majioa@altlinux.org> 0.6.3-alt2
+- ! spec tags and syntax
+
+* Tue Apr 16 2019 Pavel Skrylev <majioa@altlinux.org> 0.6.3-alt1
+- > Ruby Policy 2.0
+- > source from github
+- ^ 0.6.1 -> 0.6.3
+
+* Wed Jul 11 2018 Andrey Cherepanov <cas@altlinux.org> 0.6.1-alt1.3
+- Rebuild with new Ruby autorequirements.
+
+* Fri Mar 30 2018 Andrey Cherepanov <cas@altlinux.org> 0.6.1-alt1.2
+- Rebuild with Ruby 2.5.1
+
+* Tue Mar 13 2018 Andrey Cherepanov <cas@altlinux.org> 0.6.1-alt1.1
+- Rebuild with Ruby 2.5.0
+
+* Sat Oct 28 2017 Andrey Cherepanov <cas@altlinux.org> 0.6.1-alt1
+- Initial build for Sisyphus

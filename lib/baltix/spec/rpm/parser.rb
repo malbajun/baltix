@@ -93,6 +93,11 @@ class Baltix::Spec::Rpm::Parser
          regexp: /^%(ruby_regard_path_tokens)\s+([^\s$]+)/i,
          parse_func: :parse_ignore
       },
+      use_gem_version_list: {
+         non_contexted: true,
+         regexp: /^%ruby_use_gem_version\s+([^\s#]+)/i,
+         parse_func: :parse_use_gem_versions
+      },
       ignored_names: {
          non_contexted: true,
          regexp: /(^%ruby_ignore|--ignore=)\s*([^\s$]+)/i,
@@ -341,6 +346,13 @@ class Baltix::Spec::Rpm::Parser
 
    def parse_ignore match, *_
       match[2].split(/,/).map {|x| x =~ /^\/(.*)/ && /#{$1}/ || x }
+   end
+
+   # Reads explicitly packaged gem versions from a ruby_use_gem_version macro.
+   # @param match [Array<String>] captures with comma-separated name:version pairs at index 1
+   # @return [OpenStruct] gem names mapped to their unchanged version strings
+   def parse_use_gem_versions match, *_
+      match[1].split(',').map { |entry| entry.split(':', 2) }.to_h.to_os
    end
 
    def parse_default match, *_

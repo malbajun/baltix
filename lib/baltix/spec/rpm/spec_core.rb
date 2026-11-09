@@ -336,11 +336,18 @@ module Baltix::Spec::Rpm::SpecCore
       # TODO move reversion to space/sources
       # here is a workaround only
       # reversion to support newer ones
-      reversion = gem_versionings.select {|n,v| name.eql?(n, true) }.to_h.values.first
+      source_name = source&.provide&.name
+      reversion = source_name && gem_versionings[source_name] ||
+         gem_versionings.select {|n,v| name.eql?(n, true) }.to_h.values.first
 
       reversion || value_in
    end
 
+   # Normalizes the selected source or explicitly packaged gem version.
+   # @param value_in [Gem::Version, Gem::Dependency, Array, String] selected version
+   # @return [Gem::Version] package version, including explicit packaging suffixes
+   # Main and library packages retain the selected version. Auxiliary packages
+   # inherit their host's version; source-less secondaries inherit the document's.
    def _version value_in
       v =
          case value_in
@@ -369,7 +376,7 @@ module Baltix::Spec::Rpm::SpecCore
 
             v
          elsif source.respond_to?(:spec)
-            source.spec.version
+            v
          elsif doc
             doc.version # TODO как отличить?
          end
@@ -646,11 +653,15 @@ module Baltix::Spec::Rpm::SpecCore
       end
    end
 
+   # Builds the gem capability with its original name and selected package version.
+   # @return [Gem::Dependency] the provided gem with an exact version requirement
+   # If a source exists, its literal name is retained even when legacy RPM aliases
+   # or version overrides also match another gem. Without a source, the space name
+   # supplies the capability. A previously built dependency is returned unchanged.
    def provide_dep
       return @provide_dep if @provide_dep
 
-      name_tmp = source ? Baltix::Spec::Rpm::Name.parse(source.provide.name) : name
-      provide_dep_pre = gem_versionings.select {|n,v| name_tmp.eql?(n, true) }.to_h.values.first || source&.provide || space.name
+      provide_dep_pre = source&.provide || space.name
 
       @provide_dep = Gem::Dependency.new(provide_dep_pre.name, version)
    end

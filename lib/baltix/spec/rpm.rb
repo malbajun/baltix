@@ -591,8 +591,13 @@ class Baltix::Spec::Rpm
       @ruby_alias_names_local = value_in | (names.size > 1 && [ names ] || [])
    end
 
+   # Resolves explicitly packaged versions from the input spec and configuration.
+   # @param value_in [OpenStruct, nil] configured or parsed gem version strings
+   # @return [OpenStruct] gem names mapped to exact Gem::Dependency versions
+   # Configured entries replace matching parsed entries; other input macros survive.
    def _use_gem_version_list value_in
-      value_in && value_in.map do |name, v|
+      versions = (of_state(:use_gem_version_list) || {}.to_os).merge(value_in || {}.to_os)
+      versions.map do |name, v|
          Gem::Dependency.new(name.to_s, Gem::Requirement.new(v))
       end
    end

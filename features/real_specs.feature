@@ -285,7 +285,9 @@ Feature: Spec actor
    Scenario: Keep hiredis development overrides aligned with build requirements and conflicts
       - widen upper bounds using available versions without raising source minimums
       - preserve the same dependency ranges across repeated spec updates
+      - retain the packaged 0.6.3.14.1 version and its explicit version macro
       Given blank space
+      And a spec from fixture "hiredis"
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
          | options            | value                               |
@@ -294,8 +296,12 @@ Feature: Spec actor
          | spec_type          | rpm                                 |
          | maintainer.name    | Pavel Skrylev                       |
          | maintainer.email   | majioa@altlinux.org                 |
+      And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
-      Then he acquires an "hiredis" fixture spec for the baltix setup
+      Then the generated spec contains each line once:
+         | %ruby_use_gem_version hiredis:0.6.3.14.1 |
+         | Provides:      gem(hiredis) = 0.6.3.14.1 |
+      And he acquires an "hiredis" fixture spec for the baltix setup
       And the generated spec contains the lines:
          | %ruby_use_gem_dependency minitest >= 5.5.1,minitest < 7           |
          | %ruby_use_gem_dependency rake-compiler >= 0.7.1,rake-compiler < 2 |
