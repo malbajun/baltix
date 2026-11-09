@@ -205,6 +205,8 @@ class Baltix::Spec::Rpm::Parser
 
       store_value(state, matched.match, matched.name, matched.flow, context)
 
+      state.original_spec = source(source_in).map(&:chomp).join("\n").strip
+
       #binding.pry
       state
    end

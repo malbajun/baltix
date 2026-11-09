@@ -55,3 +55,7 @@ and `alt0.1.2`.
 
 Keep the main package, its subpackages, and the changelog entry consistent
 with the selected versions and revisions.
+
+When Baltix changes an existing spec without changing its module version,
+increment the spec revision and add a changelog entry. Re-rendering identical
+content must retain the revision and changelog unchanged.

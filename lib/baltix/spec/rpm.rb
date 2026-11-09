@@ -320,10 +320,66 @@ class Baltix::Spec::Rpm
    include Baltix::Spec::Rpm::SpecCore
    include Baltix::I18n
 
+   # Renders the spec and accounts for changes confined to the spec file.
+   # @param spec [String, nil] optional replacement ERB template
+   # @return [String] generated RPM spec without surrounding whitespace
+   # Existing packages with an unchanged module version receive a spec revision
+   # when the rendered content changes. Identical refreshes retain their revision.
    def render spec = nil
+      template = spec || spec_template
+      unless @revision_prepared
+         prepare_spec_revision(template)
+         @revision_prepared = true
+      end
+      render_template(template)
+   end
+
+   # Evaluates an RPM template against the current package properties.
+   # @param template [String] ERB source
+   # @return [String] generated spec without surrounding whitespace
+   def render_template template
       b = binding
 
-      ERB.new(spec || spec_template, trim_mode: "<>-", eoutvar: "@spec").result(b).strip
+      ERB.new(template, trim_mode: "<>-", eoutvar: "@spec").result(b).strip
+   end
+
+   # Selects a spec-only revision by comparing a preview with the original spec.
+   # @param template [String] ERB source used for both preview and final output
+   # @return [void]
+   # New packages and changed module versions keep the normal version flow.
+   # An unchanged preview retains the input release and changelog. Any other
+   # change increments the spec component, unless a different release is explicitly
+   # configured. Derived package caches are cleared before the final render so
+   # subpackage revisions and changelog entries agree.
+   def prepare_spec_revision template
+      original = of_state(:original_spec)
+      return unless original && of_state(:version) == version
+
+      @checking_revision = true
+      preview = render_template(template)
+      @checking_revision = false
+      previous = of_state(:release)
+      configured = of_options(:release)
+      @unchanged_spec = original.strip == preview.strip && (!configured || configured == previous)
+      @spec_revision_release = @unchanged_spec ? previous :
+         configured && configured != previous ? configured : next_spec_revision(previous)
+
+      self.class::STATE.each { |key, _| instance_variable_set(:"@#{key}", nil) }
+      @valid_secondaries = @autoaliases = nil
+      @change_list = []
+      change(:fix) unless @unchanged_spec
+   ensure
+      @checking_revision = false
+   end
+
+   # Increments the final spec component of an ALT packaging release.
+   # @param release [String] previous release, such as alt1.2 or alt0.1.2
+   # @return [String] next spec revision, such as alt1.3 or alt0.1.3
+   # A release without a spec component gains .1. Unrecognized release formats
+   # retain their existing components and gain .1 rather than losing information.
+   def next_spec_revision release
+      match = /\Aalt(?<base>0\.\d+|\d+)(?:\.(?<spec>\d+))?\z/.match(release.to_s)
+      match ? "alt#{match[:base]}.#{match[:spec].to_i + 1}" : "#{release}.1"
    end
 
    def macros name
@@ -886,6 +942,8 @@ class Baltix::Spec::Rpm
 
          #aif change_list.any?
    def _changes value_in
+      return value_in if @checking_revision || @unchanged_spec
+
       new_change =
          if change_list.any?
             previous_version = of_state(:version)
@@ -911,6 +969,8 @@ class Baltix::Spec::Rpm
    end
 
    def evr_from_changes
+      return [self.version, @spec_revision_release] if @spec_revision_release
+
       chgs = change_list.map {|c| CHANGES_MAJORITY[c] }.uniq
 
       if chgs.include?(:new)
@@ -932,7 +992,9 @@ class Baltix::Spec::Rpm
    end
 
    def _release value_in
-      changes.last ? changes.last.release : nil
+      return of_options(:release) || of_state(:release) || 'alt1' if @checking_revision
+
+      @spec_revision_release || (changes.last ? changes.last.release : nil)
    end
 
    # Preserves rake tasks configured in options or an existing spec.

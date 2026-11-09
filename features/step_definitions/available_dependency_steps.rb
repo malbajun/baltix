@@ -46,8 +46,25 @@ end
 
 Then('the generated dependency sections match {string} from fixture {string}') do |file, fixture|
    pattern = /\A(?:Name:|%package\s|Requires:|Conflicts:|BuildRequires:|BuildConflicts:|%ruby_use_gem_dependency\s)/
-   expected = File.read("features/fixtures/#{fixture}/#{file}").lines.map(&:strip).select { |line| line.match?(pattern) }
-   actual = @spec.lines.map(&:strip).select { |line| line.match?(pattern) }
+   # Revisions may advance on refresh; exact RPM self-requires must follow the
+   # revision in their own spec, while module versions and other bounds still match.
+   dependencies = ->(text) do
+      name = text[/^Name:\s+(\S+)/, 1]
+      epoch = text[/^Epoch:\s+(\S+)/, 1]
+      version = text[/^Version:\s+(\S+)/, 1]
+      release = text[/^Release:\s+(\S+)/, 1]
+      evr = [epoch, "#{version}-#{release}"].compact.join(':')
+      text.lines.map(&:strip).select { |line| line.match?(pattern) }.map do |line|
+         if line.match?(/\ARequires:\s+#{Regexp.escape(name)}\s+= /)
+            expect(line.split.last).to eql(evr)
+            line.sub(/\S+\z/, [epoch, version].compact.join(':'))
+         else
+            line
+         end
+      end
+   end
+   expected = dependencies.call(File.read("features/fixtures/#{fixture}/#{file}"))
+   actual = dependencies.call(@spec)
    expect(actual).to eql(expected)
 end
 

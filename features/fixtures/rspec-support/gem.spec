@@ -5,7 +5,7 @@
 
 Name:          gem-rspec-support
 Version:       3.8.0
-Release:       alt3
+Release:       alt2.1
 Summary:       Common code needed by the other RSpec gems
 License:       MIT
 Group:         Development/Ruby
@@ -37,7 +37,7 @@ and RSpec::Mocks. It is considered suitable for internal use only at this time.
 %if_enabled    doc
 %package       -n gem-rspec-support-doc
 Version:       3.8.0
-Release:       alt3
+Release:       alt2.1
 Summary:       Common code needed by the other RSpec gems documentation files
 Summary(ru_RU.UTF-8): Файлы сведений для самоцвета rspec-support
 Group:         Development/Documentation
@@ -83,9 +83,10 @@ and RSpec::Mocks. It is considered suitable for internal use only at this time.
 
 
 %changelog
-* Wed Apr 21 2021 Pavel Skrylev <majioa@altlinux.org> 3.8.0-alt3
+* Wed Apr 21 2021 Pavel Skrylev <majioa@altlinux.org> 3.8.0-alt2.1
 - * renamed package with subpackages
 - * define explicit dependencies
+- ! spec
 
 * Fri Mar 1 2019 Pavel Skrylev <majioa@altlinux.org> 3.8.0-alt2
 - Use Ruby Policy 2.0.

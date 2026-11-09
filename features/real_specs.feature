@@ -288,7 +288,7 @@ Feature: Spec actor
       - retain the packaged 0.6.3.14.1 version and its explicit version macro
       Given blank space
       And a spec from fixture "hiredis"
-      When developer locks the time to "13.12.2022"
+      When developer locks the time to "09.11.2026"
       And he sets the space options as:
          | options            | value                               |
          | rootdir            | features/fixtures/hiredis           |
@@ -319,16 +319,47 @@ Feature: Spec actor
       And package "gem-hiredis" does not require "minitest"
       And package "gem-hiredis" does not require "rake-compiler"
       When the generated spec is refreshed 2 times
-      Then the generated dependency sections match "gem.spec" from fixture "hiredis"
+      Then the generated spec matches "gem.spec" from fixture "hiredis"
 
    # gitlab-sidekiq-fetcher 0.9.0 release; input spec from altlinux/specs.
+   @scratch @main_is_gem
+   Scenario Outline: Increment only the spec revision when a generated package changes
+      - preserve the packaged module version
+      - keep release and prerelease revision components separate
+      - update the changelog and every subpackage revision together
+      - leave the full spec unchanged on subsequent identical refreshes
+      Given blank space
+      And a spec from fixture "hiredis"
+      When developer locks the time to "09.11.2026"
+      And he sets the space options as:
+         | options          | value                    |
+         | rootdir          | features/fixtures/hiredis |
+         | maintainer.name  | Pavel Skrylev            |
+         | maintainer.email | majioa@altlinux.org       |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      And the generated input has release "<before>"
+      And he sets the space option "uri" to "https://example.org/hiredis"
+      And the generated spec is refreshed 1 times
+      Then every generated package and the latest changelog entry have release "<after>"
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
+      Examples:
+         | before   | after    |
+         | alt1     | alt1.1   |
+         | alt1.1   | alt1.2   |
+         | alt0.1   | alt0.1.1 |
+         | alt0.1.1 | alt0.1.2 |
+
    @policy2_0 @main_is_gem
    Scenario: Recompute gitlab-sidekiq-fetcher overrides without raising source minimums
       - replace historical macro constraints with current source and availability bounds
       - keep runtime and build conflicts aligned with the sidekiq macro
       Given blank space
       And a spec from fixture "gitlab-sidekiq-fetcher"
-      When developer locks the time to "13.12.2022"
+      When developer locks the time to "09.11.2026"
       And he sets the space options as:
          | options            | value                                    |
          | rootdir            | features/fixtures/gitlab-sidekiq-fetcher |

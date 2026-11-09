@@ -6,7 +6,7 @@
 
 Name:          gem-hiredis
 Version:       0.6.3.14.1
-Release:       alt0.1
+Release:       alt0.1.1
 Summary:       Ruby wrapper for hiredis
 License:       BSD-3-Clause
 Group:         Development/Ruby
@@ -46,7 +46,7 @@ parsing multi bulk replies.
 %if_enabled    doc
 %package       -n gem-hiredis-doc
 Version:       0.6.3.14.1
-Release:       alt0.1
+Release:       alt0.1.1
 Summary:       Ruby wrapper for hiredis documentation files
 Summary(ru_RU.UTF-8): Файлы сведений для самоцвета hiredis
 Group:         Development/Documentation
@@ -69,7 +69,7 @@ parsing multi bulk replies.
 %if_enabled    devel
 %package       -n gem-hiredis-devel
 Version:       0.6.3.14.1
-Release:       alt0.1
+Release:       alt0.1.1
 Summary:       Ruby wrapper for hiredis development package
 Summary(ru_RU.UTF-8): Файлы для разработки самоцвета hiredis
 Group:         Development/Ruby
@@ -125,6 +125,9 @@ parsing multi bulk replies.
 
 
 %changelog
+* Mon Nov 09 2026 Pavel Skrylev <majioa@altlinux.org> 0.6.3.14.1-alt0.1.1
+- ! spec
+
 * Wed Aug 19 2026 Pavel Skrylev <majioa@altlinux.org> 0.6.3.14.1-alt0.1
 - ^ 0.6.3[2] -> 0.6.3p14.1
 

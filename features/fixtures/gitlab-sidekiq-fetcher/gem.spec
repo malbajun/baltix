@@ -5,7 +5,7 @@
 
 Name:          gem-gitlab-sidekiq-fetcher
 Version:       0.9.0
-Release:       alt1
+Release:       alt1.1
 Summary:       Redis reliable queue pattern implemented in Sidekiq
 License:       LGPL-3.0
 Group:         Development/Ruby
@@ -57,7 +57,7 @@ significantly.
 %if_enabled    doc
 %package       -n gem-gitlab-sidekiq-fetcher-doc
 Version:       0.9.0
-Release:       alt1
+Release:       alt1.1
 Summary:       Redis reliable queue pattern implemented in Sidekiq documentation files
 Summary(ru_RU.UTF-8): Файлы сведений для самоцвета gitlab-sidekiq-fetcher
 Group:         Development/Documentation
@@ -93,7 +93,7 @@ significantly.
 %if_enabled    devel
 %package       -n gem-gitlab-sidekiq-fetcher-devel
 Version:       0.9.0
-Release:       alt1
+Release:       alt1.1
 Summary:       Redis reliable queue pattern implemented in Sidekiq development package
 Summary(ru_RU.UTF-8): Файлы для разработки самоцвета gitlab-sidekiq-fetcher
 Group:         Development/Ruby
@@ -159,6 +159,9 @@ significantly.
 
 
 %changelog
+* Mon Nov 09 2026 Pavel Skrylev <majioa@altlinux.org> 0.9.0-alt1.1
+- ! spec
+
 * Mon Jan 27 2025 Pavel Skrylev <majioa@altlinux.org> 0.9.0-alt1
 - ^ 0.8.0 -> 0.9.0
 

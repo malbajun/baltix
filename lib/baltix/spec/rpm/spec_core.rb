@@ -408,8 +408,17 @@ module Baltix::Spec::Rpm::SpecCore
       end.join(" ")
    end
 
+   # Selects RPM requirements that are not regenerated from package metadata.
+   # @param value_in [Array<Gem::Dependency, String>] parsed requirements
+   # @return [Array<String>] retained non-gem RPM requirements
+   # Gem requirements are reconstructed from sources. For an auxiliary package
+   # of an application, its host RPM requirement is also reconstructed so a prior
+   # exact release cannot survive alongside the host's current release.
    def _requires_plain_only value_in
-      @requires_plain_only ||= value_in&.reject {|dep| dep.is_a?(Gem::Dependency) }
+      @requires_plain_only ||= value_in&.reject do |dep|
+         dep.is_a?(Gem::Dependency) ||
+            (is_aux? && host&.is_app? && dep.is_a?(String) && dep.match?(/\A#{Regexp.escape(host.name.to_s)}(?:\s|\z)/))
+      end
    end
 
    def _conflicts_plain_only value_in

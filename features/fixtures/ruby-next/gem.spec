@@ -6,7 +6,7 @@
 
 Name:          gem-ruby-next
 Version:       1.2.0
-Release:       alt1
+Release:       alt1.1
 Summary:       Make older Rubies quack like edge Ruby
 License:       MIT
 Group:         Development/Ruby
@@ -57,7 +57,7 @@ implementations (such as mruby, JRuby, Opal, Artichoke, RubyMotion, etc.).
 
 %package       -n gem-ruby-next-core
 Version:       1.2.0
-Release:       alt1
+Release:       alt1.1
 Summary:       Ruby Next core functionality
 Group:         Development/Ruby
 BuildArch:     noarch
@@ -75,7 +75,7 @@ dependencies to be install.
 
 %package       -n ruby-next
 Version:       1.2.0
-Release:       alt1
+Release:       alt1.1
 Summary:       Ruby Next core functionality executable(s)
 Summary(ru_RU.UTF-8): Исполнямка для самоцвета ruby-next-core
 Group:         Other
@@ -103,7 +103,7 @@ dependencies to be install.
 %if_enabled    doc
 %package       -n gem-ruby-next-core-doc
 Version:       1.2.0
-Release:       alt1
+Release:       alt1.1
 Summary:       Ruby Next core functionality documentation files
 Summary(ru_RU.UTF-8): Файлы сведений для самоцвета ruby-next-core
 Group:         Development/Documentation
@@ -128,7 +128,7 @@ dependencies to be install.
 %if_enabled    devel
 %package       -n gem-ruby-next-core-devel
 Version:       1.2.0
-Release:       alt1
+Release:       alt1.1
 Summary:       Ruby Next core functionality development package
 Summary(ru_RU.UTF-8): Файлы для разработки самоцвета ruby-next-core
 Group:         Development/Ruby
@@ -163,7 +163,7 @@ dependencies to be install.
 %if_enabled    doc
 %package       -n gem-ruby-next-doc
 Version:       1.2.0
-Release:       alt1
+Release:       alt1.1
 Summary:       Make older Rubies quack like edge Ruby documentation files
 Summary(ru_RU.UTF-8): Файлы сведений для самоцвета ruby-next
 Group:         Development/Documentation
@@ -186,7 +186,7 @@ implementations (such as mruby, JRuby, Opal, Artichoke, RubyMotion, etc.).
 %if_enabled    devel
 %package       -n gem-ruby-next-devel
 Version:       1.2.0
-Release:       alt1
+Release:       alt1.1
 Summary:       Make older Rubies quack like edge Ruby development package
 Summary(ru_RU.UTF-8): Файлы для разработки самоцвета ruby-next
 Group:         Development/Ruby
@@ -259,6 +259,9 @@ implementations (such as mruby, JRuby, Opal, Artichoke, RubyMotion, etc.).
 
 
 %changelog
+* Mon Nov 09 2026 Pavel Skrylev <majioa@altlinux.org> 1.2.0-alt1.1
+- ! spec
+
 * Mon Jun 22 2026 Pavel Skrylev <majioa@altlinux.org> 1.2.0-alt1
 - ^ 1.1.2 -> 1.2.0
 
