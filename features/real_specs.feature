@@ -865,3 +865,30 @@ Feature: Spec actor
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "ruby-debug-ide" fixture spec for the baltix setup
+
+   # Dynflow/dynflow, ALT 3c1b30b; minitest has only the upper bound < 5.19.
+   @scratch @main_is_gem
+   Scenario: Retain required gems that declare only an upper version bound
+      - require minitest for building even though its gemspec gives no minimum
+      - keep the upper bound in build conflicts and development package conflicts
+      - preserve both declarations through repeated spec updates
+      Given blank space
+      And a spec from fixture "dynflow"
+      When developer locks the time to "09.11.2026"
+      And he sets the space options as:
+         | options          | value                     |
+         | rootdir          | features/fixtures/dynflow |
+         | maintainer.name  | Pavel Skrylev             |
+         | maintainer.email | majioa@altlinux.org       |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then he acquires an "dynflow" fixture spec for the baltix setup
+      And the generated spec contains each line once:
+         | BuildRequires: gem(minitest) >= 0     |
+         | BuildConflicts: gem(minitest) >= 5.19 |
+      And package "gem-dynflow-devel" contains dependency lines:
+         | Requires:      gem(minitest) >= 0    |
+         | Conflicts:     gem(minitest) >= 5.19 |
+      And package "gem-dynflow" does not require "minitest"
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "dynflow"
