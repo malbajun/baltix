@@ -326,7 +326,7 @@ maintenance of CSS.
 %ruby_test
 
 %files
-%doc LICENSE.markdown
+%doc LICENSE.markdown README.markdown
 %ruby_gemspec
 %ruby_gemlibdir
 
@@ -363,18 +363,18 @@ maintenance of CSS.
 %endif
 
 %files         -n compass
-%doc LICENSE.markdown
+%doc LICENSE.markdown README.markdown
 %_bindir/compass
 
 %if_enabled    doc
 %files         -n gem-compass-doc
-%doc LICENSE.markdown
+%doc LICENSE.markdown README.markdown
 %ruby_gemdocdir
 %endif
 
 %if_enabled    devel
 %files         -n gem-compass-devel
-%doc LICENSE.markdown
+%doc LICENSE.markdown README.markdown
 %endif
 
 

@@ -39,3 +39,8 @@ Then('the generated documentation lines match {string} from fixture {string}') d
    actual = @spec.lines.grep(/^%doc\s/).map(&:strip)
    expect(actual).to eql(expected)
 end
+
+When('the main source receives its own README') do
+   FileUtils.touch(File.join(space.main_source.rootdir, 'README.md'))
+   system('git', '-C', space.rootdir, 'add', '--all', exception: true)
+end

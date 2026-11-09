@@ -589,30 +589,30 @@ Feature: Spec actor
       When developer locks the time to "09.11.2026"
       And the input spec uses "<form>" for its ignore list
       And he sets the space options as:
-         | options          | value                        |
-         | rootdir          | features/fixtures/llhttp-ffi |
-         | maintainer.name  | Pavel Skrylev                |
-         | maintainer.email | majioa@altlinux.org          |
+         | options            | value                          |
+         | rootdir            | features/fixtures/llhttp-ffi   |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "llhttp-ffi" fixture spec for the baltix setup
       And the parsed ignored names are:
-         | gem-llhttp-ffi |
+         | gem-llhttp-ffi  |
       And the generated spec contains each line once:
          | %ruby_ignore_names gem-llhttp-ffi          |
          | %ruby_use_gem_version llhttp:0.6.1.16      |
          | %ruby_use_gem_version llhttp-ffi:0.5.1.16  |
-         | BuildRequires: gem(rake) >= 13.0          |
-         | BuildConflicts: gem(rake) >= 14           |
+         | BuildRequires: gem(rake) >= 13.0           |
+         | BuildConflicts: gem(rake) >= 14            |
       When the generated spec is refreshed 2 times
       Then the parsed ignored names are:
-         | gem-llhttp-ffi |
+         | gem-llhttp-ffi  |
       And the generated spec contains each line once:
          | %ruby_ignore_names gem-llhttp-ffi          |
          | %ruby_use_gem_version llhttp:0.6.1.16      |
          | %ruby_use_gem_version llhttp-ffi:0.5.1.16  |
-         | BuildRequires: gem(rake) >= 13.0          |
-         | BuildConflicts: gem(rake) >= 14           |
+         | BuildRequires: gem(rake) >= 13.0           |
+         | BuildConflicts: gem(rake) >= 14            |
 
       Examples:
          | form         |
@@ -626,27 +626,39 @@ Feature: Spec actor
       - preserve the repository root while importing the cli, core and import-once gems
       - qualify nested README and license entries with their source directories
       - retain the root-level shared license and valid paths through repeated updates
+      - reuse the repository README.markdown when the main CLI gem has no README
       Given blank space
       When developer locks the time to "13.12.2022"
       And he imports fixture "compass" with documentation paths:
-         | README.markdown         |
-         | LICENSE.markdown        |
-         | core/README.md          |
-         | core/LICENSE.txt        |
-         | import-once/README.md   |
-         | import-once/LICENSE.txt |
+         | README.markdown          |
+         | LICENSE.markdown         |
+         | core/README.md           |
+         | core/LICENSE.txt         |
+         | import-once/README.md    |
+         | import-once/LICENSE.txt  |
       And he sets the space options as:
-         | options          | value               |
-         | spec_type        | rpm                 |
-         | maintainer.name  | Pavel Skrylev       |
-         | maintainer.email | majioa@altlinux.org |
+         | options            | value                 |
+         | spec_type          | rpm                   |
+         | maintainer.name    | Pavel Skrylev         |
+         | maintainer.email   | majioa@altlinux.org   |
       Then the main source is the "compass" gem
       When he applies "spec" actor to the baltix setup
       Then every generated documentation path exists in the repository root
+      And the generated spec contains the lines:
+         | %doc LICENSE.markdown README.markdown               |
+         | %doc core/LICENSE.txt core/README.md                |
+         | %doc import-once/LICENSE.txt import-once/README.md  |
       And he acquires an "compass" fixture spec for the baltix setup
       When the generated spec is refreshed 2 times
       Then every generated documentation path exists in the repository root
       And the generated documentation lines match "gem.spec" from fixture "compass"
+      When the main source receives its own README
+      And the generated spec is refreshed 1 times
+      Then the generated spec contains the lines:
+         | %doc LICENSE.markdown cli/README.md  |
+      And the generated spec excludes the lines:
+         | %doc LICENSE.markdown README.markdown   |
+      And every generated documentation path exists in the repository root
 
    @scratch @blank_setup @main_is_gem
    Scenario: Generate a mixlib-shellout spec without inferred Windows dependencies

@@ -2,6 +2,8 @@ require "json"
 require "pathname"
 
 module Baltix::Spec::Rpm::SpecCore
+   README_FILE_RE = /\Areadme(?:\.(?:md|markdown|rdoc|txt|rst|adoc|asciidoc|textile))?\z/i
+
    URL_MATCHER = {
       /(?<proto>https?:\/\/)?(?<user>[^\.]+).github.io\/(?<page>[^\/#]+)/ => ->(m) do
          "https://github.com/#{m["user"]}/#{m["page"]}.git"
@@ -409,9 +411,23 @@ module Baltix::Spec::Rpm::SpecCore
    # If an entry exists under its source directory, its emitted path includes
    # that directory relative to the repository. Root-level paths remain unchanged.
    # Otherwise the declaration is retained for shared root files and metadata-only
-   # inputs. Entries with the same basename retain the first declaration.
+   # inputs. If the main gem is nested and declares no README, repository README
+   # documents supplement its entries, including its auxiliary packages. Sibling
+   # gems retain their own documentation. Entries with the same basename retain
+   # the first declaration.
    def _readme _in
-      files.grep(/^[^\/]*(#{Baltix::Source::Base::DEFAULT_FILES.join("|")})/i).group_by do |x|
+      candidates = files
+      source_root = source && File.expand_path(source.rootdir)
+      repository_root = File.expand_path(doc.space.rootdir)
+      if source.is_a?(Baltix::Source::Gem) && source.equal?(doc.source) &&
+         source_root.start_with?(File.join(repository_root, '')) && candidates.grep(README_FILE_RE).empty?
+         readmes = doc.space.default_fake_source.default_files.grep(README_FILE_RE).select do |file|
+            File.file?(File.join(repository_root, file))
+         end
+         candidates |= readmes
+      end
+
+      candidates.grep(/^[^\/]*(#{Baltix::Source::Base::DEFAULT_FILES.join("|")})/i).group_by do |x|
          File.basename(x)
       end.map do |(name, a)|
          file = a.first

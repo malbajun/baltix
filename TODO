@@ -35,7 +35,6 @@ lost runtime deps
 
 
 gem-lemon update stable ver to unstable
-gem-compass - include the repository README.markdown for the nested main gem
 license-scout - README lost
 
 gettext-setup - invalid ruby_alias_names when genspec
