@@ -135,7 +135,7 @@ class Baltix::Spec::Rpm
          default: [],
       },
       runtime_dependencies: {
-         seq: %w(of_options of_state of_default >_prepare_dependencies >_runtime_dependencies >_replace_versioning_dependencies >_dependencies_sort),
+         seq: %w(of_options of_state of_default >_prepare_dependencies >_runtime_dependencies >_dependencies_sort),
          default: [],
       },
       build_dependencies: {

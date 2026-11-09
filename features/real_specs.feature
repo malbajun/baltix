@@ -7,6 +7,35 @@ Feature: Spec actor
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
 
+   # ruby-next/ruby-next 1.2.0; ALT gem-ruby-next b6cb98d (1.2.0-alt1).
+   @scratch @main_is_gem
+   Scenario: Preserve runtime dependencies on a gem packaged in the same spec
+      - retain ruby-next's exact runtime requirement on its ruby-next-core subpackage
+      - do not replace packaged gem versions with versions from the available list
+      - keep internal runtime requirements through repeated spec updates
+      Given blank space
+      And a spec from fixture "ruby-next"
+      When developer locks the time to "09.11.2026"
+      And he sets the space options as:
+         | options            | value                       |
+         | rootdir            | features/fixtures/ruby-next |
+         | available_gem_list | {'ruby-next-core': '2.0.0'} |
+         | maintainer.name    | Pavel Skrylev               |
+         | maintainer.email   | majioa@altlinux.org         |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then he acquires an "ruby-next" fixture spec for the baltix setup
+      And the main source is the "ruby-next" gem
+      And package "gem-ruby-next" contains dependency lines:
+         | Requires:      gem(ruby-next-core) = 1.2.0 |
+      And the generated spec contains no override for "ruby-next-core"
+      And the generated package names are unique
+      When the generated spec is refreshed 2 times
+      Then package "gem-ruby-next" contains dependency lines:
+         | Requires:      gem(ruby-next-core) = 1.2.0 |
+      And the generated spec contains no override for "ruby-next-core"
+      And the generated dependency sections match "gem.spec" from fixture "ruby-next"
+
    # datamapper/do: 16564e6dba587e92e41aba376b46ef765f3bffea.
    # Retain the core gem, one native driver and repository-level build metadata.
    @scratch @blank_setup

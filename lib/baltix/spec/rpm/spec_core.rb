@@ -533,14 +533,22 @@ module Baltix::Spec::Rpm::SpecCore
 #      end
 #   end
 
+   # Merges runtime requirements and applies effective gem version overrides.
+   # @param value_in [Array<Gem::Dependency>] runtime dependencies from existing state
+   # @return [Array<Gem::Dependency>] merged runtime dependencies with effective bounds
+   # If a dependency already exists, its source requirements are merged. External
+   # overrides are applied when available; dependencies on gems packaged in the
+   # same spec retain their source requirements.
    def _runtime_dependencies value_in
       dep_hash = value_in.group_by {|x|x.name}.map {|n, x| [n, x.reduce {|res, y| res.merge(y) } ] }.to_h
 
-      source.dsl.all_dependencies_for(kinds_in: :runtime).reduce(dep_hash.dup) do |r, x|
+      dependencies = source.dsl.all_dependencies_for(kinds_in: :runtime).reduce(dep_hash.dup) do |r, x|
          r[x.name] = r[x.name] ? r[x.name].merge(x) : x
 
          r
       end.values
+
+      replace_versioning(dependencies)
    end
 
    def _devel_dependencies value_in
