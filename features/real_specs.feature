@@ -620,6 +620,34 @@ Feature: Spec actor
          | legacy macro |
          | build option |
 
+   # Compass 07ad85d with ALT 584eab7 version patch; recreate document paths in a temporary tree.
+   @scratch @blank_setup @documentation_source
+   Scenario: Keep nested Compass documentation paths relative to the repository root
+      - preserve the repository root while importing the cli, core and import-once gems
+      - qualify nested README and license entries with their source directories
+      - retain the root-level shared license and valid paths through repeated updates
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he imports fixture "compass" with documentation paths:
+         | README.markdown         |
+         | LICENSE.markdown        |
+         | core/README.md          |
+         | core/LICENSE.txt        |
+         | import-once/README.md   |
+         | import-once/LICENSE.txt |
+      And he sets the space options as:
+         | options          | value               |
+         | spec_type        | rpm                 |
+         | maintainer.name  | Pavel Skrylev       |
+         | maintainer.email | majioa@altlinux.org |
+      Then the main source is the "compass" gem
+      When he applies "spec" actor to the baltix setup
+      Then every generated documentation path exists in the repository root
+      And he acquires an "compass" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then every generated documentation path exists in the repository root
+      And the generated documentation lines match "gem.spec" from fixture "compass"
+
    @scratch @blank_setup @main_is_gem
    Scenario: Generate a mixlib-shellout spec without inferred Windows dependencies
       Given blank space

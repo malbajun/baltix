@@ -1,4 +1,5 @@
 require "json"
+require "pathname"
 
 module Baltix::Spec::Rpm::SpecCore
    URL_MATCHER = {
@@ -402,11 +403,21 @@ module Baltix::Spec::Rpm::SpecCore
       %i(devel doc exec).include?(self.kind)
    end
 
+   # Selects documentation entries and resolves existing files from their source root.
+   # @param _in [Object] unused value from the property pipeline
+   # @return [String] space-separated documentation paths relative to the repository root
+   # If an entry exists under its source directory, its emitted path includes
+   # that directory relative to the repository. Root-level paths remain unchanged.
+   # Otherwise the declaration is retained for shared root files and metadata-only
+   # inputs. Entries with the same basename retain the first declaration.
    def _readme _in
       files.grep(/^[^\/]*(#{Baltix::Source::Base::DEFAULT_FILES.join("|")})/i).group_by do |x|
          File.basename(x)
       end.map do |(name, a)|
-         a.first
+         file = a.first
+         source_path = source && File.join(source.rootdir, file)
+         source_path && File.exist?(source_path) ?
+            Pathname.new(source_path).relative_path_from(Pathname.new(doc.space.rootdir)).to_s : file
       end.join(" ")
    end
 
