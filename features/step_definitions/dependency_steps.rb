@@ -104,3 +104,9 @@ end
 Then('the project root remains the {string} fixture') do |name|
    expect(space.rootdir).to eql(File.expand_path("features/fixtures/#{name}"))
 end
+
+Then('source {string} declares native extensions:') do |name, table|
+   source = space.valid_sources.find { |item| item.is_a?(Baltix::Source::Gem) && item.name == name }
+   expect(source).to_not be_nil
+   expect(source.spec.extensions.sort).to eql(table.raw.flatten.sort)
+end

@@ -123,6 +123,20 @@ class Hoe
          @history_file = file
       end
 
+      # Stores the legacy remote RDoc directory while importing a Hoe Rakefile.
+      # @param directory [String] publishing directory declared by the project
+      # @return [String] the supplied publishing directory
+      def remote_rdoc_dir= directory
+         @remote_rdoc_dir = directory
+      end
+
+      # Stores the legacy RubyForge project name while importing a Hoe Rakefile.
+      # @param name [String] RubyForge project name declared by the project
+      # @return [String] the supplied project name
+      def rubyforge_name= name
+         @rubyforge_name = name
+      end
+
       def history_file
          @history_file ||= Dir['{History,Changelog,HISTORY,CHANGELOG}*'].first
       end
@@ -246,9 +260,19 @@ class Hoe
    end
 
    module Main
-      def method_missing method_name, *args
+      # Dispatches legacy Hoe DSL calls to the adapter or its gem specification.
+      # @param method_name [Symbol] missing DSL method or gemspec attribute writer
+      # @param args [Array<Object>] arguments forwarded to the selected method
+      # @param block [Proc, nil] optional block forwarded to the selected method
+      # @return [Object] the result of the delegated method
+      # If Hoe implements the method, it takes priority. Otherwise, a Hoe instance
+      # delegates supported gemspec methods to its specification; other missing
+      # methods retain the superclass behavior.
+      def method_missing method_name, *args, &block
          if Hoe.respond_to?(method_name)
-            Hoe.send(method_name, *args)
+            Hoe.public_send(method_name, *args, &block)
+         elsif is_a?(Hoe) && spec.respond_to?(method_name)
+            spec.public_send(method_name, *args, &block)
          else
             super
          end

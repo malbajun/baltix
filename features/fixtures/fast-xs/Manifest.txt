@@ -1,0 +1,6 @@
+History.rdoc
+Manifest.txt
+README.rdoc
+Rakefile
+ext/fast_xs/extconf.rb
+ext/fast_xs_extra/extconf.rb
