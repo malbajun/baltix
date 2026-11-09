@@ -391,19 +391,29 @@ class Baltix::Space
       end
    end
 
-   def is_disabled? source
-      source_path = source.source_file && "/#{Pathname.new(source.source_file).relative_path_from(Pathname.new(rootdir))}"
-      !is_platform_allowed?(source.platform) || !is_version_allowed?(source.version) ||
-         regarded_path_tokens.map do |t|
-            t.is_a?(Regexp) && %r{/[^/]*#{t}[^/]*/} || %r{/#{t}/}
-         end.all? do |t|
-            t !~ source_path
-         end &&
+   # Checks source directory exclusions relative to the repository root.
+   # @param source_file [String, nil] source metadata filename to check
+   # @return [Boolean] whether its directory tokens exclude the source
+   # Explicitly regarded tokens override ignored tokens. String tokens match
+   # whole directory names; regular expressions may match part of a name.
+   # A missing filename does not match any directory token.
+   def is_source_path_ignored? source_file
+      source_path = source_file && "/#{Pathname.new(source_file).relative_path_from(Pathname.new(rootdir))}"
+      regarded_path_tokens.map do |t|
+         t.is_a?(Regexp) && %r{/[^/]*#{t}[^/]*/} || %r{/#{t}/}
+      end.all? do |t|
+         t !~ source_path
+      end &&
          ignored_path_tokens.map do |t|
             t.is_a?(Regexp) && %r{/[^/]*#{t}[^/]*/} || %r{/#{t}/}
          end.any? do |t|
             t =~ source_path
-         end ||
+         end
+   end
+
+   def is_disabled? source
+      !is_platform_allowed?(source.platform) || !is_version_allowed?(source.version) ||
+         is_source_path_ignored?(source.source_file) ||
          options.regarded_names.all? { |i| !i.match?(source.name) } &&
          options.ignored_names.any? { |i| i === source.name }
    end
@@ -535,7 +545,7 @@ class Baltix::Space
          end
 
       pre.first.flatten(1).map do |(source, status)|
-            if status == :disabled &&
+            if status == :disabled && !is_source_path_ignored?(source.source_file) &&
                pre[2].any? do |dep|
                   dep.name == source.name && source.is_a?(Baltix::Source::Gem) &&
                   dep.requirement.satisfied_by?(source.provide.requirement.requirements.last.last)

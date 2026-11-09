@@ -7,6 +7,48 @@ Feature: Spec actor
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
 
+   # chef/license_scout v2.6.10, b7fbe3c; retain one matching gemspec from spec/fixtures.
+   @scratch @blank_setup @main_is_gem
+   Scenario: Keep matching test fixture gems out of generated source packages
+      - keep ignored fixture sources disabled even when a runtime dependency matches
+      - retain the external runtime requirement rather than packaging its test copy
+      - keep exclusions stable through repeated spec updates
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options          | value                           |
+         | rootdir          | features/fixtures/license-scout |
+         | spec_type        | rpm                             |
+         | maintainer.name  | Pavel Skrylev                   |
+         | maintainer.email | majioa@altlinux.org             |
+      Then source "mixlib-shellout" has status "disabled"
+      When he applies "spec" actor to the baltix setup
+      Then he acquires an "license-scout" fixture spec for the baltix setup
+      And the generated library package names are:
+         | gem-license-scout |
+      And package "gem-license-scout" contains dependency lines:
+         | Requires:      gem(mixlib-shellout) >= 2.2 |
+         | Conflicts:     gem(mixlib-shellout) >= 4.0 |
+      When the generated spec is refreshed 2 times
+      Then source "mixlib-shellout" has status "disabled"
+      And the generated library package names are:
+         | gem-license-scout |
+      And the generated dependency sections match "gem.spec" from fixture "license-scout"
+
+   @scratch @blank_setup @main_is_gem
+   Scenario: Allow a fixture source only when its path is explicitly regarded
+      - let explicit path settings override the default fixture exclusion
+      Given blank space
+      When he sets the space options as:
+         | options              | value                           |
+         | rootdir              | features/fixtures/license-scout |
+         | regarded_path_tokens | [spec]                          |
+      Then source "mixlib-shellout" has status "valid"
+      When he applies "spec" actor to the baltix setup
+      Then the generated library package names are:
+         | gem-license-scout   |
+         | gem-mixlib-shellout |
+
    # brianmario/fast_xs, ALT gear 8a75f12; upstream declares version 0.8.0.
    @scratch @blank_setup @main_is_gem
    Scenario: Preserve native extension declarations after legacy Hoe metadata assignments
