@@ -25,6 +25,19 @@ Given('the project has versioned Rake tasks for the CLI') do
    RUBY
 end
 
+When('the standalone Baltix executable runs before-task {string}') do |task|
+   require 'open3'
+   File.write(File.join(@rake_project, 'pry.rb'), "raise LoadError, 'optional Pry unavailable'\n")
+   environment = { 'RUBYOPT' => nil, 'BUNDLE_GEMFILE' => nil, 'BUNDLE_BIN_PATH' => nil }
+   arguments = [Gem.ruby, '-I', @rake_project, '-I', File.expand_path('lib'), File.expand_path('exe/baltix'),
+      '--rootdir', @rake_project, '--rake-task-before', task, '--output-file', File.join(@rake_project, 'result.spec'), 'spec']
+   @standalone_stdout, @standalone_stderr, @standalone_status = Open3.capture3(environment, *arguments)
+end
+
+Then('the standalone CLI succeeds') do
+   expect(@standalone_status.success?).to be(true), @standalone_stderr
+end
+
 Given('the configured rake_task_before list is {string}') do |tasks|
    @configured_rake_tasks = tasks.split(',').map(&:to_sym)
 end

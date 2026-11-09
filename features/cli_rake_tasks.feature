@@ -112,6 +112,13 @@ Feature: Rake tasks scoped to the next Baltix command
       Then the ordered CLI fails with "invalid option: --pre=first"
       And no CLI spec files are written
 
+   Scenario: Run the standalone executable without optional Pry or test preloads
+      When the standalone Baltix executable runs before-task "first"
+      Then the standalone CLI succeeds
+      And the generated CLI specs contain:
+         | file        | line                 |
+         | result.spec | Version:       1.0.0 |
+
    Scenario: Find nested Rakefiles while honoring the existing source path filters
       Given the root Rakefile is moved into "component"
       And the Rake project file "fixtures/Rakefile" is:

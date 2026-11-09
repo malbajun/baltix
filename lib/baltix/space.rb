@@ -1,4 +1,5 @@
 require 'rubygems'
+require 'pathname'
 
 require 'baltix/version'
 require 'baltix/log'
