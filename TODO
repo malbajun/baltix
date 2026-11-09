@@ -84,7 +84,7 @@ loofah,rails-html-sanitizer - gems in Gemfile under condition/unknown group
 rails - requires for gem-rails
 
 
-packethost,gitlab-sidekiq-fetcher - erroneouse require list for gem
+gitlab-sidekiq-fetcher - erroneouse require list for gem
 packethost - erroneous alias
 
 
