@@ -1,5 +1,35 @@
 Feature: Available gem versions and dependency override macros
 
+   Scenario Outline: Preserve explicit package build conflicts across spec updates
+      - retain external tool bounds such as Ruby Next parser's ragel6 constraint
+      - recompute gem conflicts from source requirements and available versions
+      Given blank space
+      And a spec from fixture "rbvmomi"
+      When developer locks the time to "21.04.2021"
+      And he sets the space options as:
+         | options            | value                     |
+         | rootdir            | features/fixtures/rbvmomi |
+         | available_gem_list | {rake: '15.0'}            |
+      And the input spec has extra build conflicts:
+         | ragel6 >= 7                          |
+         | bison < 3 ragel6 >= 7 # repeated tool |
+         | gem(rake) >= 11                      |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      And the generated spec is refreshed <updates> times
+      Then the generated spec contains each line once:
+         | BuildConflicts: ragel6 >= 7                     |
+         | BuildConflicts: bison < 3                       |
+         | BuildConflicts: gem(rake) >= 16                 |
+         | %ruby_use_gem_dependency rake >= 10.5,rake < 16 |
+      And the generated spec excludes the lines:
+         | BuildConflicts: gem(rake) >= 11 |
+
+      Examples:
+         | updates |
+         | 0       |
+         | 2       |
+
    @policy2_0 @policy2_1
    Scenario: Upgrade mixed obsolete Ruby Policy 2.0 prerequisites to 2.1 without duplicates
       - replace the obsolete rpm-build-ruby prerequisite with Ruby Policy 2.1 prerequisites

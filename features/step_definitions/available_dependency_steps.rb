@@ -96,3 +96,19 @@ When('the input spec has extra build requirements:') do |table|
    declarations = table.raw.flatten.map { |requirement| "BuildRequires: #{requirement}\n" }.join
    @spec_in = @spec_in.sub(/^Name:/, "#{declarations}Name:")
 end
+
+When('the input spec has extra build conflicts:') do |table|
+   declarations = table.raw.flatten.map { |requirement| "BuildConflicts: #{requirement}\n" }.join
+   @spec_in = @spec_in.sub(/^Name:/, "#{declarations}Name:")
+end
+
+Then('the generated spec contains each line once:') do |table|
+   lines = @spec.lines.map(&:strip)
+   table.raw.flatten.each do |line|
+      expect(lines.count(line)).to eql(1), "Expected one occurrence of #{line.inspect}"
+   end
+end
+
+Then('the generated spec excludes the lines:') do |table|
+   expect(@spec.lines.map(&:strip) & table.raw.flatten).to be_empty
+end

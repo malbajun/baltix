@@ -62,6 +62,11 @@ class Baltix::Spec::Rpm::Parser
          regexp: /^BuildRequires:\s*([^#]+)/i,
          parse_func: :parse_dep
       },
+      build_conflicts: {
+         non_contexted: true,
+         regexp: /^BuildConflicts:\s*([^#]+)/i,
+         parse_func: :parse_build_conflicts
+      },
       obsoletes: {
          regexp: /^Obsoletes:\s*([^#]+)/i,
          parse_func: :parse_dep
@@ -293,6 +298,15 @@ class Baltix::Spec::Rpm::Parser
    def parse_dep match, *_
       deps = match[1].scan(/[^\s]+(?:\s+[<=>]+\s+[^\s]+)?/)
       deps.map {|d| /^(gem|rubygem|ruby-gem)\(([^\)]+)\)/ =~ d ? Gem::Dependency.new($2, Gem::Requirement.new([">= 0"])) : d }
+   end
+
+   # Parses explicit build conflicts for non-gem RPM packages.
+   # @param match [Array<String>] captures with dependency declarations at index 1
+   # @return [Array<String>] package conflicts with their original version bounds
+   # Gem conflicts are excluded because source dependencies and available gem
+   # versions determine their regenerated bounds.
+   def parse_build_conflicts match, *_
+      parse_dep(match).grep(String)
    end
 
    def parse_ignore match, *_
