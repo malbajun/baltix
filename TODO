@@ -11,14 +11,16 @@ lost runtime deps
 + generate spec for:
  - gem:multi_test,parser 2x -> 3x
  - app:cucumber_common - blank root (Fake Source) / Url, Vsc, summary, description, filters for blank packages, dedup packages by name
+ - smart-proxy - validate sources, dependencies, spec generation and updates
+ - dynflow - validate sources, dependencies, spec generation and updates
 
 
  - rubyzip  old -> new
  - check rubocop *.h adding in devel pkg, bo they are absent
  - coveralls with %ruby_use_gem_dependency, 0.8.23-alt2 -> 0.8.23.1-alt0.1 (увеличение версии с помоїью командной строки или анализа git),and Epoch =1
  - google-cloud-ruby - deduplication of build req list for gems: simplecov
- - photobuf - noarch with so packages
- - grpc - custom root - grpc, and not gem-grpc
+ - protobuf - noarch with so packages
+ - grpc - deferred: custom root - grpc, and not gem-grpc
  - googleauth - alias to google-auth
  - google-api-ruby-client: correct spec, filter by regexp to ignore-names, validate build
  - gapic-generator-ruby
@@ -91,7 +93,9 @@ detect release by rubygems - gem-minitest-spec-context
 
 
 
-oauth-tty - fix deps for devel/bin/runtime
+oauth-tty - deferred: fix deps for devel/bin/runtime
+opennebula - deferred: complex project; analyze after smaller projects
+foreman - deferred: complex project; analyze after smaller projects
 
 progressbar - position of ruby-progressbar and progressbar based on 1. spec main name, 2. shortnamess name
 source status - obsolete - (chef) and duplicate (progressbar)
