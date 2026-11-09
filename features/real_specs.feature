@@ -7,6 +7,41 @@ Feature: Spec actor
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
 
+   # brianmario/fast_xs, ALT gear 8a75f12; upstream declares version 0.8.0.
+   @scratch @blank_setup @main_is_gem
+   Scenario: Preserve native extension declarations after legacy Hoe metadata assignments
+      - accept gemspec attribute writers and legacy publishing settings in the Hoe block
+      - finish importing spec_extras with both dynamically discovered extensions
+      - keep native extension ownership and architecture through repeated updates
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options          | value                     |
+         | rootdir          | features/fixtures/fast-xs |
+         | spec_type        | rpm                       |
+         | maintainer.name  | Pavel Skrylev             |
+         | maintainer.email | majioa@altlinux.org       |
+      Then the main source is the "fast_xs" gem
+      And source "fast_xs" declares native extensions:
+         | ext/fast_xs/extconf.rb       |
+         | ext/fast_xs_extra/extconf.rb |
+      When he applies "spec" actor to the baltix setup
+      Then he acquires an "fast-xs" fixture spec for the baltix setup
+      And the generated spec contains each line once:
+         | %ruby_gemextdir |
+      And the generated package build architectures are:
+         | package     | build_arch |
+         | gem-fast-xs |            |
+      When the generated spec is refreshed 2 times
+      Then source "fast_xs" declares native extensions:
+         | ext/fast_xs/extconf.rb       |
+         | ext/fast_xs_extra/extconf.rb |
+      And the generated spec contains each line once:
+         | %ruby_gemextdir |
+      And the generated package build architectures are:
+         | package     | build_arch |
+         | gem-fast-xs |            |
+
    # ruby-next/ruby-next 1.2.0; ALT gem-ruby-next b6cb98d (1.2.0-alt1).
    @scratch @main_is_gem
    Scenario: Preserve runtime dependencies on a gem packaged in the same spec
