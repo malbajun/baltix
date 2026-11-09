@@ -359,6 +359,21 @@ class Baltix::Spec::Rpm
       all_docs.any?
    end
 
+   # Checks this package's native extensions and, optionally, its subpackages.
+   # The compilables list itself remains local to the main package. With
+   # :with_children, emitted library subpackages are also checked; without it,
+   # only the local list is checked for file ownership.
+   # @param mode [Symbol, nil] :with_children includes library subpackages;
+   #   nil checks only this package
+   # @return [Boolean] false when compilables_dep_setup is :skip; otherwise,
+   #   true when the local list or an included library subpackage has compilables
+   def has_compilables? mode = nil
+      options["compilables_dep_setup"] != :skip &&
+         (!compilables.blank? || (mode == :with_children && valid_secondaries.any? do |secondary|
+            secondary.is_lib? && secondary.has_compilables?
+         end))
+   end
+
    def pure_build_requires
       build_requires.select {|r| r !~ /^gem\(.*\)/ }
    end

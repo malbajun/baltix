@@ -79,6 +79,19 @@ Then('the generated package names are unique') do
    expect(names).to eql(names.uniq)
 end
 
+Then('the generated package build architectures are:') do |table|
+   table.hashes.each do |row|
+      name = Regexp.escape(row['package'])
+      package = @spec.split(/(?=^%package\s)/).find do |section|
+         section.match?(/^(?:Name:\s+|%package\s+-n\s+)#{name}$/)
+      end
+      expect(package).to_not be_nil
+      header = package.split(/^%description\b/, 2).first
+      expected = row['build_arch'].empty? ? [] : [row['build_arch']]
+      expect(header.scan(/^BuildArch:\s+(\S+)/).flatten).to eql(expected)
+   end
+end
+
 When('the input spec has extra build requirements:') do |table|
    declarations = table.raw.flatten.map { |requirement| "BuildRequires: #{requirement}\n" }.join
    @spec_in = @spec_in.sub(/^Name:/, "#{declarations}Name:")

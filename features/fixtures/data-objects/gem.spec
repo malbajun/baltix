@@ -13,7 +13,6 @@ Group:         Development/Ruby
 Url:           http://github.com/datamapper/do
 Vcs:           https://github.com/datamapper/do.git
 Packager:      Pavel Skrylev <majioa@altlinux.org>
-BuildArch:     noarch
 
 Source:        %name-%version.tar
 BuildRequires(pre): rpm-macros-ruby setup-rb rake

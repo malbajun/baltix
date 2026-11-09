@@ -12,7 +12,6 @@ Group:         Development/Ruby
 Url:           https://ruby-gnome2.osdn.jp/
 Vcs:           https://github.com/ruby-gnome2/ruby-gnome2.git
 Packager:      Ruby Maintainers Team <ruby@packages.altlinux.org>
-BuildArch:     noarch
 
 Source:        %name-%version.tar
 BuildRequires(pre): rpm-macros-ruby setup-rb rake

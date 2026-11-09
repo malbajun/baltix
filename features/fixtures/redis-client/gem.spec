@@ -13,7 +13,6 @@ Group:         Development/Ruby
 Url:           https://github.com/redis-rb/redis-client
 Vcs:           https://github.com/redis-rb/redis-client.git
 Packager:      Pavel Skrylev <majioa@altlinux.org>
-BuildArch:     noarch
 
 Source:        %name-%version.tar
 BuildRequires(pre): rpm-macros-ruby setup-rb rake
