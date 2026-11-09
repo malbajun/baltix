@@ -83,6 +83,16 @@ class Baltix::Spec::Rpm::Parser
          regexp: /^Conflicts:\s*([^#]+)/i,
          parse_func: :parse_dep
       },
+      ignored_path_tokens: {
+         non_contexted: true,
+         regexp: /^%(ruby_ignore_path_tokens)\s+([^\s$]+)/i,
+         parse_func: :parse_ignore
+      },
+      regarded_path_tokens: {
+         non_contexted: true,
+         regexp: /^%(ruby_regard_path_tokens)\s+([^\s$]+)/i,
+         parse_func: :parse_ignore
+      },
       ignored_names: {
          non_contexted: true,
          regexp: /(^%ruby_ignore|--ignore=)\s*([^\s$]+)/i,

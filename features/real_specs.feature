@@ -36,18 +36,39 @@ Feature: Spec actor
       And the generated dependency sections match "gem.spec" from fixture "license-scout"
 
    @scratch @blank_setup @main_is_gem
-   Scenario: Allow a fixture source only when its path is explicitly regarded
+   Scenario: Preserve explicit source path settings through generated RPM macros
       - let explicit path settings override the default fixture exclusion
+      - preserve ruby_ignore_path_tokens and ruby_regard_path_tokens when options are cleared
+      - reapply the stored lists during subsequent source imports
       Given blank space
       When he sets the space options as:
          | options              | value                           |
          | rootdir              | features/fixtures/license-scout |
          | regarded_path_tokens | [spec]                          |
+         | ignored_path_tokens  | [bench]                         |
+      And he adds the case-insensitive ignored path pattern "scratch"
       Then source "mixlib-shellout" has status "valid"
       When he applies "spec" actor to the baltix setup
       Then the generated library package names are:
          | gem-license-scout   |
          | gem-mixlib-shellout |
+      And the generated spec contains each line once:
+         | %ruby_ignore_path_tokens bench,[^/]*(?i-mx:scratch)[^/]* |
+         | %ruby_regard_path_tokens spec                            |
+      When the generated spec is refreshed without path options
+      Then source "mixlib-shellout" has status "valid"
+      And a source at "bench/example.gemspec" is disabled
+      And a source at "custom-SCRATCH-dir/example.gemspec" is disabled
+      And the generated spec contains each line once:
+         | %ruby_ignore_path_tokens bench,[^/]*(?i-mx:scratch)[^/]* |
+         | %ruby_regard_path_tokens spec                            |
+      When the generated spec is refreshed 2 times
+      Then source "mixlib-shellout" has status "valid"
+      And a source at "bench/example.gemspec" is disabled
+      And a source at "custom-SCRATCH-dir/example.gemspec" is disabled
+      And the generated spec contains each line once:
+         | %ruby_ignore_path_tokens bench,[^/]*(?i-mx:scratch)[^/]* |
+         | %ruby_regard_path_tokens spec                            |
 
    # brianmario/fast_xs, ALT gear 8a75f12; upstream declares version 0.8.0.
    @scratch @blank_setup @main_is_gem

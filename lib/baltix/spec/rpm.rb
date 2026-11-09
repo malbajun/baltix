@@ -12,7 +12,7 @@ class Baltix::Spec::Rpm
 
    OPTIONS = %w(source conflicts uri vcs maintainer
                 source_files patches build_pre_requires context comment
-                readme executables ignored_names main_source dependencies
+                readme executables ignored_names ignored_path_tokens regarded_path_tokens main_source dependencies
                 valid_sources available_gem_list rootdir aliased_names
                 time_stamp devel_dep_setup use_gem_version_list use_gem_obsolete_list)
 
@@ -270,6 +270,15 @@ class Baltix::Spec::Rpm
          seq: %w(of_options of_state >_gem_versionings_with_use),
          default: []
       },
+      # Persist explicit path settings; built-in defaults remain in Space.
+      ignored_path_tokens: {
+         seq: %w(of_options |of_state),
+         default: []
+      },
+      regarded_path_tokens: {
+         seq: %w(of_options |of_state),
+         default: []
+      },
       ignored_names: {
          seq: %w(of_options |of_state),
          default: []
@@ -319,6 +328,16 @@ class Baltix::Spec::Rpm
 
    def macros name
       [ context.__macros[name] ].flatten(1).map { |x| "%#{name} #{x}" }.join("\n")
+   end
+
+   # Formats explicit path tokens for an RPM macro and the directory-token CLI.
+   # @param tokens [Array<String, Regexp>] configured source path tokens
+   # @return [String] comma-separated tokens retaining their matching behavior
+   # If a token is a regexp, partial-directory wildcards and embedded regexp
+   # flags retain its semantics when the macro is read back as string tokens.
+   # String tokens are emitted unchanged.
+   def path_tokens_for_macro tokens
+      tokens.map { |token| token.is_a?(Regexp) ? "[^/]*#{token}[^/]*" : token }.join(",")
    end
 
    def is_same_source? source_in
