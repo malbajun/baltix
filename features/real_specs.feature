@@ -583,6 +583,7 @@ Feature: Spec actor
       - parse the full ignore macro name rather than treating its suffix as an entry
       - migrate old macro and build option forms to ruby_ignore_names
       - preserve the list through repeated updates of a nested native project
+      - retain rake >= 13.0 from the FFI gemspec when other Gemfiles allow any version
       Given blank space
       And a spec from fixture "llhttp-ffi"
       When developer locks the time to "09.11.2026"
@@ -601,6 +602,8 @@ Feature: Spec actor
          | %ruby_ignore_names gem-llhttp-ffi          |
          | %ruby_use_gem_version llhttp:0.6.1.16      |
          | %ruby_use_gem_version llhttp-ffi:0.5.1.16  |
+         | BuildRequires: gem(rake) >= 13.0          |
+         | BuildConflicts: gem(rake) >= 14           |
       When the generated spec is refreshed 2 times
       Then the parsed ignored names are:
          | gem-llhttp-ffi |
@@ -608,6 +611,8 @@ Feature: Spec actor
          | %ruby_ignore_names gem-llhttp-ffi          |
          | %ruby_use_gem_version llhttp:0.6.1.16      |
          | %ruby_use_gem_version llhttp-ffi:0.5.1.16  |
+         | BuildRequires: gem(rake) >= 13.0          |
+         | BuildConflicts: gem(rake) >= 14           |
 
       Examples:
          | form         |

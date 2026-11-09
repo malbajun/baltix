@@ -443,38 +443,18 @@ module Extensions
          Gem::Requirement.new(res.map {|x|x.join(" ")})
       end
 
-      # merging gem requirement with others strictizing the conditions
+      # Intersects source requirements without changing any operator's meaning.
+      # @param other_requirement [Gem::Requirement] constraints to combine with this requirement
+      # @return [Gem::Requirement] the conjunction of both sets of source constraints
+      # RubyGems evaluates all retained conditions together. Duplicate conditions
+      # are removed; neither operand is modified. Contradictory conditions remain
+      # contradictory instead of compatible pairs becoming an impossible sentinel.
+      # RPM-specific conversions are applied later, after source constraints merge.
       def merge other_requirement
-         reqs_pre = self.requirements | other_requirement.requirements
-         reqs_tmp = []
-
-         while reqs_tmp != reqs_pre
-            reqs_tmp = reqs_pre
-            reqs_pre =
-               reqs_tmp[1..-1].reduce([reqs_tmp.first]) do |res, req|
-                  op1, ver1 = res.last
-                  op2, ver2 = req
-
-                  prc =
-                     Gem::Requirement::AND_RELAS.find do |((left, right, comp), _)|
-                        match = op1 == left && op2 == right &&
-                           case comp
-                           when NilClass
-                              true
-                           when Integer
-                              comp == (ver1 <=> ver2)
-                           when Proc
-                              comp[ver1, ver2]
-                           end
+         constraints = self.requirements | other_requirement.requirements
+         Gem::Requirement.new(constraints.map { |operator, version| "#{operator} #{version}" })
                      end
 
-                  prc && (res[0...-1] | prc) ? prc.last[ver1, ver2] : [INVALID_DEP]
-            end
-         end
-
-         # binding.pry
-         Gem::Requirement.new(reqs_pre.map {|x|x.join(" ")})
-      end
    end
 
    module String

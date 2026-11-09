@@ -260,26 +260,22 @@ class Baltix::Deps
          }
       }
 
+      # Selects the strongest of two lower dependency boundaries.
+      # @param req1 [Array<String, Gem::Version>, nil] first =, >= or > boundary
+      # @param req2 [Array<String, Gem::Version>, nil] second =, >= or > boundary
+      # @return [Array<String, Gem::Version>, nil] the selected boundary
+      # If either boundary is empty, the other is returned. The greater version
+      # wins; at equal versions > takes priority over = and >=. Exact equality
+      # otherwise takes priority over >=. Neither argument is modified.
       def merge req1, req2
          return req1 if req2.blank?
          return req2 if req1.blank?
 
-         m = [req1[1], req2[1]].max
-
-         if req1[0] == req2[0]
-            [req1[0], m]
-         elsif req1[0] == ">="
-            req1[1] <= req2[1] ? [">", m] : [">=", m]
-         elsif req1[0] == ">"
-            req1[1] >= req2[1] ? [">", m] : [">=", m]
-         elsif %w(= < <=).include?(req1[0])
-            # unsupported
-            req2
-         else
-            # unsupported
-            req1
+         [req1, req2].max_by do |operator, version|
+            [version, operator == '>' ? 2 : operator == '=' ? 1 : 0]
          end
       end
+
    end
 
    protected

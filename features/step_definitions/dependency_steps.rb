@@ -27,13 +27,13 @@ Then('the generated dependency requirement for {string} is {string}') do |name, 
    generated.eval_gemfile(@dependency_gemfile, @dependency_dsl.to_gemfile)
    dependency = generated.dependencies.find { |dep| dep.name == name }
    expect(dependency).to_not be_nil
-   expect(dependency.requirement.to_s).to eql(Gem::Requirement.new(requirement.split(/,\s*/)).to_s)
+   expect(dependency.requirement).to eq(Gem::Requirement.new(requirement.split(/,\s*/)))
 end
 
 Then('the definition dependency requirement for {string} is {string}') do |name, requirement|
    dependency = @dependency_dsl.definition.dependencies.find { |dep| dep.name == name }
    expect(dependency).to_not be_nil
-   expect(dependency.requirement.to_s).to eql(Gem::Requirement.new(requirement.split(/,\s*/)).to_s)
+   expect(dependency.requirement).to eq(Gem::Requirement.new(requirement.split(/,\s*/)))
 end
 
 Then('the project dependencies exclude:') do |table|
@@ -74,7 +74,7 @@ end
 Then('the development dependencies include {string} with requirement {string}') do |name, requirement|
    dependency = @dependency_dsl.all_dependencies_for(kinds_in: :devel).find { |dep| dep.name == name }
    expect(dependency).to_not be_nil
-   expect(dependency.requirement.to_s).to eql(Gem::Requirement.new(requirement.split(/,\s*/)).to_s)
+   expect(dependency.requirement).to eq(Gem::Requirement.new(requirement.split(/,\s*/)))
 end
 
 Then('the generated Gemfile declares {string} in group {string} with requirement {string}') do |name, group, requirement|
@@ -111,4 +111,27 @@ Then('source {string} declares native extensions:') do |name, table|
    source = space.valid_sources.find { |item| item.is_a?(Baltix::Source::Gem) && item.name == name }
    expect(source).to_not be_nil
    expect(source.spec.extensions.sort).to eql(table.raw.flatten.sort)
+end
+
+Then('requirement intersections preserve these version checks:') do |table|
+   table.hashes.each do |row|
+      left = Gem::Requirement.new(row['left'].split(',').map(&:strip))
+      right = Gem::Requirement.new(row['right'].split(',').map(&:strip))
+      originals = [left.requirements.dup, right.requirements.dup]
+      merged = [left.merge(right), right.merge(left)]
+      %w(allowed rejected).each do |kind|
+         row[kind].split(',').reject(&:empty?).each do |version|
+            merged.each do |requirement|
+               expect(requirement.satisfied_by?(Gem::Version.new(version))).to eql(kind == 'allowed'), "#{row['left']} & #{row['right']} at #{version}"
+            end
+         end
+      end
+      unless row['lower'].empty?
+         merged.each do |requirement|
+            boundary = Baltix::Deps.lower_to_rpm(requirement).map(&:to_s).join(' ')
+            expect(boundary).to eql(row['lower'])
+         end
+      end
+      expect([left.requirements, right.requirements]).to eql(originals)
+   end
 end

@@ -20,7 +20,7 @@ BuildRequires(pre): rpm-macros-ruby setup-rb rake
 BuildRequires: gem(async) >= 0
 BuildRequires: gem(ffi-compiler) >= 1.0
 BuildRequires: gem(io-endpoint) >= 0
-BuildRequires: gem(rake) >= 0
+BuildRequires: gem(rake) >= 13.0
 BuildRequires: gem(rake-compiler) >= 0
 BuildRequires: gem(rspec) >= 0
 BuildRequires: gem(standardrb) >= 0
