@@ -1,4 +1,5 @@
 require 'rake'
+require 'tempfile'
 
 require 'baltix'
 require 'baltix/log'

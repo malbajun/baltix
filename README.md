@@ -35,8 +35,11 @@ Or install it yourself as:
 
 ### Ruby packaging policy
 
-Ruby Policy 2.0 is obsolete. Baltix is being updated for Ruby Policy 2.1,
-which is currently a draft.
+[Ruby Policy 2.0](https://en.altlinux.org/Ruby/Policy_2.0) is obsolete.
+Baltix is being updated for [Ruby Policy 2.1](docs/ruby-policy-2.1.md),
+which is currently a draft. The policy states the rules concisely; the
+[Versioning](docs/ruby-versioning.md) and [Dependencies](docs/ruby-dependencies.md)
+guides provide explanations and examples.
 
 The 2.1 draft replaces the obsolete `rpm-build-ruby` build prerequisite with:
 
@@ -79,6 +82,23 @@ When you are creating a spec for the space from a scratch sample call may be as 
 When you are updating the spec do something like:
 
     $ /usr/bin/baltix -s $(find -name "*.spec~") -o _.spec -g/home/majioa/available-list.yaml spec
+
+Use `--rake-task-before=LIST` to run comma-separated Rake tasks before the
+following Baltix command:
+
+```sh
+baltix --rake-task-before=generate --output-file=generated.spec spec
+```
+
+Options and commands are processed in order. The Rake task list is consumed
+by the next command; later commands run without it unless another list is
+specified. Repeated commands are executed separately. The equivalent config
+option is `rake_task_before: [generate]`; an explicit CLI list replaces it.
+Task failures stop the command stream. Tasks use their actual build libraries
+inside the current Ruby process, including imported and plugin-defined tasks.
+
+When updating an RPM spec, the obsolete `%ruby_build --pre=LIST` declaration
+is migrated to `%ruby_on_build_rake_tasks LIST`. `--pre` is not a Baltix CLI option.
 
 
 ## Development

@@ -28,8 +28,8 @@ Gem::Specification.new do |spec|
    spec.require_paths = ["lib"]
 
    spec.required_ruby_version = [ '>= 3.0.0' ]
+   spec.add_runtime_dependency "rake", ">= 13.0.6"
    spec.add_development_dependency "bundler", "~> 2.0"
-   spec.add_development_dependency "rake", ">= 12.0"
    spec.add_development_dependency "pry", "~> 0.13"
    spec.add_development_dependency "cucumber", "~> 5.2"
    spec.add_development_dependency "shoulda-matchers-cucumber", "~> 1.0", ">= 1.0.1"

@@ -1,11 +1,13 @@
 require 'optparse'
 require 'ostruct'
 require 'yaml'
+require 'shellwords'
 
 require 'baltix'
 require 'baltix/space'
 require 'baltix/actor'
 require 'baltix/log'
+require 'baltix/rake'
 
 class Baltix::CLI
    include Baltix::Log
@@ -32,6 +34,7 @@ class Baltix::CLI
       debug_io: 'stderr',
       high_default_dependencies_priority: false,
       autorender_name: false,
+      rake_task_before: [].freeze,
       skip_platforms: %i(jruby mingw mswin).freeze
    }.to_os.freeze
 
@@ -46,6 +49,10 @@ class Baltix::CLI
 
             opts.on("--source-lib-folders=FOLDERS", Array, "Lib directories for the current source or at whole") do |list|
                options[:source_lib_folders] = list.compact
+            end
+
+            opts.on("--rake-task-before=LIST", Array, "Run comma-separated Rake tasks before the next Baltix action") do |list|
+               options.rake_task_before = list.compact.reject(&:empty?)
             end
 
             opts.on("-I", "--ignore-names=LIST", Array, "Source names comma-separated ignore list") do |list|
@@ -171,18 +178,34 @@ class Baltix::CLI
       @actions ||= parse.actions.select { |a| Baltix::Actor.kinds.include?(a) }
    end
 
+   # Parses options and commands in their original order.
+   # Takes no parameters.
+   # @return [OpenStruct] final options, action names and per-action option snapshots
+   # Each recognized action consumes rake_task_before. Later options affect later
+   # actions only, and repeated actions remain distinct. A task list without a
+   # following action raises OptionParser::MissingArgument; invalid options raise.
    def parse!
       return @parse if @parse
 
-      option_parser.parse!
+      action_names = []
+      invocations = []
+      option_parser.order! do |name|
+         action_names << name
+         if Baltix::Actor.kinds.include?(name)
+            invocations << { name: name, options: options.deep_dup }
+            options.rake_task_before = []
+         end
+      end
 
-      @parse = OpenStruct.new(options: options, actions: option_parser.default_argv)
+      unless Array(options.rake_task_before).empty?
+         raise OptionParser::MissingArgument, 'following command for --rake-task-before'
+      end
+
+      @parse = OpenStruct.new(options: options, actions: action_names, invocations: invocations)
    end
 
    def parse
       parse!
-   rescue OptionParser::InvalidOption
-      @parse = OpenStruct.new(options: options, actions: option_parser.default_argv)
    end
 
    def space
@@ -193,21 +216,65 @@ class Baltix::CLI
       @space = value
    end
 
+   # Executes the parsed stream of actions and their associated Rake tasks.
+   # Takes no parameters.
+   # @return [Array<Object>] actor results in command-line order, including repeats
+   # If an action has preceding Rake tasks, they run before its sources are read.
+   # Every action receives its own options and space. Failures are logged and
+   # propagated so the actor and subsequent actions do not run after a failed task.
    def run
-      actions.reduce({}.to_os) do |res, action_name|
-         res[action_name] = Baltix::Actor.for!(action_name, space)
-
-         res
-      end.map do |action_name, actor|
+      parse.invocations.map do |invocation|
+         @space = Baltix::Space.load_from(options: invocation[:options])
+         run_rake_tasks_before(Array(space.options.rake_task_before))
+         actor = Baltix::Actor.for!(invocation[:name], space)
          actor.apply_to(space)
       end
-   rescue SystemExit, Interrupt
-   rescue Exception => e
-      # binding.pry
+   rescue StandardError => e
       error("[#{e.class}]: #{e.message}\n\t#{e.backtrace.join("\n\t")}")
+      raise
    end
 
+   # Creates a CLI from process arguments or an explicit argument sequence.
+   # @param argv [Array<String>, String, nil] tokens, a shell-style string, or ARGV
+   # @return [Baltix::CLI] the unparsed command interface
+   # Nil leaves OptionParser's process arguments in use; strings preserve quoted
+   # arguments through Shellwords, and arrays are copied without reordering.
    def initialize argv = nil
-      @argv = argv&.split(/\s+/)
+      @argv = argv.is_a?(String) ? Shellwords.split(argv) : argv&.dup
+   end
+
+   private
+
+   # Finds project Rakefiles and runs the task list attached to the next action.
+   # @param task_names [Array<String, Symbol>] ordered names, including legacy @ markers
+   # @return [Array<String>] unique executed task names; an empty list when none are requested
+   # If a root Rakefile exists it owns the tasks. Otherwise nested Rakefiles are
+   # searched using the space's source filters, with one default Rakefile per folder.
+   # Missing Rakefiles or tasks raise before the actor reads or writes its outputs.
+   def run_rake_tasks_before task_names
+      return [] if task_names.empty?
+
+      defaults = ::Rake::Application::DEFAULT_RAKEFILES
+      root_file = defaults.map {|name| File.join(space.rootdir, name) }.find {|file| File.file?(file) }
+      files = if root_file
+         [root_file]
+      else
+         Dir.glob(File.join(space.rootdir, '**', "{#{defaults.join(',')}}"), File::FNM_DOTMATCH).
+            select {|file| File.file?(file) }.group_by {|file| File.dirname(file) }.values.map do |candidates|
+               candidates.min_by {|file| defaults.index(File.basename(file)) }
+            end.sort.reject do |file|
+               source = Baltix::Source::Rakefile.new(source_file: file)
+               space.is_disabled?(source)
+            end
+      end
+      raise Baltix::Rake::InvalidRakefileError, "No Rakefile in #{space.rootdir}" if files.empty?
+
+      executed = files.flat_map do |file|
+         Baltix::Rake.new(file, runtime: true).run_tasks(task_names, :if_defined)
+      end.uniq
+      missing = task_names.map {|name| name.to_s.delete_prefix('@') }.uniq - executed
+      raise ArgumentError, "Rake tasks not found: #{missing.join(', ')}" unless missing.empty?
+
+      executed
    end
 end

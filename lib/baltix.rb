@@ -12,6 +12,16 @@ require 'baltix/deps'
 require "baltix/license"
 
 module Baltix
+   METADATA_LIBRARIES = {
+      Hoe: "hoe",
+      Levitate: "levitate",
+      Echoe: "echoe",
+      Olddoc: "olddoc",
+      Wrongdoc: "olddoc",
+      Bones: "bones",
+      Jeweler: "jeweler",
+   }.freeze
+
    ::Object.include(Extensions::Object)
    ::OpenStruct.include(Extensions::OpenStruct)
    ::String.include(Extensions::String)
@@ -57,15 +67,7 @@ module Baltix
    end
 end
 
-{
-  :Hoe => "hoe",
-  :Levitate => "levitate",
-  :Echoe => "echoe",
-  :Olddoc => "olddoc",
-  :Wrongdoc => "olddoc",
-  :Bones => "bones",
-  :Jeweler => "jeweler",
-}.each do |mod, req|
+Baltix::METADATA_LIBRARIES.each do |mod, req|
    unless (mod.constantize rescue nil)
       Kernel.autoload(mod, File.dirname(__FILE__) + "/baltix/extensions/#{req}")
    end
