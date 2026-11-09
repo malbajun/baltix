@@ -60,7 +60,7 @@ class Baltix::Spec::Rpm::Parser
       build_requires: {
          non_contexted: true,
          regexp: /^BuildRequires:\s*([^#]+)/i,
-         parse_func: :parse_dep
+         parse_func: :parse_build_requires
       },
       obsoletes: {
          regexp: /^Obsoletes:\s*([^#]+)/i,
@@ -290,9 +290,29 @@ class Baltix::Spec::Rpm::Parser
       end.reverse
    end
 
-   def parse_dep match, *_
+   # Parses RPM dependency declarations into gem dependencies or package strings.
+   # @param match [Array<String>] captures with declarations at index 1
+   # @param preserve_versions [Boolean] whether to retain explicit gem constraints
+   # @return [Array<Gem::Dependency, String>] parsed gem and package dependencies
+   # If version preservation is enabled, a gem's explicit constraint is retained.
+   # Otherwise gem constraints default to >= 0. Non-gem declarations stay strings.
+   def parse_dep match, *_, preserve_versions: false
       deps = match[1].scan(/[^\s]+(?:\s+[<=>]+\s+[^\s]+)?/)
-      deps.map {|d| /^(gem|rubygem|ruby-gem)\(([^\)]+)\)/ =~ d ? Gem::Dependency.new($2, Gem::Requirement.new([">= 0"])) : d }
+      deps.map do |declaration|
+         if gem = /\A(?:gem|rubygem|ruby-gem)\(([^\)]+)\)/.match(declaration)
+            requirement = preserve_versions && declaration[gem.end(0)..].strip
+            Gem::Dependency.new(gem[1], requirement.present? ? requirement : '>= 0')
+         else
+            declaration
+         end
+      end
+   end
+
+   # Parses build requirements without discarding explicit gem version bounds.
+   # @param match [Array<String>] captures with build declarations at index 1
+   # @return [Array<Gem::Dependency, String>] gem requirements and RPM package strings
+   def parse_build_requires match, *_
+      parse_dep(match, preserve_versions: true)
    end
 
    def parse_ignore match, *_

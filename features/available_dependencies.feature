@@ -142,3 +142,37 @@ Feature: Available gem versions and dependency override macros
       And package "gem-mustermann" contains dependency lines:
          | Requires:      gem(ruby2_keywords) >= 0.0.1 |
          | Conflicts:     gem(ruby2_keywords) >= 0.1   |
+
+   Scenario Outline: Preserve external gem build requirements absent from source metadata
+      - retain an externally identified tool such as Ruby Next parser's cliver
+      - keep explicit version bounds outside the optional checks section
+      - reconstruct known source dependencies rather than retaining stale input bounds
+      Given blank space
+      And a spec from fixture "rbvmomi"
+      When developer locks the time to "21.04.2021"
+      And he sets the space options as:
+         | options            | value                     |
+         | rootdir            | features/fixtures/rbvmomi |
+         | available_gem_list | {rake: '15.0'}            |
+      And the input spec has extra build requirements:
+         | <declaration>   |
+         | gem(rake) >= 99 |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the unconditional build requirements include:
+         | BuildRequires: <expected> |
+      And the generated build requirements for "rake" are:
+         | BuildRequires: gem(rake) >= 10.5 |
+      And package "gem-rbvmomi" does not require "cliver"
+      When the generated spec is refreshed 2 times
+      Then the unconditional build requirements include:
+         | BuildRequires: <expected> |
+      And the generated build requirements for "rake" are:
+         | BuildRequires: gem(rake) >= 10.5 |
+      And package "gem-rbvmomi" does not require "cliver"
+
+      Examples:
+         | declaration        | expected           |
+         | gem(cliver)        | gem(cliver) >= 0   |
+         | gem(cliver) >= 1.0 | gem(cliver) >= 1.0 |
+         | gem(cliver) < 2    | gem(cliver) < 2    |

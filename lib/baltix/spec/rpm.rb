@@ -729,17 +729,32 @@ class Baltix::Spec::Rpm
       end
    end
 
-   # Removes Ruby build requirements that are reconstructed from source metadata.
+   # Retains external gem build requirements while reconstructing known gems.
    # @param value_in [Array<Gem::Dependency, String>] parsed RPM build requirements
-   # @return [Array<Gem::Dependency, String>] requirements retained before reconstruction
-   # If a Ruby-prefixed string names a separate -headers-devel package, it is
-   # retained because gem(name) does not identify that header package. Other
-   # Ruby-prefixed strings are removed; non-string entries and unrelated RPM
-   # requirements are retained.
+   # @return [Array<String>] requirements retained before source reconstruction
+   # If a gem is declared in source metadata or provided by this spec, its old
+   # requirement is removed for reconstruction, including ignored platform gems.
+   # Other gems retain their explicit bounds as RPM declarations. Ruby-prefixed
+   # package strings are removed except for separate -headers-devel packages;
+   # unrelated package strings are retained.
    def _filter_out_build_auto_requires value_in
-      value_in.reject do |value|
-         value.is_a?(String) && /^(#{Baltix::Spec::Rpm::Name::PREFICES.join('|')})[\-(]/ =~ value &&
+      known_names = space.dependencies.map(&:name) | space.valid_sources.flat_map do |source|
+         [source.name] | source.dsl.dsl.dependencies.map(&:name)
+      end
+
+      value_in.flat_map do |value|
+         if value.is_a?(Gem::Dependency)
+            if known_names.include?(value.name)
+               []
+            else
+               value.requirement.requirements.map { |relation, version| "#{prefix}(#{value.name}) #{relation} #{version}" }
+            end
+         elsif value.is_a?(String) && /^(#{Baltix::Spec::Rpm::Name::PREFICES.join('|')})[\-(]/ =~ value &&
             !value.match?(/\A\S+-headers-devel(?:\s|\z)/)
+            []
+         else
+            [value]
+         end
       end
    end
 
