@@ -112,3 +112,46 @@ windows/mingw paltform filter - mixlib-shellout
 duplicated gem-gem- in names for gem-chef-licensing gem
 
 man file - rake
+
+
+
+analyze.
+fake-version-increase (like turn gem to 1.0.0): cond: no-bump(in git), no-tag, no-pushlish-rubygems
+force-change-version-required: context: source, val:[true/false]
+prefix: context: git/tag - prefix for current tag: examp: v for v@tag, branch/v for branch/v@tag, :nil for @tag
+flow: context: repo, values:
+- gear: spec in .gear
+- geared_srpm: spec in .gear, code in <name>
+- srpm: spec in root, code in <name>
+- plain: spec in root, code in tag
+
+
+tag:
+- generate:
+ - on release:
+ - after bump: like gem-gettext
+- prefix: ()\v\(etc)
+
+
+HROUPS:
+check: only test+runtime group deps 
+devel: all the group deps including test,devel,runtime + dep to -headers
+doc: only docs
+headers: headers only package
+
+
+GEMFILE group definitions
+group - kinds(tags)
+dev/ - +dev
+/test,/tests,/spec,/feature - +test
+(default) - +exec -lib +dev +test +app
+(specific: not dev/not test/but not default) - +dev +app
+
+EXTFILE
+(call to gem from within) - +build
+
+
+
+---
+devel.
+- dep only requires (conflicts are not needed)
