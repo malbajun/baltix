@@ -73,7 +73,7 @@ class Baltix::Spec::Rpm::Parser
       },
       provides: {
          regexp: /^Provides:\s*([^#]+)/i,
-         parse_func: :parse_dep
+         parse_func: :parse_provides
       },
       requires: {
          regexp: /^Requires:\s*([^#]+)/i,
@@ -332,6 +332,13 @@ class Baltix::Spec::Rpm::Parser
    # @param match [Array<String>] captures with build declarations at index 1
    # @return [Array<Gem::Dependency, String>] gem requirements and RPM package strings
    def parse_build_requires match, *_
+      parse_dep(match, preserve_versions: true)
+   end
+
+   # Parses RPM and gem capabilities without losing their declared versions.
+   # @param match [Array<String>] captures with capability declarations at index 1
+   # @return [Array<Gem::Dependency, String>] typed gem capabilities and RPM strings
+   def parse_provides match, *_
       parse_dep(match, preserve_versions: true)
    end
 

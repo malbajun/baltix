@@ -63,7 +63,6 @@ Group:         Development/Ruby
 BuildArch:     noarch
 
 Requires:      ruby >= 2.2.0
-Provides:      ruby-next-core = %EVR
 Provides:      gem(ruby-next-core) = 1.2.0
 
 %description   -n gem-ruby-next-core

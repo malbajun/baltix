@@ -33,7 +33,6 @@ BuildConflicts: gem(rake-compiler) >= 2
 %ruby_use_gem_dependency rake-compiler >= 0.7.1,rake-compiler < 2
 Obsoletes:     ruby-hiredis < %EVR
 Provides:      ruby-hiredis = %EVR
-Provides:      hiredis = %EVR
 Provides:      gem(hiredis) = 0.6.3.14.1
 
 %ruby_use_gem_version hiredis:0.6.3.14.1

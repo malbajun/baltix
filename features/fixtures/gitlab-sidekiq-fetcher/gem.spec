@@ -34,7 +34,6 @@ BuildConflicts: gem(stub_env) >= 2
 Requires:      gem(json) >= 2.5
 Requires:      gem(sidekiq) >= 6.1
 Conflicts:     gem(sidekiq) >= 8
-Provides:      gitlab-sidekiq-fetcher = %EVR
 Provides:      gem(gitlab-sidekiq-fetcher) = 0.9.0
 
 %description

@@ -301,6 +301,8 @@ Feature: Spec actor
       Then the generated spec contains each line once:
          | %ruby_use_gem_version hiredis:0.6.3.14.1 |
          | Provides:      gem(hiredis) = 0.6.3.14.1 |
+      And the generated spec excludes the lines:
+         | Provides:      hiredis = %EVR |
       And he acquires an "hiredis" fixture spec for the baltix setup
       And the generated spec contains the lines:
          | %ruby_use_gem_dependency minitest >= 5.5.1,minitest < 7           |
