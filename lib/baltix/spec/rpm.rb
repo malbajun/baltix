@@ -664,12 +664,12 @@ class Baltix::Spec::Rpm
       secondaries_in = of_state(:secondaries) || []
 
       # binding.pry
-      # Match the main source through RPM aliases so its repository metadata
-      # cannot produce a second package with the same normalized name.
-      main_name = source && Name.parse(source.name)
-      to_ignore = ([main_name] | ignored_names).flatten.compact
+      # Match real gems by their full gem names and repository metadata by RPM
+      # aliases, preserving distinct ruby-prefixed gems without duplicating the main package.
+      main_name = source && Name.for_gem(source.name)
       secondaries = valid_sources.reject do |source_in|
-         to_ignore.any? { |i| i === source_in.name }
+         candidate_name = source_in.is_a?(Baltix::Source::Gem) ? Name.for_gem(source_in.name) : source_in.name
+         main_name === candidate_name || ignored_names.any? { |ignored| ignored === source_in.name }
       end.map do |source|
          state =
             secondaries_in.find do |osec|

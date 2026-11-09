@@ -22,3 +22,7 @@ When('he sets the space options as:') do |table|
       end
    space.options = opts
 end
+
+When('the input spec is named {string}') do |name|
+   @spec_in = @spec_in.sub(/^Name:[^\n]+/, "Name:          #{name}")
+end

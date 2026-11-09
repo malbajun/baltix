@@ -164,6 +164,8 @@ class Baltix::Space
    # Takes no parameters and returns a source, or nil when no candidate exists.
    # If the loaded spec names a real source, that source takes precedence;
    # a gem is preferred over repository metadata matching the same name.
+   # Literal gem names represented by the RPM library name take precedence
+   # over legacy package aliases, keeping progressbar and ruby-progressbar distinct.
    # If the root source is not a gem, a nested gem matching its RPM name aliases
    # is preferred. If the root is synthetic and no matching gem exists, the sole
    # real source is used. Otherwise the root source is retained. A previously
@@ -175,7 +177,10 @@ class Baltix::Space
       reals = valid_sources.select { |source| !source.is_a?(Baltix::Source::Fake) }
 
       if spec && !spec.state.blank?
-         specen_source = (reals.grep(Baltix::Source::Gem) | reals).find { |real| spec.state["name"] === real.name }
+         gems = reals.grep(Baltix::Source::Gem)
+         library_name = Baltix::Spec::Rpm::Name.parse(spec.state["name"]).as("lib")
+         specen_source = gems.find { |real| library_name == Baltix::Spec::Rpm::Name.for_gem(real.name) } ||
+            (gems | reals).find { |real| spec.state["name"] === real.name }
       end
 
       root_source ||= valid_sources.sort {|x, y| x.name.size <=> y.name.size }.find { |source| source.rootdir == rootdir }
