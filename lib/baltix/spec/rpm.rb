@@ -596,6 +596,9 @@ class Baltix::Spec::Rpm
    # @return [OpenStruct] override requirements keyed by dependency name
    # An override is retained when it changes a dependency of the main source or
    # another packaged source, so secondary gems also receive a build-time macro.
+   # Version exclusions select one source interval even without available versions;
+   # its macro and RPM requirements/conflicts use the same bounds.
+   # If available versions are too old, exclusions still use the source interval.
    # If a gem is itself packaged from these sources, it is excluded from external
    # version overrides and retains its source version.
    def _versioned_gem_list _value_in
@@ -603,14 +606,20 @@ class Baltix::Spec::Rpm
       packaged_names = packaged_sources.grep(Baltix::Source::Gem).map(&:name)
       dependencies = packaged_sources.flat_map(&:all_dependencies)
 
-      available_gem_ranges.reduce({}.to_os) do |result, name, available|
+      excluded_names = dependencies.select do |dependency|
+         dependency.requirement.requirements.any? { |operator, _| operator == '!=' }
+      end.map(&:name)
+      names = available_gem_ranges.to_h.keys.map(&:to_s) | excluded_names
+      names.reduce({}.to_os) do |result, name|
+         available = available_gem_ranges[name]
          next result if packaged_names.include?(name.to_s)
 
          matching = dependencies.select { |dep| dep.name == name.to_s }
          next result if matching.empty?
 
          override = _available_dependency_override(available, matching)
-         if override && matching.any? { |dep| combine_deps(dep, override).requirement.requirements != dep.requirement.expand.requirements }
+         override ||= _available_dependency_override(nil, matching) if excluded_names.include?(name)
+         if override && (excluded_names.include?(name) || matching.any? { |dep| combine_deps(dep, override).requirement.requirements != dep.requirement.expand.requirements })
             result[name] = override
          end
 
@@ -619,12 +628,16 @@ class Baltix::Spec::Rpm
    end
 
    # Builds an availability override without lowering any source minimum.
-   # @param available [Gem::Dependency] range inferred from the available gem list
+   # @param available [Gem::Dependency, nil] optional range inferred from the available gem list
    # @param dependencies [Array<Gem::Dependency>] current source requirements for this gem
    # @return [Gem::Dependency, nil] the corrected range, or nil when all available versions are too old
    # The lower bound is the greatest source minimum, independent of availability.
    # The source upper bound is the least source maximum; availability may raise
    # it, but cannot narrow it. If sources have no maximum, it stays unbounded.
+   # Excluded versions narrow the source maximum so RPM conflicts use >=.
+   # Without an available list, the resulting source interval is still returned.
+   # An exclusion at the minimum makes that minimum exclusive; exclusions below
+   # the minimum do not constrain the selected interval.
    # If a source uses >, its exclusive minimum is preserved; = and ~> supply
    # inclusive minimums. If no available version reaches the source minimum,
    # no override is produced. Historical spec macros do not participate.
@@ -638,8 +651,14 @@ class Baltix::Spec::Rpm
          end
       end
       minimum = minimums.max_by { |operator, version| [version, operator == '>' ? 1 : 0] } || ['>=', Gem::Version.new(0)]
+      excluded_minimum = dependencies.any? do |dependency|
+         dependency.requirement.requirements.any? { |operator, version| operator == '!=' && version.release == minimum[1] }
+      end
+      minimum = ['>', minimum[1]] if excluded_minimum
+      if available
       versions = Array(available_gem_list[available.name]).map { |version| Gem::Version.new(version.to_s) }
       return nil unless versions.any? { |version| minimum[0] == '>' ? version > minimum[1] : version >= minimum[1] }
+      end
 
       maximums = dependencies.flat_map do |dependency|
          dependency.requirement.requirements.filter_map do |operator, version|
@@ -647,16 +666,17 @@ class Baltix::Spec::Rpm
             when '<', '<=' then [operator, version]
             when '=' then ['<=', version]
             when '~>' then ['<', version.bump]
+            when '!=' then ['<', version.release] if version.release > minimum[1]
             end
          end
       end
       maximum = maximums.min_by { |operator, version| [version, operator == '<' ? 0 : 1] }
       requirements = [minimum]
       if maximum
-         available_maximums = available.requirement.requirements.select { |operator, _| %w(< <=).include?(operator) }
+         available_maximums = available ? available.requirement.requirements.select { |operator, _| %w(< <=).include?(operator) } : []
          requirements << ([maximum] + available_maximums).max_by { |operator, version| [version, operator == '<=' ? 1 : 0] }
       end
-      Gem::Dependency.new(available.name, Gem::Requirement.new(requirements.map { |pair| pair.join(' ') }))
+      Gem::Dependency.new(dependencies.first.name, Gem::Requirement.new(requirements.map { |pair| pair.join(' ') }))
    end
 
    def _gem_versionings_with_use value_in

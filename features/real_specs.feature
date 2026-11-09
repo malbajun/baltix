@@ -645,6 +645,39 @@ Feature: Spec actor
       And he applies "spec" actor to the baltix setup
       Then he acquires an "kgio" fixture spec for the baltix setup
 
+   @scratch @blank_setup @main_is_gem
+   Scenario Outline: Preserve a common source interval for rails-html-sanitizer security exclusions
+      - use the upstream 1.7.2 gemspec and Gemfile
+      - keep the source minimum and narrow the maximum at the first excluded version
+      - use identical bounds in the dependency macro, Requires and Conflicts
+      - work without an available list and widen the maximum only when one is supplied
+      - preserve the selected interval through repeated spec updates
+      Given blank space
+      When developer locks the time to "09.11.2026"
+      And he sets the space options as:
+         | options            | value                                      |
+         | rootdir            | features/fixtures/rails-html-sanitizer-1.7 |
+         | available_gem_list | <available>                                |
+         | maintainer.name    | Pavel Skrylev                              |
+         | maintainer.email   | majioa@altlinux.org                        |
+      And he applies "spec" actor to the baltix setup
+      Then package "gem-rails-html-sanitizer" contains dependency lines:
+         | Requires:      gem(nokogiri) >= 1.15.7    |
+         | Conflicts:     gem(nokogiri) >= <maximum> |
+      And the generated spec contains each line once:
+         | %ruby_use_gem_dependency nokogiri >= 1.15.7,nokogiri < <maximum> |
+         | BuildRequires: gem(nokogiri) >= 1.15.7                           |
+         | BuildConflicts: gem(nokogiri) >= <maximum>                       |
+      And the generated spec matches "<expected>" from fixture "rails-html-sanitizer-1.7"
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "<expected>" from fixture "rails-html-sanitizer-1.7"
+
+      Examples:
+         | available            | maximum | expected       |
+         | {}                   | 1.16.0  | gem.spec       |
+         | {nokogiri: '1.14.0'} | 1.16.0  | gem.spec       |
+         | {nokogiri: '1.16.8'} | 2       | available.spec |
+
    @policy2_0 @gem_change @main_is_gem
    Scenario: Migrate rbvmomi from obsolete Ruby Policy 2.0 to 2.1 using available gem versions
       - blank packager
