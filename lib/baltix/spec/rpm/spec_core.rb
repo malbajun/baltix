@@ -229,6 +229,8 @@ module Baltix::Spec::Rpm::SpecCore
    end
 
    def _summaries value_in
+      return value_in if source.is_a?(Baltix::Source::Fake) && of_state(:summaries).present?
+
       source_name = source&.name
       summaries_in = @host && host.summaries || of_source(:summaries) || {}.to_os
 
@@ -483,7 +485,7 @@ module Baltix::Spec::Rpm::SpecCore
 
    def _host_require value_in
       if is_aux?
-         [ host.is_app? ? "#{host.name} = #{host.evr}" : provide_dep ].compact
+         [ host.is_app? ? "#{host.name} = #{host.evr}" : source.is_a?(Baltix::Source::Fake) ? host.provide_dep : provide_dep ].compact
       end
    end
 

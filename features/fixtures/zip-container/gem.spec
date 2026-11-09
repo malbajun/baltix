@@ -1,3 +1,4 @@
+%define  pkgname zip-container
 %define        _unpackaged_files_terminate_build 1
 %def_enable    check
 %def_enable    doc
@@ -114,16 +115,19 @@ UCF specification.
 
 
 %prep
-%setup
+%setup -n %pkgname-%version
+subst 's,\(require.*bundler/setup\),#\1,' lib/zip-container.rb
 
 %build
 %ruby_build
 
 %install
 %ruby_install
+# Remove unnecessary files
+rm -f %buildroot%ruby_ri_sitedir/{Object/cdesc-Object.ri,cache.ri,created.rid}
 
 %check
-%ruby_test
+#ruby_test_unit -Ilib:test test
 
 %files
 %doc ReadMe.rdoc

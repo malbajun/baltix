@@ -217,6 +217,20 @@ choosing the right one (providing default implementations as well).
 %endif
 
 
+%package       -n dynflow
+Version:       2.0.1
+Release:       alt1.1
+Summary:       DYNamic workFLOW engine executable(s)
+Summary(ru_RU.UTF-8): Исполнямка для самоцвета dynflow
+Group:         Development/Other
+BuildArch:     noarch
+
+Requires:      gem(dynflow) = 2.0.1
+
+%description   -n dynflow
+Ruby workflow/orchestration engine
+
+
 %prep
 %setup
 
@@ -225,9 +239,26 @@ choosing the right one (providing default implementations as well).
 
 %install
 %ruby_install
+install -Dm0755 %SOURCE1 %buildroot%_sbindir/dynflow
+install -Dm0644 %SOURCE2 %buildroot%_sysconfdir/sysconfig/dynflow
+install -Dm0644 %SOURCE3 %buildroot%_unitdir/dynflow.service
+mkdir -p %buildroot%_sharedstatedir/dynflow %buildroot%_logdir/dynflow %buildroot/run/dynflow
 
 %check
 %ruby_test
+
+%pre           -n dynflow
+# Add the "dynflow" user and group
+getent group dynflow >/dev/null || %_sbindir/groupadd -r dynflow
+getent passwd _dynflow >/dev/null || \
+   %_sbindir/useradd -r -g dynflow -d %_sharedstatedir/dynflow -s /bin/bash -c "Dynflow service" _dynflow
+exit 0
+
+%post          -n dynflow
+%post_service dynflow
+
+%preun         -n dynflow
+%preun_service dynflow
 
 %files
 %ruby_gemspec
@@ -241,6 +272,15 @@ choosing the right one (providing default implementations as well).
 %if_enabled    devel
 %files         -n gem-dynflow-devel
 %endif
+
+%files         -n dynflow
+%doc MIT-LICENSE README.md
+%_sbindir/dynflow
+%_unitdir/dynflow.service
+%config(noreplace) %_sysconfdir/sysconfig/dynflow
+%attr(770,_dynflow,dynflow) %_sharedstatedir/dynflow
+%attr(770,_dynflow,dynflow) %_logdir/dynflow
+%attr(770,_dynflow,dynflow) /run/dynflow
 
 
 %changelog

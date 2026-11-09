@@ -1,3 +1,4 @@
+%define        pkgname rbvmomi
 %define        _unpackaged_files_terminate_build 1
 %def_enable    check
 %def_enable    doc
@@ -153,7 +154,7 @@ used alongside the official documentation.
 
 %files         -n rbvmomish
 %doc LICENSE README.md
-%_bindir/rbvmomish
+%_bindir/*
 
 %if_enabled    doc
 %files         -n gem-rbvmomi-doc

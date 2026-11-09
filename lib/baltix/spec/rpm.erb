@@ -1,6 +1,9 @@
 <% if has_comment? -%>
 <%= comment -%>
 <% end -%>
+<% custom_macros.each do |line| -%>
+<%= line %>
+<% end -%>
 %define        _unpackaged_files_terminate_build 1
 %def_enable    check
 <% if has_any_docs? -%>
@@ -145,19 +148,23 @@ Provides:      <%= dep %>
 
 <% end -%>
 %prep
-%setup
-<% if has_patches? -%>
+<%= preserved_script(:prep) %>
+<% if has_patches? && !prep.to_s.match?(/^\s*%(?:autopatch|patch\d*)\b/) -%>
 %autopatch
 <% end -%>
 
 %build
-%ruby_build
+<%= preserved_script(:build) %>
 
 %install
-%ruby_install
+<%= preserved_script(:install) %>
 
 %check
-%ruby_test
+<%= preserved_script(:check) %>
+<% scriptlets.each do |scriptlet| -%>
+
+<%= scriptlet %>
+<% end -%>
 
 %files
 <% if has_readme? -%>
@@ -170,12 +177,20 @@ Provides:      <%= dep %>
 <% if has_compilables? -%>
 %ruby_gemextdir
 <% end -%>
+<% preserved_files(self).each do |line| -%>
+<%= line %>
+<% end -%>
 
 <% valid_secondaries.each do |secondary| -%>
 <% if secondary.is_doc? || secondary.is_devel? -%>
 %if_enabled    <%= secondary.kind %>
 <% end -%>
 %files         -n <%= secondary.name %>
+<% if secondary.source.is_a?(Baltix::Source::Fake) -%>
+<% preserved_files(secondary).each do |line| -%>
+<%= line %>
+<% end -%>
+<% else -%>
 <% if secondary.has_readme? -%>
 %doc <%= secondary.readme %>
 <% end -%>
@@ -188,7 +203,9 @@ Provides:      <%= dep %>
 <% end -%>
 <% if secondary.is_exec? -%>
 <% secondary.executables.each do |e| -%>
+<% unless preserved_files(secondary).any? { |line| File.fnmatch?(line.strip, "%_bindir/#{e}") } -%>
 %_bindir/<%= e %>
+<% end -%>
 <% end -%>
 <% end -%>
 <% if secondary.is_doc? -%>
@@ -201,6 +218,10 @@ Provides:      <%= dep %>
 <% if secondary.is_devel? -%>
 <% if secondary.has_devel_sources? -%>
 %ruby_includedir/*
+<% end -%>
+<% end -%>
+<% preserved_files(secondary).each do |line| -%>
+<%= line %>
 <% end -%>
 <% end -%>
 <% if secondary.is_doc? || secondary.is_devel? -%>

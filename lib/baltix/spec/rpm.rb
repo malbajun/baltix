@@ -186,6 +186,14 @@ class Baltix::Spec::Rpm
          seq: %w(of_options of_state),
          default: "%ruby_test",
       },
+      custom_macros: {
+         seq: %w(of_state),
+         default: [],
+      },
+      scriptlets: {
+         seq: %w(of_state),
+         default: [],
+      },
       secondaries: {
          seq: %w(of_options of_state of_default >_secondaries),
          default: [],
@@ -491,7 +499,59 @@ class Baltix::Spec::Rpm
 
    def valid_secondaries
      @valid_secondaries ||= secondaries.select do |s|
-        s.source&.source_file
+        s.source&.source_file ||
+           (s.source.is_a?(Baltix::Source::Fake) && %i(app exec).include?(s.kind) && has_custom_packaging_files?(s.state.name))
+     end
+   end
+
+   # Renders a retained script section while migrating obsolete Ruby build wrappers.
+   # @param section [Symbol] :prep, :build, :install or :check
+   # @return [String] section commands, preserving custom arguments and ordering
+   # Obsolete configuration/documentation wrappers are removed. Legacy ruby_build
+   # selection and rake flags move to their generated macros; other flags survive.
+   # If migration empties a section, its current default is used.
+   def preserved_script section
+      lines = public_send(section).to_s.lines.map(&:chomp).reject do |line|
+         line.match?(/^\s*%(?:update_setup_rb|ruby_config|rdoc)(?:\s|$)/)
+      end.map do |line|
+         line = line.sub(/^\s*%gem_build\b/, '%ruby_build').sub(/^\s*%gem_install\b/, '%ruby_install')
+         line.match?(/^\s*%ruby_build\b/) ? line.gsub(/\s+--(?:pre|use|alias|ignore)=\S+/, '') : line
+      end
+      result = lines.join("\n").strip
+      result.empty? ? self.class::STATE[section][:default] : result
+   end
+
+   # Selects retained manual file entries for a generated package.
+   # @param package [Rpm, Secondary] package whose original file list is requested
+   # @return [Array<String>] custom file entries absent from automatic Ruby lists
+   # State-only application packages retain the complete list. Source-backed
+   # packages omit old documentation/Ruby layout macros and duplicate executable
+   # entries because those are regenerated from current metadata.
+   def preserved_files package
+      lists = state.preserved_file_lists || {}.to_os
+      key = package.state.name&.original_fullname || package.name.original_fullname
+      lines = Array(lists[key]).reject { |line| line.strip.empty? }
+      return lines if package.source.is_a?(Baltix::Source::Fake)
+
+      lines.reject do |line|
+         line.match?(/^\s*%(?:doc\b|ruby_(?:gem|site|ri|include)|rubygem_)/) ||
+            (package.is_exec? && package.executables.any? { |file| line.strip == "%_bindir/#{file}" })
+      end
+   end
+
+   # Detects manual files that need a separately declared RPM package.
+   # @param package_name [Name, nil] original package name from the parsed spec
+   # @return [Boolean] whether non-generated file entries remain for this package
+   # Ruby/documentation layout macros and executables already provided by known
+   # sources do not keep obsolete aliases alive. A missing package name has no files.
+   def has_custom_packaging_files? package_name
+      return false unless package_name
+
+      lists = state.preserved_file_lists || {}.to_os
+      executables = space.valid_sources.grep(Baltix::Source::Gem).flat_map { |source| source.spec.executables }
+      Array(lists[package_name.original_fullname]).any? do |line|
+         !line.strip.empty? && !line.match?(/^\s*%(?:doc\b|ruby_|rubygem_)/) &&
+            !executables.any? { |file| line.strip == "%_bindir/#{file}" }
      end
    end
 
@@ -690,7 +750,8 @@ class Baltix::Spec::Rpm
       # binding.pry
       secondaries =
          names.reduce(secondaries) do |secs, an|
-            next secs if secs.find { |sec| sec.name == an }
+            next secs if secs.any? { |sec| sec.name.fullname == an.fullname } ||
+               (secs.any? { |sec| sec.name == an } && !has_custom_packaging_files?(an))
             sec = value_in.find { |sec| sec.name == an }
       # binding.pry if sec
 
@@ -700,9 +761,10 @@ class Baltix::Spec::Rpm
                #source = sources.find { |s| sec.name == s.name } || Baltix::Source::Fake.new
                source = Baltix::Source::Fake.new
                host = secs.find { |sec_in| sec_in.name.eql_by?(:name, sec.name) }
+               host ||= self if name.eql_by?(:name, sec.name)
 
                secs | [Secondary.new(doc: self,
-                             kind: sec.name.kind,#an.kind
+                             kind: sec.name.kind || (sec.name.prefix.nil? ? :exec : nil),
                              host: host,
                              state: sec,
                              source: source,

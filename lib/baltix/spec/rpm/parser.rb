@@ -1,5 +1,10 @@
 class Baltix::Spec::Rpm::Parser
    MATCHER = /^Name:\s+([^\s]+)/i
+   SCRIPT_SECTIONS = %w(prep build install check clean conf generate_buildrequires
+      pretrans posttrans preuntrans postuntrans preun postun pre post verifyscript
+      triggerprein triggerin triggerun triggerpostun filetriggerin filetriggerun
+      filetriggerpostun transfiletriggerin transfiletriggerun transfiletriggerpostun).freeze
+   SECTION_HEADER = /^%(#{(SCRIPT_SECTIONS + %w(package description files changelog)).join('|')})(?:\s|$)/
 
    SCHEME = {
       name: {
@@ -206,9 +211,75 @@ class Baltix::Spec::Rpm::Parser
       store_value(state, matched.match, matched.name, matched.flow, context)
 
       state.original_spec = source(source_in).map(&:chomp).join("\n").strip
+      preserve_sections(source(source_in), state)
 
       #binding.pry
       state
+   end
+
+   # Retains executable section bodies and manual file entries before macro expansion.
+   # @param lines [Array<String>] original spec lines
+   # @param state [OpenStruct] parsed spec state, updated in place
+   # @return [OpenStruct] state containing raw script bodies, scriptlets and file lists
+   # Build sections replace their lossy parsed values. File sections are keyed by
+   # their original package names; scriptlets retain their headers and order.
+   # Leading custom define/global macros are retained except generated definitions.
+   def preserve_sections lines, state
+      blocks = []
+      leading = []
+      lines.each do |line|
+         line = line.chomp
+         match = SECTION_HEADER.match(line)
+         if match
+            blocks << [match[1], line, []]
+         elsif blocks.empty?
+            leading << line
+         else
+            blocks.last[2] << line
+         end
+      end
+
+      state.custom_macros = leading.grep(/^%(?:define|global)\s/).reject do |line|
+         line.match?(/^%(?:define|global)\s+(?:gemname|_unpackaged_files_terminate_build)\s/)
+      end
+      state.scriptlets = []
+      state.preserved_file_lists = {}.to_os
+      blocks.each do |kind, header, body|
+         case kind
+         when 'prep', 'build', 'install', 'check'
+            state[kind] = body.join("\n").strip
+         when 'files'
+            expanded_header = reeval(header, state)
+            package = expanded_header[/\s-n\s+(\S+)/, 1] ||
+               (expanded_header.strip == '%files' ? state.name.original_fullname : nil)
+            state.preserved_file_lists[package] = clean_file_section(body) if package
+         when 'package', 'description', 'changelog'
+         else
+            state.scriptlets << ([header] + body).join("\n").rstrip
+         end
+      end
+      state
+   end
+
+   # Removes enclosing generated package conditionals from a captured file section.
+   # @param lines [Array<String>] lines following a files header
+   # @return [Array<String>] file entries with internal conditionals retained
+   # Closing conditionals opened outside the section are omitted. Trailing
+   # doc/devel guards belong to the next package and are omitted as well.
+   def clean_file_section lines
+      depth = 0
+      result = lines.reject do |line|
+         if line.match?(/^%if(?:\b|_enabled\b|_disabled\b|arch\b|narch\b|os\b|nos\b)/)
+            depth += 1
+            false
+         elsif line.match?(/^%endif\b/)
+            external = depth.zero?
+            depth -= 1 unless external
+            external
+         end
+      end
+      result.pop while result.last && (result.last.strip.empty? || result.last.match?(/^%if_(?:enabled|disabled)\s+(?:doc|devel)\s*$/))
+      result
    end
 
    def store_value opts, match, key, flow, context

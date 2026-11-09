@@ -665,6 +665,7 @@ Feature: Spec actor
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "rbvmomi" fixture spec for the baltix setup
+      And the generated package names are unique
       And the generated build prerequisites are:
          | rpm-macros-ruby setup-rb rake |
       And the generated spec contains the lines:
@@ -882,7 +883,12 @@ Feature: Spec actor
          | maintainer.email | majioa@altlinux.org       |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
-      Then he acquires an "dynflow" fixture spec for the baltix setup
+      Then the generated spec preserves the input packaging sections
+      And the generated package names are unique
+      And package "dynflow" contains dependency lines:
+         | Summary:       DYNamic workFLOW engine executable(s) |
+         | Requires:      gem(dynflow) = 2.0.1                  |
+      And he acquires an "dynflow" fixture spec for the baltix setup
       And the generated spec contains each line once:
          | BuildRequires: gem(minitest) >= 0     |
          | BuildConflicts: gem(minitest) >= 5.19 |
@@ -892,3 +898,4 @@ Feature: Spec actor
       And package "gem-dynflow" does not require "minitest"
       When the generated spec is refreshed 2 times
       Then the generated dependency sections match "gem.spec" from fixture "dynflow"
+      And the generated spec preserves the input packaging sections

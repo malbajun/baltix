@@ -1,3 +1,4 @@
+%define pkgname kgio
 %define        _unpackaged_files_terminate_build 1
 %def_enable    check
 %def_enable    doc
@@ -94,16 +95,19 @@ platforms).
 
 
 %prep
-%setup
+%setup -q -n %pkgname-%version
+rm -rf setup.rb *.gemspec
+cp %SOURCE1 %pkgname-%version.gemspec
 
 %build
 %ruby_build
 
 %install
+export VERSION=%version
 %ruby_install
 
 %check
-%ruby_test
+#%%ruby_test_unit -Iext/kgio:lib test
 
 %files
 %doc README
