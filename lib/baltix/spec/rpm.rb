@@ -75,7 +75,7 @@ class Baltix::Spec::Rpm
          default: [],
       },
       conflicts: {
-         seq: %w(of_options of_state of_default >_conflicts_plain_only |_conflicts_ruby |_kind_deps >_render_top_dep),
+         seq: %w(of_options of_state of_default >_conflicts_plain_only >_conflicts_ruby |_kind_deps >_render_top_dep),
          default: [],
       },
       provides: {

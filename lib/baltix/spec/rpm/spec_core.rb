@@ -4,6 +4,10 @@ require "pathname"
 module Baltix::Spec::Rpm::SpecCore
    README_FILE_RE = /\Areadme(?:\.(?:md|markdown|rdoc|txt|rst|adoc|asciidoc|textile))?\z/i
 
+   RUBY_CONFLICT_OPERATORS = {
+      '>=' => '<', '>' => '<=', '<=' => '>', '<' => '>=', '=' => '!=', '!=' => '='
+   }.freeze
+
    URL_MATCHER = {
       /(?<proto>https?:\/\/)?(?<user>[^\.]+).github.io\/(?<page>[^\/#]+)/ => ->(m) do
          "https://github.com/#{m["user"]}/#{m["page"]}.git"
@@ -470,35 +474,64 @@ module Baltix::Spec::Rpm::SpecCore
       end
    end
 
+   # Replaces parsed numeric interpreter minimums with the merged requirements.
+   # @param value_in [Array<String>] retained non-gem RPM requirements
+   # @return [Array<String, Hash>] opaque requirements and combined interpreter bounds
+   # Numeric Ruby constraints are merged; unrelated packages and RPM macros remain
+   # unchanged. Rendering selects the strictest lower boundary for each interpreter.
    def _requires_ruby value_in
-      value_in |
-         case self.kind
-         when :lib, :app
-            reqs = source.dsl.required_rubies
-
-            if !reqs.blank? && reqs.values.last.requirements.first.last.to_s != "0"
-               [reqs]
-            else
-               []
-            end
-         else
-            []
-         end
+      Array(value_in).reject { |dependency| ruby_dependency(dependency) } | [ruby_requirements]
    end
 
+   # Replaces parsed numeric interpreter conflicts with the merged requirements.
+   # @param value_in [Array<String>] retained non-gem RPM conflicts
+   # @return [Array<String, Hash>] opaque conflicts and combined interpreter bounds
+   # Numeric Ruby conflicts are merged; unrelated packages and RPM macros remain
+   # unchanged. Rendering selects the strictest upper boundary for each interpreter.
    def _conflicts_ruby value_in
-         case self.kind
-         when :lib, :app
-            reqs = source.dsl.required_rubies
+      Array(value_in).reject { |dependency| ruby_dependency(dependency) } | [ruby_requirements]
+   end
 
-            if !reqs.blank? && reqs.values.last.requirements.first.last.to_s != "0"
-               [reqs]
-            else
-               []
+   # Parses one numeric interpreter constraint without expanding RPM expressions.
+   # @param dependency [Object] an imported RPM dependency
+   # @return [Array<String>, nil] interpreter, operator and version, or no match
+   # Only Ruby and engines declared by this library/application are recognized.
+   # Other packages, non-string inputs and opaque versions are left untouched.
+   def ruby_dependency dependency
+      return unless dependency.is_a?(String)
+
+      match = /\A(?<name>\S+)\s+(?<operator>!=|>=|<=|=|>|<)\s+(?<version>\S+)\z/.match(dependency)
+      engines = ['ruby'] | (%i(lib app).include?(kind) ? source.dsl.required_rubies.keys : [])
+      return unless match && engines.include?(match[:name]) && Gem::Version.correct?(match[:version])
+
+      match.values_at(:name, :operator, :version)
+   end
+
+   # Intersects this package's source and imported interpreter requirements.
+   # @return [Hash<String, Gem::Requirement>] merged requirements for each interpreter
+   # Libraries and applications include source declarations, excluding the implicit
+   # unconstrained default. Explicit options take precedence over parsed RPM tags.
+   # Parsed conflicts are inverted into allowed bounds before the shared merger is
+   # used; macros and unrelated dependencies are preserved by the caller.
+   def ruby_requirements
+      @ruby_requirements ||= begin
+         declarations = %i(lib app).include?(kind) ? source.dsl.required_rubies : {}
+         requirements = declarations.reject { |_name, requirement| requirement == Gem::Requirement.default }
+         %i(requires conflicts).each do |tag|
+            value = of_options(tag)
+            value = of_state(tag) unless value.present?
+            Array(value).each do |dependency|
+               parsed = ruby_dependency(dependency)
+               next unless parsed
+
+               name, operator, version = parsed
+               operator = RUBY_CONFLICT_OPERATORS.fetch(operator) if tag == :conflicts
+               incoming = Gem::Requirement.new("#{operator} #{version}")
+               requirements[name] = requirements[name] ? requirements[name].merge(incoming) : incoming
             end
-         else
-            []
          end
+         requirements
+      end
    end
 
    def _requires_rubygems value_in

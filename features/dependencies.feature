@@ -1,5 +1,25 @@
 Feature: Dependencies from real Ruby projects
 
+   Scenario: Merge Ruby bounds from the Gemfile, gemspec and original RPM spec
+      - choose the greatest lower bound and the least upper bound per interpreter
+      - retain strictness at equal boundaries and keep opaque RPM macros unchanged
+      - retain the merged bounds through two more spec updates
+      Then Ruby interpreter constraints produce these RPM bounds:
+         | gemspec         | gemfile         | original_requires  | original_conflicts | requires  | conflicts |
+         | >= 2.7          | >= 2.4          | >= 2.0             |                    | >= 2.7    |           |
+         | >= 2.4          | >= 2.7, < 3.4   | >= 2.0             | >= 3.5             | >= 2.7    | >= 3.4    |
+         | >= 2.4, < 3.5   | >= 2.7, < 3.4   | >= 2.0             | >= 3.3             | >= 2.7    | >= 3.3    |
+         | >= 2.7          | > 2.7           | >= 2.0             |                    | > 2.7     |           |
+         | > 2.7           | >= 2.7          | >= 2.0             |                    | > 2.7     |           |
+         | <= 3.4          | < 3.4           | >= 2.7             | > 3.4              | >= 2.7    | >= 3.4    |
+         | <= 3.4          | <= 3.5          | > 2.7              | > 3.4              | > 2.7     | > 3.4     |
+         | >= 2.0          | >= 2.4          | >= 2.5; > 2.7      | >= 3.6; > 3.4      | > 2.7     | > 3.4     |
+         | >= 2.7          | >= 2.0          | >= %ruby_version   |                    | >= 2.7    |           |
+
+   Scenario: Keep the Ruby language and alternate interpreter bounds separate
+      Then a JRuby Gemfile and gemspec retain their interpreter requirements
+
+
    Scenario: Preserve source requirement intersections independently of operand order
       - keep every constraint, including exclusions and pessimistic requirements
       - retain strict boundaries and do not broaden or empty compatible ranges

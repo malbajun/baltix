@@ -59,7 +59,6 @@ BuildConflicts: gem(m) >= 1.6
 
 %add_findreq_skiplist %ruby_gemslibdir/**/*
 %add_findprov_skiplist %ruby_gemslibdir/**/*
-Requires:      ruby >= 2.4.0
 Requires:      ruby >= 2.7.0
 Requires:      gem(base64) >= 0
 Requires:      gem(fiber-storage) >= 0

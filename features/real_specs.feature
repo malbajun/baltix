@@ -15,6 +15,7 @@ Feature: Spec actor
       - replace the loose internal minimum with the exact generated GraphQL capability
       - ignore availability overrides for gems provided by the same spec
       - omit conflicts on gems supplied by this spec through repeated updates
+      - merge the historical Ruby minimum into the stricter gemspec requirement
       Given blank space
       And a spec from fixture "graphql"
       When developer locks the time to "13.12.2022"
@@ -28,6 +29,9 @@ Feature: Spec actor
       And he applies "spec" actor to the baltix setup
       Then package "gem-graphql" contains dependency lines:
          | Provides:      gem(graphql) = 2.4.8  |
+         | Requires:      ruby >= 2.7.0         |
+      And the generated spec excludes the lines:
+         | Requires:      ruby >= 2.4.0   |
       And the unconditional build requirements include:
          | BuildRequires: gem(capybara) >= 3.34.0  |
       And package "gem-graphql-c-parser" contains dependency lines:
@@ -47,6 +51,7 @@ Feature: Spec actor
       - retain the Apache build requirement as one expression without evaluating it
       - keep the expression intact in generated build and devel dependency tags
       - retain the declaration after repeated spec updates
+      - retain the stricter gemspec Ruby minimum even when Gemfile is weaker
       Given blank space
       And a spec from fixture "passenger"
       When developer locks the time to "13.12.2022"
@@ -60,6 +65,7 @@ Feature: Spec actor
       Then the generated spec contains the lines:
          | BuildRequires: %(eval echo %apache2_apr_buildreq)                        |
          | BuildRequires: apache2-devel >= 2.2.5                                    |
+         | Requires:      ruby >= 2.5.9                                             |
          | %ruby_ignore_path_tokens dev,build,agent,cxx_supportlib,schema_printer   |
       And the generated spec excludes the lines:
          | %ruby_ignore_names _path_tokens   |
