@@ -203,9 +203,7 @@ Provides:      <%= dep %>
 <% end -%>
 <% if secondary.is_exec? -%>
 <% secondary.executables.each do |e| -%>
-<% unless preserved_files(secondary).any? { |line| File.fnmatch?(line.strip, "%_bindir/#{e}") } -%>
 %_bindir/<%= e %>
-<% end -%>
 <% end -%>
 <% end -%>
 <% if secondary.is_doc? -%>

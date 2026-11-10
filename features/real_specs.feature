@@ -837,8 +837,12 @@ Feature: Spec actor
       - migrate rpm-build-ruby to rpm-macros-ruby, setup-rb and rake
       - replace legacy gem_replace_version constraints using current sources and available versions
       - use identical rake requirements in the override macro and RPM dependency fields
+      - replace the old executable wildcard with names declared by the gemspec
       Given blank space
       And a spec from fixture "rbvmomi"
+      And the input main package file list also contains:
+         | %_bindir/*            |
+         | %{_bindir}/rbvmomish  |
       When developer locks the time to "21.04.2021"
       And he sets the space options as:
          | options            | value                                         |
@@ -848,7 +852,11 @@ Feature: Spec actor
          | maintainer.email   | majioa@altlinux.org                           |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
-      Then he acquires an "rbvmomi" fixture spec for the baltix setup
+      Then the generated spec contains each line once:
+         | %_bindir/rbvmomish |
+      And the generated spec excludes the lines:
+         | %_bindir/*   |
+      And he acquires an "rbvmomi" fixture spec for the baltix setup
       And the generated package names are unique
       And the generated build prerequisites are:
          | rpm-macros-ruby setup-rb rake  |
@@ -859,6 +867,11 @@ Feature: Spec actor
       And package "gem-rbvmomi-devel" contains dependency lines:
          | Requires:      gem(rake) >= 10.5  |
          | Conflicts:     gem(rake) >= 16    |
+      When the generated spec is refreshed 2 times
+      Then the generated spec contains each line once:
+         | %_bindir/rbvmomish |
+      And the generated spec excludes the lines:
+         | %_bindir/*   |
 
    @policy2_0 @release_change @main_is_gem
    Scenario: Migrate rspec-support from obsolete Ruby Policy 2.0 to 2.1

@@ -151,7 +151,7 @@ used alongside the official documentation.
 
 %files         -n rbvmomish
 %doc LICENSE README.md
-%_bindir/*
+%_bindir/rbvmomish
 
 %if_enabled    doc
 %files         -n gem-rbvmomi-doc

@@ -624,16 +624,23 @@ class Baltix::Spec::Rpm
    # @return [Array<String>] custom file entries absent from automatic Ruby lists
    # State-only application packages retain the complete list. Source-backed
    # packages omit old documentation/Ruby layout macros and duplicate executable
-   # entries because those are regenerated from current metadata.
+   # entries because those are regenerated from current metadata. Gem-backed
+   # packages omit bindir globs and paths belonging to declared executables, even
+   # when these occur in a library or documentation file list. Non-gem executable
+   # packages omit entries matching their known commands. Other manual files remain.
    def preserved_files package
       lists = state.preserved_file_lists || {}.to_os
       key = package.state.name&.original_fullname || package.name.original_fullname
       lines = Array(lists[key]).reject { |line| line.strip.empty? }
       return lines if package.source.is_a?(Baltix::Source::Fake)
 
+      gem_source = package.source.is_a?(Baltix::Source::Gem)
+      executable_paths = (gem_source || package.is_exec? ? package.executables : []).map { |file| "%_bindir/#{file}" }
       lines.reject do |line|
+         path = line.strip.sub(/\A%\{_bindir\}/, '%_bindir')
          line.match?(/^\s*%(?:doc\b|ruby_(?:gem|site|ri|include)|rubygem_)/) ||
-            (package.is_exec? && package.executables.any? { |file| line.strip == "%_bindir/#{file}" })
+            (gem_source && path.match?(/\A%_bindir\/.*[*?\[]/)) ||
+            executable_paths.any? { |file| File.fnmatch?(path, file) }
       end
    end
 

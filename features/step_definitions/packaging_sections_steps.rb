@@ -39,3 +39,8 @@ Then('the generated spec contains none of these packaging tokens:') do |table|
    packaging = @spec.split(/^%changelog\b/, 2).first
    table.raw.flatten.each { |token| expect(packaging).to_not include(token) }
 end
+
+Given('the input main package file list also contains:') do |table|
+   entries = table.raw.flatten.join("\n")
+   @spec_in = @spec_in.sub(/^%files[ \t]*$/, "%files\n#{entries}")
+end
