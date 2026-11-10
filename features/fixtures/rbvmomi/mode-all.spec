@@ -18,7 +18,6 @@ BuildArch:     noarch
 
 Source:        %name-%version.tar
 BuildRequires(pre): rpm-macros-ruby setup-rb rake
-BuildConflicts: ragel6 >= 7
 %if_enabled check
 BuildRequires: gem(builder) >= 3.0
 BuildRequires: gem(json) >= 1.8

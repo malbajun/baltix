@@ -29,10 +29,10 @@ Feature: Baltix CLI
          """
 
       Examples:
-         | mode    |
-         | regular |
-         | redep   |
-         | all     |
+         | mode      |
+         | regular   |
+         | redep     |
+         | all       |
 
    Scenario: Baltix CLI rootdir validation
       Given blank baltix CLI

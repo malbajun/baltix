@@ -44,19 +44,19 @@ Feature: Spec actor
       And a spec from fixture "autoprefixer-rails"
       When developer locks the time to "10.11.2026"
       And he sets the space options as:
-         | options          | value                                |
-         | rootdir          | features/fixtures/autoprefixer-rails |
-         | maintainer.name  | Pavel Skrylev                        |
-         | maintainer.email | majioa@altlinux.org                  |
+         | options            | value                                |
+         | rootdir            | features/fixtures/autoprefixer-rails |
+         | maintainer.name    | Pavel Skrylev                        |
+         | maintainer.email   | majioa@altlinux.org                  |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then the generated spec contains each line once:
-         | Provides:      gem(autoprefixer-rails) = 10.4.19.0 |
+         | Provides:      gem(autoprefixer-rails) = 10.4.19.0  |
       And the generated spec excludes the lines:
-         | Provides:      autoprefixer-rails = %EVR |
+         | Provides:      autoprefixer-rails = %EVR   |
       And package "gem-autoprefixer-rails" contains dependency lines:
-         | Requires:      gem(execjs) >= 2 |
-         | Conflicts:     gem(execjs) >= 3 |
+         | Requires:      gem(execjs) >= 2   |
+         | Conflicts:     gem(execjs) >= 3   |
       And he acquires an "autoprefixer-rails" fixture spec for the baltix setup
       When the generated spec is refreshed 2 times
       Then the generated spec matches "gem.spec" from fixture "autoprefixer-rails"
@@ -70,23 +70,23 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options          | value                           |
-         | rootdir          | features/fixtures/license-scout |
-         | spec_type        | rpm                             |
-         | maintainer.name  | Pavel Skrylev                   |
-         | maintainer.email | majioa@altlinux.org             |
+         | options            | value                             |
+         | rootdir            | features/fixtures/license-scout   |
+         | spec_type          | rpm                               |
+         | maintainer.name    | Pavel Skrylev                     |
+         | maintainer.email   | majioa@altlinux.org               |
       Then source "mixlib-shellout" has status "disabled"
       When he applies "spec" actor to the baltix setup
       Then he acquires an "license-scout" fixture spec for the baltix setup
       And the generated library package names are:
-         | gem-license-scout |
+         | gem-license-scout  |
       And package "gem-license-scout" contains dependency lines:
          | Requires:      gem(mixlib-shellout) >= 2.2 |
          | Conflicts:     gem(mixlib-shellout) >= 4.0 |
       When the generated spec is refreshed 2 times
       Then source "mixlib-shellout" has status "disabled"
       And the generated library package names are:
-         | gem-license-scout |
+         | gem-license-scout  |
       And the generated dependency sections match "gem.spec" from fixture "license-scout"
 
    @scratch @blank_setup @main_is_gem
@@ -96,33 +96,33 @@ Feature: Spec actor
       - reapply the stored lists during subsequent source imports
       Given blank space
       When he sets the space options as:
-         | options              | value                           |
-         | rootdir              | features/fixtures/license-scout |
-         | regarded_path_tokens | [spec]                          |
-         | ignored_path_tokens  | [bench]                         |
+         | options               | value                             |
+         | rootdir               | features/fixtures/license-scout   |
+         | regarded_path_tokens  | [spec]                            |
+         | ignored_path_tokens   | [bench]                           |
       And he adds the case-insensitive ignored path pattern "scratch"
       Then source "mixlib-shellout" has status "valid"
       When he applies "spec" actor to the baltix setup
       Then the generated library package names are:
-         | gem-license-scout   |
-         | gem-mixlib-shellout |
+         | gem-license-scout     |
+         | gem-mixlib-shellout   |
       And the generated spec contains each line once:
-         | %ruby_ignore_path_tokens bench,[^/]*(?i-mx:scratch)[^/]* |
-         | %ruby_regard_path_tokens spec                            |
+         | %ruby_ignore_path_tokens bench,[^/]*(?i-mx:scratch)[^/]*  |
+         | %ruby_regard_path_tokens spec                             |
       When the generated spec is refreshed without path options
       Then source "mixlib-shellout" has status "valid"
       And a source at "bench/example.gemspec" is disabled
       And a source at "custom-SCRATCH-dir/example.gemspec" is disabled
       And the generated spec contains each line once:
-         | %ruby_ignore_path_tokens bench,[^/]*(?i-mx:scratch)[^/]* |
-         | %ruby_regard_path_tokens spec                            |
+         | %ruby_ignore_path_tokens bench,[^/]*(?i-mx:scratch)[^/]*  |
+         | %ruby_regard_path_tokens spec                             |
       When the generated spec is refreshed 2 times
       Then source "mixlib-shellout" has status "valid"
       And a source at "bench/example.gemspec" is disabled
       And a source at "custom-SCRATCH-dir/example.gemspec" is disabled
       And the generated spec contains each line once:
-         | %ruby_ignore_path_tokens bench,[^/]*(?i-mx:scratch)[^/]* |
-         | %ruby_regard_path_tokens spec                            |
+         | %ruby_ignore_path_tokens bench,[^/]*(?i-mx:scratch)[^/]*  |
+         | %ruby_regard_path_tokens spec                             |
 
    # brianmario/fast_xs, ALT gear 8a75f12; upstream declares version 0.8.0.
    @scratch @blank_setup @main_is_gem
@@ -133,31 +133,31 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options          | value                     |
-         | rootdir          | features/fixtures/fast-xs |
-         | spec_type        | rpm                       |
-         | maintainer.name  | Pavel Skrylev             |
-         | maintainer.email | majioa@altlinux.org       |
+         | options            | value                       |
+         | rootdir            | features/fixtures/fast-xs   |
+         | spec_type          | rpm                         |
+         | maintainer.name    | Pavel Skrylev               |
+         | maintainer.email   | majioa@altlinux.org         |
       Then the main source is the "fast_xs" gem
       And source "fast_xs" declares native extensions:
-         | ext/fast_xs/extconf.rb       |
-         | ext/fast_xs_extra/extconf.rb |
+         | ext/fast_xs/extconf.rb         |
+         | ext/fast_xs_extra/extconf.rb   |
       When he applies "spec" actor to the baltix setup
       Then he acquires an "fast-xs" fixture spec for the baltix setup
       And the generated spec contains each line once:
          | %ruby_gemextdir |
       And the generated package build architectures are:
-         | package     | build_arch |
-         | gem-fast-xs |            |
+         | package      | build_arch   |
+         | gem-fast-xs  |              |
       When the generated spec is refreshed 2 times
       Then source "fast_xs" declares native extensions:
-         | ext/fast_xs/extconf.rb       |
-         | ext/fast_xs_extra/extconf.rb |
+         | ext/fast_xs/extconf.rb         |
+         | ext/fast_xs_extra/extconf.rb   |
       And the generated spec contains each line once:
          | %ruby_gemextdir |
       And the generated package build architectures are:
-         | package     | build_arch |
-         | gem-fast-xs |            |
+         | package      | build_arch   |
+         | gem-fast-xs  |              |
 
    # ruby-next/ruby-next 1.2.0; ALT gem-ruby-next b6cb98d (1.2.0-alt1).
    @scratch @main_is_gem
@@ -200,11 +200,11 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options          | value                          |
-         | rootdir          | features/fixtures/data-objects |
-         | spec_type        | rpm                            |
-         | maintainer.name  | Pavel Skrylev                  |
-         | maintainer.email | majioa@altlinux.org            |
+         | options            | value                          |
+         | rootdir            | features/fixtures/data-objects |
+         | spec_type          | rpm                            |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
       Then the main source is the "data_objects" gem
       And the project root remains the "data-objects" fixture
       When he applies "spec" actor to the baltix setup
@@ -212,32 +212,32 @@ Feature: Spec actor
       And he acquires an "data-objects" fixture spec for the baltix setup
       And the generated package names are unique
       And the generated spec contains the lines:
-         | Name:          gem-data-objects          |
-         | Version:       0.10.17                   |
-         | BuildRequires: gem(rake-compiler) >= 0.7 |
-         | BuildConflicts: gem(rake-compiler) >= 1  |
+         | Name:          gem-data-objects            |
+         | Version:       0.10.17                     |
+         | BuildRequires: gem(rake-compiler) >= 0.7   |
+         | BuildConflicts: gem(rake-compiler) >= 1    |
       And package "gem-data-objects" contains dependency lines:
-         | Requires:      gem(addressable) >= 2.1 |
-         | Conflicts:     gem(addressable) >= 3   |
+         | Requires:      gem(addressable) >= 2.1  |
+         | Conflicts:     gem(addressable) >= 3    |
       And package "gem-do-sqlite3" contains dependency lines:
          | Requires:      gem(data_objects) = 0.10.17 |
       And the generated package build architectures are:
-         | package              | build_arch |
-         | gem-data-objects     |            |
-         | gem-do-sqlite3       |            |
-         | gem-do-sqlite3-doc   | noarch     |
-         | gem-do-sqlite3-devel | noarch     |
+         | package               | build_arch   |
+         | gem-data-objects      |              |
+         | gem-do-sqlite3        |              |
+         | gem-do-sqlite3-doc    | noarch       |
+         | gem-do-sqlite3-devel  | noarch       |
       When the generated spec is refreshed 2 times
       Then the main source is the "data_objects" gem
       And the project root remains the "data-objects" fixture
       And the generated package names are unique
       And the generated dependency sections match "gem.spec" from fixture "data-objects"
       And the generated package build architectures are:
-         | package              | build_arch |
-         | gem-data-objects     |            |
-         | gem-do-sqlite3       |            |
-         | gem-do-sqlite3-doc   | noarch     |
-         | gem-do-sqlite3-devel | noarch     |
+         | package               | build_arch   |
+         | gem-data-objects      |              |
+         | gem-do-sqlite3        |              |
+         | gem-do-sqlite3-doc    | noarch       |
+         | gem-do-sqlite3-devel  | noarch       |
 
    # Published glu/glut 8.3.0 and kpeg 1.3.3 source packages from RubyGems.
    # Hoe reads the retained manifests, readmes and histories while importing Rakefiles.
@@ -253,11 +253,11 @@ Feature: Spec actor
       And the "fast-xs" fixture has already been imported
       And the "<previous>" fixture has already been imported
       And he sets the space options as:
-         | options          | value               |
-         | rootdir          | <rootdir>           |
-         | spec_type        | rpm                 |
-         | maintainer.name  | Pavel Skrylev       |
-         | maintainer.email | majioa@altlinux.org |
+         | options            | value                 |
+         | rootdir            | <rootdir>             |
+         | spec_type          | rpm                   |
+         | maintainer.name    | Pavel Skrylev         |
+         | maintainer.email   | majioa@altlinux.org   |
       And he applies "spec" actor to the baltix setup
       Then the generated spec contains the lines:
          | BuildRequires: gem(<dependency>) >= <minimum> |
@@ -271,10 +271,10 @@ Feature: Spec actor
       Then the generated dependency sections match "gem.spec" from fixture "<fixture>"
 
       Examples:
-         | fixture | previous | rootdir                | dependency    | minimum | upper |
-         | glu     | glut     | features/fixtures/glu  | rake-compiler | 1.0     | 2     |
-         | glut    | glu      | features/fixtures/glut | mini_portile2 | 2.1     | 3     |
-         | kpeg    | glu      | features/fixtures/kpeg | rdoc          | 4.0     | 7     |
+         | fixture   | previous  | rootdir                  | dependency      | minimum   | upper  |
+         | glu       | glut      | features/fixtures/glu    | rake-compiler   | 1.0       | 2      |
+         | glut      | glu       | features/fixtures/glut   | mini_portile2   | 2.1       | 3      |
+         | kpeg      | glu       | features/fixtures/kpeg   | rdoc            | 4.0       | 7      |
 
    # rubyworks/facets 3.1.0, revision 86e44b354b0008c32bebb305fae7b1848cfd13a6.
    # The manifest is reduced to files retained for importing the fixture.
@@ -285,19 +285,19 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options          | value                    |
-         | rootdir          | features/fixtures/facets |
-         | spec_type        | rpm                      |
-         | maintainer.name  | Pavel Skrylev            |
-         | maintainer.email | majioa@altlinux.org      |
+         | options            | value                    |
+         | rootdir            | features/fixtures/facets |
+         | spec_type          | rpm                      |
+         | maintainer.name    | Pavel Skrylev            |
+         | maintainer.email   | majioa@altlinux.org      |
       Then source "facets" has dependency declarations:
-         | name         | type        | requirement |
-         | guard        | development | >= 0        |
-         | lemon        | development | >= 0        |
-         | qed          | development | >= 0        |
-         | rake         | development | >= 0        |
-         | rubytest-cli | development | >= 0        |
-         | simplecov    | development | >= 0        |
+         | name         | type         | requirement  |
+         | guard        | development  | >= 0         |
+         | lemon        | development  | >= 0         |
+         | qed          | development  | >= 0         |
+         | rake         | development  | >= 0         |
+         | rubytest-cli | development  | >= 0         |
+         | simplecov    | development  | >= 0         |
       When he applies "spec" actor to the baltix setup
       Then he acquires an "facets" fixture spec for the baltix setup
 
@@ -313,11 +313,11 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options          | value               |
-         | rootdir          | <rootdir>           |
-         | spec_type        | rpm                 |
-         | maintainer.name  | Pavel Skrylev       |
-         | maintainer.email | majioa@altlinux.org |
+         | options            | value                 |
+         | rootdir            | <rootdir>             |
+         | spec_type          | rpm                   |
+         | maintainer.name    | Pavel Skrylev         |
+         | maintainer.email   | majioa@altlinux.org   |
       And he applies "spec" actor to the baltix setup
       Then the generated spec contains the lines:
          | BuildRequires: gem(<dependency>) >= <minimum> |
@@ -325,16 +325,16 @@ Feature: Spec actor
          | Requires:      gem(<dependency>) >= <minimum> |
       And package "gem-<fixture>" does not require "<dependency>"
       And the generated package build architectures are:
-         | package       | build_arch   |
-         | gem-<fixture> | <build_arch> |
+         | package         | build_arch   |
+         | gem-<fixture>   | <build_arch> |
       And stringified property "has_compilables?" of space's spec is "<local_compilable>"
       And he acquires an "<fixture>" fixture spec for the baltix setup
 
       Examples:
-         | fixture      | rootdir                        | dependency | minimum | build_arch | local_compilable |
-         | wasmtime     | features/fixtures/wasmtime     | rspec      | 3.13    |            | true             |
-         | redis-client | features/fixtures/redis-client | rubocop    | 0       |            | false            |
-         | megatest     | features/fixtures/megatest     | rubocop    | 1.21    | noarch     | false            |
+         | fixture      | rootdir                        | dependency   | minimum   | build_arch   | local_compilable   |
+         | wasmtime     | features/fixtures/wasmtime     | rspec        | 3.13      |              | true               |
+         | redis-client | features/fixtures/redis-client | rubocop      | 0         |              | false              |
+         | megatest     | features/fixtures/megatest     | rubocop      | 1.21      | noarch       | false              |
 
    # redis/hiredis-rb: eb27295facd5473a54585e06a043bebf5c80bb5b.
    @scratch @blank_setup @main_is_gem
@@ -346,27 +346,27 @@ Feature: Spec actor
       And a spec from fixture "hiredis"
       When developer locks the time to "09.11.2026"
       And he sets the space options as:
-         | options            | value                               |
-         | rootdir            | features/fixtures/hiredis           |
-         | available_gem_list | {minitest: 6.0, rake-compiler: 1.2} |
-         | spec_type          | rpm                                 |
-         | maintainer.name    | Pavel Skrylev                       |
-         | maintainer.email   | majioa@altlinux.org                 |
+         | options            | value                                |
+         | rootdir            | features/fixtures/hiredis            |
+         | available_gem_list | {minitest: 6.0, rake-compiler: 1.2}  |
+         | spec_type          | rpm                                  |
+         | maintainer.name    | Pavel Skrylev                        |
+         | maintainer.email   | majioa@altlinux.org                  |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then the generated spec contains each line once:
-         | %ruby_use_gem_version hiredis:0.6.3.14.1 |
-         | Provides:      gem(hiredis) = 0.6.3.14.1 |
+         | %ruby_use_gem_version hiredis:0.6.3.14.1   |
+         | Provides:      gem(hiredis) = 0.6.3.14.1   |
       And the generated spec excludes the lines:
-         | Provides:      hiredis = %EVR |
+         | Provides:      hiredis = %EVR  |
       And he acquires an "hiredis" fixture spec for the baltix setup
       And the generated spec contains the lines:
-         | %ruby_use_gem_dependency minitest >= 5.5.1,minitest < 7           |
-         | %ruby_use_gem_dependency rake-compiler >= 0.7.1,rake-compiler < 2 |
-         | BuildRequires: gem(minitest) >= 5.5.1                             |
-         | BuildConflicts: gem(minitest) >= 7                                |
-         | BuildRequires: gem(rake-compiler) >= 0.7.1                        |
-         | BuildConflicts: gem(rake-compiler) >= 2                           |
+         | %ruby_use_gem_dependency minitest >= 5.5.1,minitest < 7            |
+         | %ruby_use_gem_dependency rake-compiler >= 0.7.1,rake-compiler < 2  |
+         | BuildRequires: gem(minitest) >= 5.5.1                              |
+         | BuildConflicts: gem(minitest) >= 7                                 |
+         | BuildRequires: gem(rake-compiler) >= 0.7.1                         |
+         | BuildConflicts: gem(rake-compiler) >= 2                            |
       And package "gem-hiredis-devel" contains dependency lines:
          | Requires:      gem(minitest) >= 5.5.1      |
          | Conflicts:     gem(minitest) >= 7          |
@@ -388,10 +388,10 @@ Feature: Spec actor
       And a spec from fixture "hiredis"
       When developer locks the time to "09.11.2026"
       And he sets the space options as:
-         | options          | value                    |
-         | rootdir          | features/fixtures/hiredis |
-         | maintainer.name  | Pavel Skrylev            |
-         | maintainer.email | majioa@altlinux.org       |
+         | options            | value                       |
+         | rootdir            | features/fixtures/hiredis   |
+         | maintainer.name    | Pavel Skrylev               |
+         | maintainer.email   | majioa@altlinux.org         |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       And the generated input has release "<before>"
@@ -403,11 +403,11 @@ Feature: Spec actor
       Then the generated spec is unchanged
 
       Examples:
-         | before   | after    |
-         | alt1     | alt1.1   |
-         | alt1.1   | alt1.2   |
-         | alt0.1   | alt0.1.1 |
-         | alt0.1.1 | alt0.1.2 |
+         | before    | after     |
+         | alt1      | alt1.1    |
+         | alt1.1    | alt1.2    |
+         | alt0.1    | alt0.1.1  |
+         | alt0.1.1  | alt0.1.2  |
 
    @policy2_0 @main_is_gem
    Scenario: Recompute gitlab-sidekiq-fetcher overrides without raising source minimums
@@ -417,11 +417,11 @@ Feature: Spec actor
       And a spec from fixture "gitlab-sidekiq-fetcher"
       When developer locks the time to "09.11.2026"
       And he sets the space options as:
-         | options            | value                                    |
-         | rootdir            | features/fixtures/gitlab-sidekiq-fetcher |
-         | available_gem_list | {sidekiq: 7.3.8, json: 2.10}             |
-         | maintainer.name    | Pavel Skrylev                            |
-         | maintainer.email   | majioa@altlinux.org                      |
+         | options            | value                                      |
+         | rootdir            | features/fixtures/gitlab-sidekiq-fetcher   |
+         | available_gem_list | {sidekiq: 7.3.8, json: 2.10}               |
+         | maintainer.name    | Pavel Skrylev                              |
+         | maintainer.email   | majioa@altlinux.org                        |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "gitlab-sidekiq-fetcher" fixture spec for the baltix setup
@@ -431,9 +431,9 @@ Feature: Spec actor
          | BuildConflicts: gem(sidekiq) >= 8                   |
          | BuildRequires: gem(json) >= 2.5                     |
       And package "gem-gitlab-sidekiq-fetcher" contains dependency lines:
-         | Requires:      gem(sidekiq) >= 6.1 |
-         | Conflicts:     gem(sidekiq) >= 8   |
-         | Requires:      gem(json) >= 2.5    |
+         | Requires:      gem(sidekiq) >= 6.1   |
+         | Conflicts:     gem(sidekiq) >= 8     |
+         | Requires:      gem(json) >= 2.5      |
       And the generated spec contains no override for "json"
       When the generated spec is refreshed 2 times
       Then the generated dependency sections match "gem.spec" from fixture "gitlab-sidekiq-fetcher"
@@ -446,12 +446,12 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options            | value                     |
-         | rootdir            | features/fixtures/unf_ext |
-         | available_gem_list | <available>               |
-         | spec_type          | rpm                       |
-         | maintainer.name    | Pavel Skrylev             |
-         | maintainer.email   | majioa@altlinux.org       |
+         | options            | value                       |
+         | rootdir            | features/fixtures/unf_ext   |
+         | available_gem_list | <available>                 |
+         | spec_type          | rpm                         |
+         | maintainer.name    | Pavel Skrylev               |
+         | maintainer.email   | majioa@altlinux.org         |
       And he applies "spec" actor to the baltix setup
       Then he acquires an "unf_ext" fixture spec for the baltix setup
       And the generated spec contains no dependency override macros
@@ -465,22 +465,22 @@ Feature: Spec actor
       Then the generated dependency sections match "gem.spec" from fixture "unf_ext"
 
       Examples:
-         | available                       |
-         | {}                              |
-         | {rdoc: 6.6, rake-compiler: 1.3} |
+         | available                         |
+         | {}                                |
+         | {rdoc: 6.6, rake-compiler: 1.3}   |
 
    @available_gem_list
    Scenario: Generate a complete mustermann spec with adjusted dependency requirements
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options            | value                                     |
-         | rootdir            | features/fixtures/mustermann              |
-         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'} |
-         | packager.name      | Ruby Maintainers Team                     |
-         | packager.email     | ruby@packages.altlinux.org                |
-         | maintainer.name    | Pavel Skrylev                             |
-         | maintainer.email   | majioa@altlinux.org                       |
+         | options            | value                                      |
+         | rootdir            | features/fixtures/mustermann               |
+         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'}  |
+         | packager.name      | Ruby Maintainers Team                      |
+         | packager.email     | ruby@packages.altlinux.org                 |
+         | maintainer.name    | Pavel Skrylev                              |
+         | maintainer.email   | majioa@altlinux.org                        |
       And he applies "spec" actor to the baltix setup
       Then the generated spec matches "available.spec" from fixture "mustermann"
 
@@ -489,53 +489,53 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options            | value                                     |
-         | rootdir            | features/fixtures/mustermann              |
-         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'} |
-         | packager.name      | Ruby Maintainers Team                     |
-         | packager.email     | ruby@packages.altlinux.org                |
-         | maintainer.name    | Pavel Skrylev                             |
-         | maintainer.email   | majioa@altlinux.org                       |
+         | options            | value                                      |
+         | rootdir            | features/fixtures/mustermann               |
+         | available_gem_list | {hansi: '1.0.0', ruby2_keywords: '0.1.0'}  |
+         | packager.name      | Ruby Maintainers Team                      |
+         | packager.email     | ruby@packages.altlinux.org                 |
+         | maintainer.name    | Pavel Skrylev                              |
+         | maintainer.email   | majioa@altlinux.org                        |
       And he applies "spec" actor to the baltix setup
       And the generated spec is refreshed <updates> times
       Then the generated build prerequisites are:
-         | rpm-macros-ruby setup-rb rake |
+         | rpm-macros-ruby setup-rb rake  |
       And the generated spec contains the lines:
-         | %ruby_use_gem_dependency hansi >= 0.2.0,hansi < 2                   |
-         | %ruby_use_gem_dependency ruby2_keywords >= 0.0.1,ruby2_keywords < 1 |
-         | BuildRequires: gem(hansi) >= 0.2.0                                  |
-         | BuildConflicts: gem(hansi) >= 2                                     |
-         | BuildRequires: gem(ruby2_keywords) >= 0.0.1                         |
-         | BuildConflicts: gem(ruby2_keywords) >= 1                            |
+         | %ruby_use_gem_dependency hansi >= 0.2.0,hansi < 2                     |
+         | %ruby_use_gem_dependency ruby2_keywords >= 0.0.1,ruby2_keywords < 1   |
+         | BuildRequires: gem(hansi) >= 0.2.0                                    |
+         | BuildConflicts: gem(hansi) >= 2                                       |
+         | BuildRequires: gem(ruby2_keywords) >= 0.0.1                           |
+         | BuildConflicts: gem(ruby2_keywords) >= 1                              |
       And package "gem-mustermann" does not require "hansi"
       And package "gem-mustermann" contains dependency lines:
-         | Requires:      gem(ruby2_keywords) >= 0.0.1 |
-         | Conflicts:     gem(ruby2_keywords) >= 1     |
+         | Requires:      gem(ruby2_keywords) >= 0.0.1   |
+         | Conflicts:     gem(ruby2_keywords) >= 1       |
       And package "gem-mustermann-contrib" contains dependency lines:
-         | Requires:      gem(hansi) >= 0.2.0     |
-         | Conflicts:     gem(hansi) >= 2         |
-         | Requires:      gem(mustermann) = 2.0.2 |
+         | Requires:      gem(hansi) >= 0.2.0      |
+         | Conflicts:     gem(hansi) >= 2          |
+         | Requires:      gem(mustermann) = 2.0.2  |
 
       And the generated dependency sections match "available.spec" from fixture "mustermann"
 
       Examples:
-         | updates |
-         | 0       |
-         | 1       |
-         | 2       |
+         | updates   |
+         | 0         |
+         | 1         |
+         | 2         |
 
    @scratch @blank_setup
    Scenario: Generate a spec from the root of the mustermann repository
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options          | value                                    |
-         | rootdir          | features/fixtures/mustermann              |
-         | spec_type        | rpm                                      |
-         | packager.name    | Ruby Maintainers Team                    |
-         | packager.email   | ruby@packages.altlinux.org                |
-         | maintainer.name  | Pavel Skrylev                            |
-         | maintainer.email | majioa@altlinux.org                       |
+         | options            | value                          |
+         | rootdir            | features/fixtures/mustermann   |
+         | spec_type          | rpm                            |
+         | packager.name      | Ruby Maintainers Team          |
+         | packager.email     | ruby@packages.altlinux.org     |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
       Then the main source is the "mustermann" gem
       When he applies "spec" actor to the baltix setup
       Then he acquires an "mustermann" fixture spec for the baltix setup
@@ -545,13 +545,13 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options          | value                              |
-         | rootdir          | features/fixtures/mixlib-shellout   |
-         | spec_type        | rpm                                |
-         | packager.name    | Ruby Maintainers Team              |
-         | packager.email   | ruby@packages.altlinux.org          |
-         | maintainer.name  | Pavel Skrylev                      |
-         | maintainer.email | majioa@altlinux.org                 |
+         | options            | value                             |
+         | rootdir            | features/fixtures/mixlib-shellout |
+         | spec_type          | rpm                               |
+         | packager.name      | Ruby Maintainers Team             |
+         | packager.email     | ruby@packages.altlinux.org        |
+         | maintainer.name    | Pavel Skrylev                     |
+         | maintainer.email   | majioa@altlinux.org               |
       And he applies "spec" actor to the baltix setup
       Then he acquires an "mixlib-shellout" fixture spec for the baltix setup
 
@@ -565,27 +565,27 @@ Feature: Spec actor
       And a spec from fixture "packethost"
       When developer locks the time to "09.11.2026"
       And he sets the space options as:
-         | options          | value                        |
-         | rootdir          | features/fixtures/packethost |
-         | maintainer.name  | Pavel Skrylev                |
-         | maintainer.email | majioa@altlinux.org          |
+         | options            | value                          |
+         | rootdir            | features/fixtures/packethost   |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "packethost" fixture spec for the baltix setup
       And the generated spec contains each line once:
-         | BuildRequires: gem(rdoc) > 4       |
-         | BuildConflicts: gem(rdoc) >= 7     |
-         | BuildRequires: gem(sinatra) > 1.4  |
-         | BuildConflicts: gem(sinatra) >= 3  |
-         | BuildRequires: gem(webmock) > 1.20 |
-         | BuildConflicts: gem(webmock) >= 4  |
+         | BuildRequires: gem(rdoc) > 4         |
+         | BuildConflicts: gem(rdoc) >= 7       |
+         | BuildRequires: gem(sinatra) > 1.4    |
+         | BuildConflicts: gem(sinatra) >= 3    |
+         | BuildRequires: gem(webmock) > 1.20   |
+         | BuildConflicts: gem(webmock) >= 4    |
       And package "gem-packethost-devel" contains dependency lines:
-         | Requires:      gem(rdoc) > 4       |
-         | Conflicts:     gem(rdoc) >= 7      |
-         | Requires:      gem(sinatra) > 1.4  |
-         | Conflicts:     gem(sinatra) >= 3   |
-         | Requires:      gem(webmock) > 1.20 |
-         | Conflicts:     gem(webmock) >= 4   |
+         | Requires:      gem(rdoc) > 4         |
+         | Conflicts:     gem(rdoc) >= 7        |
+         | Requires:      gem(sinatra) > 1.4    |
+         | Conflicts:     gem(sinatra) >= 3     |
+         | Requires:      gem(webmock) > 1.20   |
+         | Conflicts:     gem(webmock) >= 4     |
       When the generated spec is refreshed 2 times
       Then the generated dependency sections match "gem.spec" from fixture "packethost"
 
@@ -594,13 +594,13 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "13.12.2022"
       And he sets the space options as:
-         | options          | value                                   |
-         | rootdir          | features/fixtures/rails-html-sanitizer   |
-         | spec_type        | rpm                                     |
-         | packager.name    | Ruby Maintainers Team                   |
-         | packager.email   | ruby@packages.altlinux.org               |
-         | maintainer.name  | Pavel Skrylev                           |
-         | maintainer.email | majioa@altlinux.org                      |
+         | options            | value                                   |
+         | rootdir            | features/fixtures/rails-html-sanitizer  |
+         | spec_type          | rpm                                     |
+         | packager.name      | Ruby Maintainers Team                   |
+         | packager.email     | ruby@packages.altlinux.org              |
+         | maintainer.name    | Pavel Skrylev                           |
+         | maintainer.email   | majioa@altlinux.org                     |
       And he applies "spec" actor to the baltix setup
       Then he acquires an "rails-html-sanitizer" fixture spec for the baltix setup
 
@@ -614,10 +614,10 @@ Feature: Spec actor
       And a spec from fixture "progressbar"
       When developer locks the time to "09.11.2026"
       And he sets the space options as:
-         | options          | value                         |
-         | rootdir          | features/fixtures/progressbar |
-         | maintainer.name  | Pavel Skrylev                 |
-         | maintainer.email | majioa@altlinux.org           |
+         | options            | value                          |
+         | rootdir            | features/fixtures/progressbar  |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
       And he loads the spec into the space
       Then the main source is the "progressbar" gem
       When he applies "spec" actor to the baltix setup
@@ -626,7 +626,7 @@ Feature: Spec actor
       And package "gem-progressbar" contains dependency lines:
          | Provides:      gem(progressbar) = 1.13.0.5 |
       And package "gem-ruby-progressbar" contains dependency lines:
-         | Provides:      gem(ruby-progressbar) = 1.13.0.5 |
+         | Provides:      gem(ruby-progressbar) = 1.13.0.5  |
       When the generated spec is refreshed 2 times
       Then the main source is the "progressbar" gem
       And the generated package names are unique
@@ -640,10 +640,10 @@ Feature: Spec actor
       When the input spec is named "gem-ruby-progressbar"
       And developer locks the time to "09.11.2026"
       And he sets the space options as:
-         | options          | value                         |
-         | rootdir          | features/fixtures/progressbar |
-         | maintainer.name  | Pavel Skrylev                 |
-         | maintainer.email | majioa@altlinux.org           |
+         | options            | value                          |
+         | rootdir            | features/fixtures/progressbar  |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
       And he loads the spec into the space
       Then the main source is the "ruby-progressbar" gem
       When he applies "spec" actor to the baltix setup
@@ -651,9 +651,9 @@ Feature: Spec actor
       Then the main source is the "ruby-progressbar" gem
       And the generated package names are unique
       And the generated spec contains the lines:
-         | Name:          gem-ruby-progressbar |
+         | Name:          gem-ruby-progressbar  |
       And package "gem-ruby-progressbar" contains dependency lines:
-         | Provides:      gem(ruby-progressbar) = 1.13.0.5 |
+         | Provides:      gem(ruby-progressbar) = 1.13.0.5  |
       And package "gem-progressbar" contains dependency lines:
          | Provides:      gem(progressbar) = 1.13.0.5 |
 
@@ -681,11 +681,11 @@ Feature: Spec actor
       And a spec from fixture "zip-container"
       When developer locks the time to "21.04.2021"
       And he sets the space options as:
-         | options               | value                                         |
-         | rootdir               | features/fixtures/zip-container               |
-         | use_gem_obsolete_list | {rubyzip: rubyzip}                            |
-         | maintainer.name       | Pavel Skrylev                                 |
-         | maintainer.email      | majioa@altlinux.org                           |
+         | options               | value                             |
+         | rootdir               | features/fixtures/zip-container   |
+         | use_gem_obsolete_list | {rubyzip: rubyzip}                |
+         | maintainer.name       | Pavel Skrylev                     |
+         | maintainer.email      | majioa@altlinux.org               |
       And he loads the spec into the space
       Then the main source is the "zip_container" gem
       And the main source metadata file is "zip-container.gemspec"
@@ -702,10 +702,10 @@ Feature: Spec actor
       And a spec from fixture "kgio"
       When developer locks the time to "21.04.2021"
       And he sets the space options as:
-         | options               | value                                         |
-         | rootdir               | features/fixtures/kgio                        |
-         | maintainer.name       | Pavel Skrylev                                 |
-         | maintainer.email      | majioa@altlinux.org                           |
+         | options            | value                    |
+         | rootdir            | features/fixtures/kgio   |
+         | maintainer.name    | Pavel Skrylev            |
+         | maintainer.email   | majioa@altlinux.org      |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "kgio" fixture spec for the baltix setup
@@ -727,21 +727,21 @@ Feature: Spec actor
          | maintainer.email   | majioa@altlinux.org                        |
       And he applies "spec" actor to the baltix setup
       Then package "gem-rails-html-sanitizer" contains dependency lines:
-         | Requires:      gem(nokogiri) >= 1.15.7    |
-         | Conflicts:     gem(nokogiri) >= <maximum> |
+         | Requires:      gem(nokogiri) >= 1.15.7     |
+         | Conflicts:     gem(nokogiri) >= <maximum>  |
       And the generated spec contains each line once:
-         | %ruby_use_gem_dependency nokogiri >= 1.15.7,nokogiri < <maximum> |
-         | BuildRequires: gem(nokogiri) >= 1.15.7                           |
-         | BuildConflicts: gem(nokogiri) >= <maximum>                       |
+         | %ruby_use_gem_dependency nokogiri >= 1.15.7,nokogiri < <maximum>   |
+         | BuildRequires: gem(nokogiri) >= 1.15.7                             |
+         | BuildConflicts: gem(nokogiri) >= <maximum>                         |
       And the generated spec matches "<expected>" from fixture "rails-html-sanitizer-1.7"
       When the generated spec is refreshed 2 times
       Then the generated dependency sections match "<expected>" from fixture "rails-html-sanitizer-1.7"
 
       Examples:
-         | available            | maximum | expected       |
-         | {}                   | 1.16.0  | gem.spec       |
-         | {nokogiri: '1.14.0'} | 1.16.0  | gem.spec       |
-         | {nokogiri: '1.16.8'} | 2       | available.spec |
+         | available             | maximum   | expected        |
+         | {}                    | 1.16.0    | gem.spec        |
+         | {nokogiri: '1.14.0'}  | 1.16.0    | gem.spec        |
+         | {nokogiri: '1.16.8'}  | 2         | available.spec  |
 
    @policy2_0 @gem_change @main_is_gem
    Scenario: Migrate rbvmomi from obsolete Ruby Policy 2.0 to 2.1 using available gem versions
@@ -765,14 +765,14 @@ Feature: Spec actor
       Then he acquires an "rbvmomi" fixture spec for the baltix setup
       And the generated package names are unique
       And the generated build prerequisites are:
-         | rpm-macros-ruby setup-rb rake |
+         | rpm-macros-ruby setup-rb rake  |
       And the generated spec contains the lines:
-         | %ruby_use_gem_dependency rake >= 10.5,rake < 16 |
-         | BuildRequires: gem(rake) >= 10.5                |
-         | BuildConflicts: gem(rake) >= 16                 |
+         | %ruby_use_gem_dependency rake >= 10.5,rake < 16  |
+         | BuildRequires: gem(rake) >= 10.5                 |
+         | BuildConflicts: gem(rake) >= 16                  |
       And package "gem-rbvmomi-devel" contains dependency lines:
-         | Requires:      gem(rake) >= 10.5 |
-         | Conflicts:     gem(rake) >= 16   |
+         | Requires:      gem(rake) >= 10.5  |
+         | Conflicts:     gem(rake) >= 16    |
 
    @policy2_0 @release_change @main_is_gem
    Scenario: Migrate rspec-support from obsolete Ruby Policy 2.0 to 2.1
@@ -820,26 +820,26 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "21.04.2021"
       And he sets the space options as:
-         | options            | value                  |
-         | rootdir            | features/fixtures/turn |
-         | available_gem_list | <available>            |
-         | spec_type          | rpm                    |
-         | maintainer.name    | Pavel Skrylev          |
-         | maintainer.email   | majioa@altlinux.org    |
+         | options            | value                    |
+         | rootdir            | features/fixtures/turn   |
+         | available_gem_list | <available>              |
+         | spec_type          | rpm                      |
+         | maintainer.name    | Pavel Skrylev            |
+         | maintainer.email   | majioa@altlinux.org      |
       Then the source "turn" dependency "minitest" has version compatibility:
-         | version | allowed |
-         | 3.9     | no      |
-         | 4.0     | yes     |
-         | 4.99    | yes     |
-         | 5.0     | no      |
-         | 5.14.0  | no      |
+         | version   | allowed   |
+         | 3.9       | no        |
+         | 4.0       | yes       |
+         | 4.99      | yes       |
+         | 5.0       | no        |
+         | 5.14.0    | no        |
       When he applies "spec" actor to the baltix setup
       Then the generated spec matches "<expected>" from fixture "turn"
 
       Examples:
-         | available          | expected    |
-         | {}                 | source.spec |
-         | {minitest: 5.14.0} | gem.spec    |
+         | available          | expected     |
+         | {}                 | source.spec  |
+         | {minitest: 5.14.0} | gem.spec     |
 
    @policy2_0 @gem_change
    Scenario: Migrate ruby-gnome2 from obsolete Ruby Policy pre-2.0 to 2.1
@@ -855,21 +855,21 @@ Feature: Spec actor
       And a spec from fixture "ruby-gnome2"
       When developer locks the time to "09.03.2022"
       And he sets the space options as:
-         | options            | value                         |
-         | rootdir            | features/fixtures/ruby-gnome2 |
-         | available_gem_list | {minitest: 5.14.0}            |
-         | spec_type          | rpm                           |
-         | ignored_names      | [rake]                        |
-         | maintainer.name    | Pavel Skrylev                 |
-         | maintainer.email   | majioa@altlinux.org           |
+         | options            | value                          |
+         | rootdir            | features/fixtures/ruby-gnome2  |
+         | available_gem_list | {minitest: 5.14.0}             |
+         | spec_type          | rpm                            |
+         | ignored_names      | [rake]                         |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
       And the input spec has extra build requirements:
-         | gem-cairo-headers-devel |
+         | gem-cairo-headers-devel  |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "ruby-gnome2" fixture spec for the baltix setup
       When the generated spec is refreshed 2 times
       Then the generated spec contains the lines:
-         | BuildRequires: gem-cairo-headers-devel |
+         | BuildRequires: gem-cairo-headers-devel  |
       And the generated dependency sections match "gem.spec" from fixture "ruby-gnome2"
 
    @scratch @hoe @blank_setup
@@ -878,13 +878,13 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "21.04.2021"
       And he sets the space options as:
-         | options               | value                             |
-         | packager.name         | Ruby Maintainers Team             |
-         | packager.email        | ruby@packages.altlinux.org        |
-         | rootdir               | features/fixtures/oedipus-lex     |
-         | spec_type             | rpm                               |
-         | maintainer.name       | Pavel Skrylev                     |
-         | maintainer.email      | majioa@altlinux.org               |
+         | options            | value                          |
+         | packager.name      | Ruby Maintainers Team          |
+         | packager.email     | ruby@packages.altlinux.org     |
+         | rootdir            | features/fixtures/oedipus-lex  |
+         | spec_type          | rpm                            |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
       And he applies "spec" actor to the baltix setup
       Then he acquires an "oedipus-lex" fixture spec for the baltix setup
 
@@ -894,13 +894,13 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "21.04.2021"
       And he sets the space options as:
-         | options               | value                             |
-         | packager.name         | Ruby Maintainers Team             |
-         | packager.email        | ruby@packages.altlinux.org        |
-         | rootdir               | features/fixtures/little-plugger  |
-         | spec_type             | rpm                               |
-         | maintainer.name       | Pavel Skrylev                     |
-         | maintainer.email      | majioa@altlinux.org               |
+         | options            | value                             |
+         | packager.name      | Ruby Maintainers Team             |
+         | packager.email     | ruby@packages.altlinux.org        |
+         | rootdir            | features/fixtures/little-plugger  |
+         | spec_type          | rpm                               |
+         | maintainer.name    | Pavel Skrylev                     |
+         | maintainer.email   | majioa@altlinux.org               |
       And he applies "spec" actor to the baltix setup
       Then he acquires an "little-plugger" fixture spec for the baltix setup
 
@@ -910,13 +910,13 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "21.04.2021"
       And he sets the space options as:
-         | options               | value                             |
-         | packager.name         | Ruby Maintainers Team             |
-         | packager.email        | ruby@packages.altlinux.org        |
-         | rootdir               | features/fixtures/polyglot        |
-         | spec_type             | rpm                               |
-         | maintainer.name       | Pavel Skrylev                     |
-         | maintainer.email      | majioa@altlinux.org               |
+         | options            | value                       |
+         | packager.name      | Ruby Maintainers Team       |
+         | packager.email     | ruby@packages.altlinux.org  |
+         | rootdir            | features/fixtures/polyglot  |
+         | spec_type          | rpm                         |
+         | maintainer.name    | Pavel Skrylev               |
+         | maintainer.email   | majioa@altlinux.org         |
       And he applies "spec" actor to the baltix setup
       Then he acquires an "polyglot" fixture spec for the baltix setup
 
@@ -928,13 +928,13 @@ Feature: Spec actor
       Given blank space
       When developer locks the time to "21.04.2021"
       And he sets the space options as:
-         | options               | value                             |
-         | packager.name         | Ruby Maintainers Team             |
-         | packager.email        | ruby@packages.altlinux.org        |
-         | rootdir               | features/fixtures/echoe           |
-         | spec_type             | rpm                               |
-         | maintainer.name       | Pavel Skrylev                     |
-         | maintainer.email      | majioa@altlinux.org               |
+         | options            | value                       |
+         | packager.name      | Ruby Maintainers Team       |
+         | packager.email     | ruby@packages.altlinux.org  |
+         | rootdir            | features/fixtures/echoe     |
+         | spec_type          | rpm                         |
+         | maintainer.name    | Pavel Skrylev               |
+         | maintainer.email   | majioa@altlinux.org         |
       And he applies "spec" actor to the baltix setup
       Then he acquires an "echoe" fixture spec for the baltix setup
 
@@ -952,15 +952,15 @@ Feature: Spec actor
       And a spec from fixture "ruby-debug-ide"
       When developer locks the time to "16.11.2024"
       And he sets the space options as:
-         | options               | value                             |
-         | rootdir               | features/fixtures/ruby-debug-ide  |
-         | available_gem_list    | {rake: 13.2.1, test-unit: 3.6.2}  |
-         | spec_type             | rpm                               |
-         | packager.name         | Baltix Maintainers Team           |
-         | packager.email        | baltix@packages.altlinux.org      |
-         | autorender_name       | true                              |
-         | maintainer.name       | Baltix Builder Bot                |
-         | maintainer.email      | bbb@altlinux.org                  |
+         | options            | value                             |
+         | rootdir            | features/fixtures/ruby-debug-ide  |
+         | available_gem_list | {rake: 13.2.1, test-unit: 3.6.2}  |
+         | spec_type          | rpm                               |
+         | packager.name      | Baltix Maintainers Team           |
+         | packager.email     | baltix@packages.altlinux.org      |
+         | autorender_name    | true                              |
+         | maintainer.name    | Baltix Builder Bot                |
+         | maintainer.email   | bbb@altlinux.org                  |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "ruby-debug-ide" fixture spec for the baltix setup
@@ -975,21 +975,21 @@ Feature: Spec actor
       And a spec from fixture "dynflow"
       When developer locks the time to "09.11.2026"
       And he sets the space options as:
-         | options          | value                     |
-         | rootdir          | features/fixtures/dynflow |
-         | maintainer.name  | Pavel Skrylev             |
-         | maintainer.email | majioa@altlinux.org       |
+         | options            | value                       |
+         | rootdir            | features/fixtures/dynflow   |
+         | maintainer.name    | Pavel Skrylev               |
+         | maintainer.email   | majioa@altlinux.org         |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then the generated spec preserves the input packaging sections
       And the generated package names are unique
       And package "dynflow" contains dependency lines:
-         | Summary:       DYNamic workFLOW engine executable(s) |
-         | Requires:      gem(dynflow) = 2.0.1                  |
+         | Summary:       DYNamic workFLOW engine executable(s)   |
+         | Requires:      gem(dynflow) = 2.0.1                    |
       And he acquires an "dynflow" fixture spec for the baltix setup
       And the generated spec contains each line once:
-         | BuildRequires: gem(minitest) >= 0     |
-         | BuildConflicts: gem(minitest) >= 5.19 |
+         | BuildRequires: gem(minitest) >= 0       |
+         | BuildConflicts: gem(minitest) >= 5.19   |
       And package "gem-dynflow-devel" contains dependency lines:
          | Requires:      gem(minitest) >= 0    |
          | Conflicts:     gem(minitest) >= 5.19 |
