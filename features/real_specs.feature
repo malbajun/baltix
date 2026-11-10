@@ -9,6 +9,31 @@ Feature: Spec actor
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
 
+   # Passenger 3a958d427e6a, ALT gem-passenger spec from altlinux/specs 4d2273b2.
+   @policy2_1 @main_is_gem
+   Scenario: Preserve Passenger shell-expanded RPM dependency declarations
+      - retain the Apache build requirement as one expression without evaluating it
+      - keep the expression intact in generated build and devel dependency tags
+      - retain the declaration after repeated spec updates
+      Given blank space
+      And a spec from fixture "passenger"
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options            | value                       |
+         | rootdir            | features/fixtures/passenger |
+         | maintainer.name    | Pavel Skrylev               |
+         | maintainer.email   | majioa@altlinux.org         |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains the lines:
+         | BuildRequires: %(eval echo %apache2_apr_buildreq)   |
+         | BuildRequires: apache2-devel >= 2.2.5               |
+      And package "gem-passenger-devel" contains dependency lines:
+         | Requires:      %(eval echo %apache2_apr_buildreq)   |
+      And he acquires an "passenger" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "passenger"
+
    # ai/autoprefixer-rails 10.4.19.0; ALT gear b5d38f9ba56b197f31a2b733e07fc8f212761dca.
    @scratch @main_is_gem
    Scenario: Remove a plain gem-name capability imported from a packaged spec
@@ -647,7 +672,7 @@ Feature: Spec actor
       And he applies "spec" actor to the baltix setup
       Then he acquires an "ucf" fixture spec for the baltix setup
 
-   @policy1_0 @gem_change @gem_obsolete_list @main_is_gem
+   @policy1_0 @gem_change @gem_obsolete_list @main_is_gem @loader_gc
    Scenario: Migrate zip-container from obsolete Ruby Policy 1.0 to 2.1
       - blank packager
       - both gem dependencies are runtime and development
@@ -662,7 +687,9 @@ Feature: Spec actor
          | maintainer.name       | Pavel Skrylev                                 |
          | maintainer.email      | majioa@altlinux.org                           |
       And he loads the spec into the space
-      And he applies "spec" actor to the baltix setup
+      Then the main source is the "zip_container" gem
+      And the main source metadata file is "zip-container.gemspec"
+      When he applies "spec" actor to the baltix setup
       Then he acquires an "zip-container" fixture spec for the baltix setup
 
    @policy1_0 @gem_change @olddoc @wrongdoc @main_is_gem

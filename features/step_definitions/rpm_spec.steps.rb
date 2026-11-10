@@ -3,6 +3,14 @@ Given('RPM spec file:') do |rpm_spec|
    @spec_in = StringIO.open(rpm_spec)
 end
 
+When('developer loads the spec without evaluating expressions') do
+   forbidden = ['eval', 'system', 'exec', 'spawn', 'popen', '`'].map(&:to_sym)
+   guard = TracePoint.new(:call, :c_call) do |event|
+      raise "Dependency parsing attempted #{event.method_id}" if forbidden.include?(event.method_id)
+   end
+   guard.enable { step 'developer loads the spec' }
+end
+
 When('developer loads the spec') do
    options = cli.options.merge({ rootdir: File.join(Dir.pwd, 'features/fixtures/blank') }.to_os)
    @space = Baltix::Space::Spec.load_from(@spec_in, options)

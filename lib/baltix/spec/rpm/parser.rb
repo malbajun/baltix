@@ -383,14 +383,60 @@ class Baltix::Spec::Rpm::Parser
       end.reverse
    end
 
+   # Splits dependency tokens without evaluating embedded RPM or shell expressions.
+   # @param text [String] a dependency tag's value
+   # @return [Array<String>] tokens with their original grouped contents
+   # Whitespace separates tokens only outside parentheses, braces and quotes.
+   # Nested groups, quoted delimiters and escaped characters stay in their token.
+   # An unfinished group or quote is retained as text rather than partially split.
+   def dependency_tokens text
+      tokens = []
+      start = 0
+      closing = []
+      quote = nil
+      escaped = false
+
+      text.each_char.with_index do |character, index|
+         if escaped
+            escaped = false
+         elsif character == '\\'
+            escaped = true
+         elsif quote
+            quote = nil if character == quote
+         elsif character == '"' || character == "'"
+            quote = character
+         elsif character == '(' || character == '{'
+            closing << (character == '(' ? ')' : '}')
+         elsif character == closing.last
+            closing.pop
+         elsif character.match?(/\s/) && closing.empty?
+            tokens << text[start...index] if start < index
+            start = index + 1
+         end
+      end
+
+      tokens << text[start..] if start < text.length
+      tokens
+   end
+
    # Parses RPM dependency declarations into gem dependencies or package strings.
    # @param match [Array<String>] captures with declarations at index 1
    # @param preserve_versions [Boolean] whether to retain explicit gem constraints
    # @return [Array<Gem::Dependency, String>] parsed gem and package dependencies
    # If version preservation is enabled, a gem's explicit constraint is retained.
    # Otherwise gem constraints default to >= 0. Non-gem declarations stay strings.
+   # A comparison token and following version are attached to the preceding name.
+   # Embedded expressions remain intact, including nested groups and quoted spaces.
    def parse_dep match, *_, preserve_versions: false
-      deps = match[1].scan(/[^\s]+(?:\s+[<=>]+\s+[^\s]+)?/)
+      tokens = dependency_tokens(match[1])
+      deps = []
+      until tokens.empty?
+         declaration = tokens.shift
+         if tokens.first&.match?(/\A[<=>]+\z/) && tokens[1]
+            declaration = [declaration, tokens.shift, tokens.shift].join(' ')
+         end
+         deps << declaration
+      end
       deps.map do |declaration|
          if gem = /\A(?:gem|rubygem|ruby-gem)\(([^\)]+)\)/.match(declaration)
             requirement = preserve_versions && declaration[gem.end(0)..].strip

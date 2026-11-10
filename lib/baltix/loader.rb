@@ -200,13 +200,20 @@ module Baltix::Loader
       @@mods ||= {}
    end
 
+   # Evaluates package metadata while capturing output independently of Tempfile wrappers.
+   # @param file [String] metadata file to evaluate
+   # @param dir [String] source directory used by the sandbox
+   # @return [OpenStruct] captured objects and logs, or empty object data on failure
+   # Matching preloaders run before evaluation. The underlying IO is duplicated
+   # so garbage collection of a temporary wrapper cannot close the original log.
+   # Failures are reported and the original global streams are always restored.
    def load_file file, dir
       debug("Loading file: #{file}")
       stdout = $stdout
       stderr = $stderr
 
       tmpio = Tempfile.new('loader')
-      $stdout = $stderr = tmpio.dup
+      $stdout = $stderr = tmpio.to_io.dup
 
       pre_loaders.each do |(m, preload_method)|
          if file =~ m
