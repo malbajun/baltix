@@ -6,6 +6,58 @@ class Baltix::Spec::Rpm::Parser
       filetriggerpostun transfiletriggerin transfiletriggerun transfiletriggerpostun).freeze
    SECTION_HEADER = /^%(#{(SCRIPT_SECTIONS + %w(package description files changelog)).join('|')})(?:\s|$)/
 
+   DEPENDENCY_TOKEN_GROUPS = { '(' => ')', '{' => '}' }.freeze
+
+   # The first matching rule handles a character without evaluating its contents.
+   # Matchers and actions receive the character, its index and the scanner state.
+   # Escape and quote rules precede grouping and whitespace rules so delimiters
+   # inside escaped or quoted text remain part of their original token.
+   DEPENDENCY_TOKEN_SCHEME = {
+      escaped: [
+         ->(_character, _index, state) { state[:escaped] },
+         ->(_character, _index, state) { state[:escaped] = false }
+      ],
+      escape: [
+         ->(character, _index, _state) { character == "\\" },
+         ->(_character, _index, state) { state[:escaped] = true }
+      ],
+      quote_end: [
+         ->(character, _index, state) { character == state[:quote] },
+         ->(_character, _index, state) { state[:quote] = nil }
+      ],
+      quoted: [
+         ->(_character, _index, state) { state[:quote] },
+         ->(_character, _index, _state) {}
+      ],
+      quote_start: [
+         ->(character, _index, _state) { %q{"'}.include?(character) },
+         ->(character, _index, state) { state[:quote] = character }
+      ],
+      group_start: [
+         ->(character, _index, _state) { DEPENDENCY_TOKEN_GROUPS.key?(character) },
+         ->(character, _index, state) { state[:closing] << DEPENDENCY_TOKEN_GROUPS[character] }
+      ],
+      group_end: [
+         ->(character, _index, state) { character == state[:closing].last },
+         ->(_character, _index, state) { state[:closing].pop }
+      ],
+      token_end: [
+         ->(character, index, state) { character.match?(/\s/) && state[:closing].empty? && state[:start] < index },
+         lambda do |_character, index, state|
+            state[:tokens] << state[:text][state[:start]...index]
+            state[:start] = index + 1
+         end
+      ],
+      whitespace: [
+         ->(character, _index, state) { character.match?(/\s/) && state[:closing].empty? },
+         ->(_character, index, state) { state[:start] = index + 1 }
+      ],
+      text: [
+         ->(_character, _index, _state) { true },
+         ->(_character, _index, _state) {}
+      ]
+   }.transform_values(&:freeze).freeze
+
    SCHEME = {
       name: {
          non_contexted: true,
@@ -389,34 +441,20 @@ class Baltix::Spec::Rpm::Parser
    # Whitespace separates tokens only outside parentheses, braces and quotes.
    # Nested groups, quoted delimiters and escaped characters stay in their token.
    # An unfinished group or quote is retained as text rather than partially split.
+   # The ordered schema chooses one action per character; empty trailing tokens
+   # are omitted. Neither RPM macros nor shell expressions are evaluated.
    def dependency_tokens text
-      tokens = []
-      start = 0
-      closing = []
-      quote = nil
-      escaped = false
+      state = { text: text, tokens: [], start: 0, closing: [], quote: nil, escaped: false }
 
       text.each_char.with_index do |character, index|
-         if escaped
-            escaped = false
-         elsif character == '\\'
-            escaped = true
-         elsif quote
-            quote = nil if character == quote
-         elsif character == '"' || character == "'"
-            quote = character
-         elsif character == '(' || character == '{'
-            closing << (character == '(' ? ')' : '}')
-         elsif character == closing.last
-            closing.pop
-         elsif character.match?(/\s/) && closing.empty?
-            tokens << text[start...index] if start < index
-            start = index + 1
+         rule = DEPENDENCY_TOKEN_SCHEME.each_value.find do |matcher, _action|
+            matcher.call(character, index, state)
          end
+         rule.last.call(character, index, state)
       end
 
-      tokens << text[start..] if start < text.length
-      tokens
+      state[:tokens] << text[state[:start]..]
+      state[:tokens].reject(&:empty?)
    end
 
    # Parses RPM dependency declarations into gem dependencies or package strings.
