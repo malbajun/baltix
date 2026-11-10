@@ -84,7 +84,7 @@ loofah,rails-html-sanitizer - gems in Gemfile under condition/unknown group
 rails - requires for gem-rails
 
 
-snowglobe,warnings_logger,addressable,autoprefixer-rails,graphql,packethost,jquery-ui-rails,gitlab-sidekiq-fetcher - erroneouse require list for gem
+packethost,gitlab-sidekiq-fetcher - erroneouse require list for gem
 packethost - erroneous alias
 
 
@@ -97,7 +97,6 @@ oauth-tty - deferred: fix deps for devel/bin/runtime
 opennebula - deferred: complex project; analyze after smaller projects
 foreman - deferred: complex project; analyze after smaller projects
 
-progressbar - position of ruby-progressbar and progressbar based on 1. spec main name, 2. shortnamess name
 source status - obsolete - (chef) and duplicate (progressbar)
 
 azure-for.ruby - compare old spec and newly generated, to ensure no avoid manual fixes

@@ -336,11 +336,18 @@ module Baltix::Spec::Rpm::SpecCore
       # TODO move reversion to space/sources
       # here is a workaround only
       # reversion to support newer ones
-      reversion = gem_versionings.select {|n,v| name.eql?(n, true) }.to_h.values.first
+      source_name = source&.provide&.name
+      reversion = source_name && gem_versionings[source_name] ||
+         gem_versionings.select {|n,v| name.eql?(n, true) }.to_h.values.first
 
       reversion || value_in
    end
 
+   # Normalizes the selected source or explicitly packaged gem version.
+   # @param value_in [Gem::Version, Gem::Dependency, Array, String] selected version
+   # @return [Gem::Version] package version, including explicit packaging suffixes
+   # Main and library packages retain the selected version. Auxiliary packages
+   # inherit their host's version; source-less secondaries inherit the document's.
    def _version value_in
       v =
          case value_in
@@ -369,7 +376,7 @@ module Baltix::Spec::Rpm::SpecCore
 
             v
          elsif source.respond_to?(:spec)
-            source.spec.version
+            v
          elsif doc
             doc.version # TODO как отличить?
          end
@@ -401,8 +408,17 @@ module Baltix::Spec::Rpm::SpecCore
       end.join(" ")
    end
 
+   # Selects RPM requirements that are not regenerated from package metadata.
+   # @param value_in [Array<Gem::Dependency, String>] parsed requirements
+   # @return [Array<String>] retained non-gem RPM requirements
+   # Gem requirements are reconstructed from sources. For an auxiliary package
+   # of an application, its host RPM requirement is also reconstructed so a prior
+   # exact release cannot survive alongside the host's current release.
    def _requires_plain_only value_in
-      @requires_plain_only ||= value_in&.reject {|dep| dep.is_a?(Gem::Dependency) }
+      @requires_plain_only ||= value_in&.reject do |dep|
+         dep.is_a?(Gem::Dependency) ||
+            (is_aux? && host&.is_app? && dep.is_a?(String) && dep.match?(/\A#{Regexp.escape(host.name.to_s)}(?:\s|\z)/))
+      end
    end
 
    def _conflicts_plain_only value_in
@@ -646,20 +662,39 @@ module Baltix::Spec::Rpm::SpecCore
       end
    end
 
+   # Builds the gem capability with its original name and selected package version.
+   # @return [Gem::Dependency] the provided gem with an exact version requirement
+   # If a source exists, its literal name is retained even when legacy RPM aliases
+   # or version overrides also match another gem. Without a source, the space name
+   # supplies the capability. A previously built dependency is returned unchanged.
    def provide_dep
       return @provide_dep if @provide_dep
 
-      name_tmp = source ? Baltix::Spec::Rpm::Name.parse(source.provide.name) : name
-      provide_dep_pre = gem_versionings.select {|n,v| name_tmp.eql?(n, true) }.to_h.values.first || source&.provide || space.name
+      provide_dep_pre = source&.provide || space.name
 
       @provide_dep = Gem::Dependency.new(provide_dep_pre.name, version)
    end
 
+   # Retains explicit capabilities without converting gems into plain RPM aliases.
+   # @param value_in [Array<Gem::Dependency, String>] capabilities from configuration or state
+   # @return [Array<Gem::Dependency, String>] explicit capabilities awaiting rendering
+   # Packaged gems' capabilities are regenerated with their selected versions.
+   # Other gem capabilities retain their type and bounds. Plain aliases matching
+   # the current gem's literal name are removed, with or without version bounds.
+   # Other RPM aliases retain the existing deduplication and implicit EVR behavior.
+   # Packaged sources are queried only when a parsed gem capability needs handling.
+   # The current gem's name is also checked when no typed gem capability was given.
    def _provides value_in
+      packaged_names = value_in.any? { |value| value.is_a?(Gem::Dependency) } ?
+         (Array(doc.sources) | [source]).grep(Baltix::Source::Gem).map(&:name) : []
+      gem_name = source.name if source.is_a?(Baltix::Source::Gem)
       value_in.reduce([]) do |res, o|
-         n = o.is_a?(Gem::Dependency) ? o.name : o
-
-         names.include?(n) ? res : n =~ /^[^\s]+$/ ? res | [n + " = %EVR"] : res | [o]
+         if o.is_a?(Gem::Dependency)
+            packaged_names.include?(o.name) ? res : res | [o]
+         else
+            names.include?(o) || o.split.first == gem_name ?
+               res : o =~ /^[^\s]+$/ ? res | [o + " = %EVR"] : res | [o]
+         end
       end.compact
    end
 

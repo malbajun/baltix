@@ -6,6 +6,10 @@ See the normative rules in the [Ruby Policy 2.1 draft](ruby-policy-2.1.md).
 
 For an upstream release, preserve its original semantic version.
 
+When refreshing an existing spec, preserve explicitly packaged versions from
+`%ruby_use_gem_version`; do not discard their upstream or local patch components
+by falling back to an unadjusted upstream gemspec version.
+
 For a prerelease snapshot, append a numeric component to the previous upstream
 release version. This component is the number of upstream patches (commits)
 between that release and the selected upstream HEAD. For example, 17 upstream
@@ -51,3 +55,7 @@ and `alt0.1.2`.
 
 Keep the main package, its subpackages, and the changelog entry consistent
 with the selected versions and revisions.
+
+When Baltix changes an existing spec without changing its module version,
+increment the spec revision and add a changelog entry. Re-rendering identical
+content must retain the revision and changelog unchanged.

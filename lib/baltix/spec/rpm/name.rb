@@ -206,6 +206,15 @@ class Baltix::Spec::Rpm::Name
          })
       end
 
+      # Creates an RPM library name from a literal gem name.
+      # @param gem_name [String] gemspec name, including any ruby- or gem- prefix
+      # @return [Baltix::Spec::Rpm::Name] library name retaining the complete gem name
+      # The explicit RPM prefix prevents a gem's own prefix from being treated
+      # as a legacy package prefix; ordinary punctuation aliases still apply.
+      def for_gem gem_name
+         parse("#{default_prefix}-#{gem_name}", name: gem_name, kind: "lib", prefix: default_prefix)
+      end
+
       def parse name_in, options_in = {}
          options = parse_options(name_in, options_in)
 

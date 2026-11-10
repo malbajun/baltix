@@ -73,7 +73,7 @@ class Baltix::Spec::Rpm::Parser
       },
       provides: {
          regexp: /^Provides:\s*([^#]+)/i,
-         parse_func: :parse_dep
+         parse_func: :parse_provides
       },
       requires: {
          regexp: /^Requires:\s*([^#]+)/i,
@@ -92,6 +92,11 @@ class Baltix::Spec::Rpm::Parser
          non_contexted: true,
          regexp: /^%(ruby_regard_path_tokens)\s+([^\s$]+)/i,
          parse_func: :parse_ignore
+      },
+      use_gem_version_list: {
+         non_contexted: true,
+         regexp: /^%ruby_use_gem_version\s+([^\s#]+)/i,
+         parse_func: :parse_use_gem_versions
       },
       ignored_names: {
          non_contexted: true,
@@ -199,6 +204,8 @@ class Baltix::Spec::Rpm::Parser
       end
 
       store_value(state, matched.match, matched.name, matched.flow, context)
+
+      state.original_spec = source(source_in).map(&:chomp).join("\n").strip
 
       #binding.pry
       state
@@ -330,6 +337,13 @@ class Baltix::Spec::Rpm::Parser
       parse_dep(match, preserve_versions: true)
    end
 
+   # Parses RPM and gem capabilities without losing their declared versions.
+   # @param match [Array<String>] captures with capability declarations at index 1
+   # @return [Array<Gem::Dependency, String>] typed gem capabilities and RPM strings
+   def parse_provides match, *_
+      parse_dep(match, preserve_versions: true)
+   end
+
    # Parses explicit build conflicts for non-gem RPM packages.
    # @param match [Array<String>] captures with dependency declarations at index 1
    # @return [Array<String>] package conflicts with their original version bounds
@@ -341,6 +355,13 @@ class Baltix::Spec::Rpm::Parser
 
    def parse_ignore match, *_
       match[2].split(/,/).map {|x| x =~ /^\/(.*)/ && /#{$1}/ || x }
+   end
+
+   # Reads explicitly packaged gem versions from a ruby_use_gem_version macro.
+   # @param match [Array<String>] captures with comma-separated name:version pairs at index 1
+   # @return [OpenStruct] gem names mapped to their unchanged version strings
+   def parse_use_gem_versions match, *_
+      match[1].split(',').map { |entry| entry.split(':', 2) }.to_h.to_os
    end
 
    def parse_default match, *_

@@ -7,6 +7,33 @@ Feature: Spec actor
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
 
+   # ai/autoprefixer-rails 10.4.19.0; ALT gear b5d38f9ba56b197f31a2b733e07fc8f212761dca.
+   @scratch @main_is_gem
+   Scenario: Remove a plain gem-name capability imported from a packaged spec
+      - keep the typed gem capability and its packaged version
+      - remove the redundant plain RPM alias already present in the input
+      - retain runtime bounds and keep the result stable through repeated updates
+      Given blank space
+      And a spec from fixture "autoprefixer-rails"
+      When developer locks the time to "10.11.2026"
+      And he sets the space options as:
+         | options          | value                                |
+         | rootdir          | features/fixtures/autoprefixer-rails |
+         | maintainer.name  | Pavel Skrylev                        |
+         | maintainer.email | majioa@altlinux.org                  |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains each line once:
+         | Provides:      gem(autoprefixer-rails) = 10.4.19.0 |
+      And the generated spec excludes the lines:
+         | Provides:      autoprefixer-rails = %EVR |
+      And package "gem-autoprefixer-rails" contains dependency lines:
+         | Requires:      gem(execjs) >= 2 |
+         | Conflicts:     gem(execjs) >= 3 |
+      And he acquires an "autoprefixer-rails" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated spec matches "gem.spec" from fixture "autoprefixer-rails"
+
    # chef/license_scout v2.6.10, b7fbe3c; retain one matching gemspec from spec/fixtures.
    @scratch @blank_setup @main_is_gem
    Scenario: Keep matching test fixture gems out of generated source packages
@@ -285,8 +312,10 @@ Feature: Spec actor
    Scenario: Keep hiredis development overrides aligned with build requirements and conflicts
       - widen upper bounds using available versions without raising source minimums
       - preserve the same dependency ranges across repeated spec updates
+      - retain the packaged 0.6.3.14.1 version and its explicit version macro
       Given blank space
-      When developer locks the time to "13.12.2022"
+      And a spec from fixture "hiredis"
+      When developer locks the time to "09.11.2026"
       And he sets the space options as:
          | options            | value                               |
          | rootdir            | features/fixtures/hiredis           |
@@ -294,8 +323,14 @@ Feature: Spec actor
          | spec_type          | rpm                                 |
          | maintainer.name    | Pavel Skrylev                       |
          | maintainer.email   | majioa@altlinux.org                 |
+      And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
-      Then he acquires an "hiredis" fixture spec for the baltix setup
+      Then the generated spec contains each line once:
+         | %ruby_use_gem_version hiredis:0.6.3.14.1 |
+         | Provides:      gem(hiredis) = 0.6.3.14.1 |
+      And the generated spec excludes the lines:
+         | Provides:      hiredis = %EVR |
+      And he acquires an "hiredis" fixture spec for the baltix setup
       And the generated spec contains the lines:
          | %ruby_use_gem_dependency minitest >= 5.5.1,minitest < 7           |
          | %ruby_use_gem_dependency rake-compiler >= 0.7.1,rake-compiler < 2 |
@@ -311,16 +346,47 @@ Feature: Spec actor
       And package "gem-hiredis" does not require "minitest"
       And package "gem-hiredis" does not require "rake-compiler"
       When the generated spec is refreshed 2 times
-      Then the generated dependency sections match "gem.spec" from fixture "hiredis"
+      Then the generated spec matches "gem.spec" from fixture "hiredis"
 
    # gitlab-sidekiq-fetcher 0.9.0 release; input spec from altlinux/specs.
+   @scratch @main_is_gem
+   Scenario Outline: Increment only the spec revision when a generated package changes
+      - preserve the packaged module version
+      - keep release and prerelease revision components separate
+      - update the changelog and every subpackage revision together
+      - leave the full spec unchanged on subsequent identical refreshes
+      Given blank space
+      And a spec from fixture "hiredis"
+      When developer locks the time to "09.11.2026"
+      And he sets the space options as:
+         | options          | value                    |
+         | rootdir          | features/fixtures/hiredis |
+         | maintainer.name  | Pavel Skrylev            |
+         | maintainer.email | majioa@altlinux.org       |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      And the generated input has release "<before>"
+      And he sets the space option "uri" to "https://example.org/hiredis"
+      And the generated spec is refreshed 1 times
+      Then every generated package and the latest changelog entry have release "<after>"
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
+      Examples:
+         | before   | after    |
+         | alt1     | alt1.1   |
+         | alt1.1   | alt1.2   |
+         | alt0.1   | alt0.1.1 |
+         | alt0.1.1 | alt0.1.2 |
+
    @policy2_0 @main_is_gem
    Scenario: Recompute gitlab-sidekiq-fetcher overrides without raising source minimums
       - replace historical macro constraints with current source and availability bounds
       - keep runtime and build conflicts aligned with the sidekiq macro
       Given blank space
       And a spec from fixture "gitlab-sidekiq-fetcher"
-      When developer locks the time to "13.12.2022"
+      When developer locks the time to "09.11.2026"
       And he sets the space options as:
          | options            | value                                    |
          | rootdir            | features/fixtures/gitlab-sidekiq-fetcher |
@@ -474,6 +540,59 @@ Feature: Spec actor
          | maintainer.email | majioa@altlinux.org                      |
       And he applies "spec" actor to the baltix setup
       Then he acquires an "rails-html-sanitizer" fixture spec for the baltix setup
+
+   # jfelchner/ruby-progressbar, ALT 0a5d8aa; keep one Gemfile variant that imports ruby-progressbar first.
+   @scratch @main_is_gem
+   Scenario: Prefer the literal progressbar gem over a legacy ruby package alias
+      - select progressbar for the input RPM name gem-progressbar
+      - retain ruby-progressbar as a distinct source with its own gem provide
+      - preserve both packages through repeated spec updates
+      Given blank space
+      And a spec from fixture "progressbar"
+      When developer locks the time to "09.11.2026"
+      And he sets the space options as:
+         | options          | value                         |
+         | rootdir          | features/fixtures/progressbar |
+         | maintainer.name  | Pavel Skrylev                 |
+         | maintainer.email | majioa@altlinux.org           |
+      And he loads the spec into the space
+      Then the main source is the "progressbar" gem
+      When he applies "spec" actor to the baltix setup
+      Then he acquires an "progressbar" fixture spec for the baltix setup
+      And the generated package names are unique
+      And package "gem-progressbar" contains dependency lines:
+         | Provides:      gem(progressbar) = 1.13.0.5 |
+      And package "gem-ruby-progressbar" contains dependency lines:
+         | Provides:      gem(ruby-progressbar) = 1.13.0.5 |
+      When the generated spec is refreshed 2 times
+      Then the main source is the "progressbar" gem
+      And the generated package names are unique
+      And the generated dependency sections match "gem.spec" from fixture "progressbar"
+
+   @scratch @main_is_gem
+   Scenario: Select ruby-progressbar explicitly without removing the progressbar gem
+      - keep a real ruby- gem prefix distinct from an obsolete RPM package prefix
+      Given blank space
+      And a spec from fixture "progressbar"
+      When the input spec is named "gem-ruby-progressbar"
+      And developer locks the time to "09.11.2026"
+      And he sets the space options as:
+         | options          | value                         |
+         | rootdir          | features/fixtures/progressbar |
+         | maintainer.name  | Pavel Skrylev                 |
+         | maintainer.email | majioa@altlinux.org           |
+      And he loads the spec into the space
+      Then the main source is the "ruby-progressbar" gem
+      When he applies "spec" actor to the baltix setup
+      And the generated spec is refreshed 2 times
+      Then the main source is the "ruby-progressbar" gem
+      And the generated package names are unique
+      And the generated spec contains the lines:
+         | Name:          gem-ruby-progressbar |
+      And package "gem-ruby-progressbar" contains dependency lines:
+         | Provides:      gem(ruby-progressbar) = 1.13.0.5 |
+      And package "gem-progressbar" contains dependency lines:
+         | Provides:      gem(progressbar) = 1.13.0.5 |
 
    @policy1_0 @gem_change @main_is_gem
    Scenario: Migrate ucf from obsolete Ruby Policy 1.0 to 2.1

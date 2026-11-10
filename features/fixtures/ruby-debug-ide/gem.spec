@@ -6,7 +6,7 @@
 
 Name:          gem-ruby-debug-ide
 Version:       0.7.3
-Release:       alt2
+Release:       alt1.1
 Summary:       IDE interface for ruby-debug
 License:       MIT
 Group:         Development/Ruby
@@ -37,7 +37,7 @@ RubyMine.
 
 %package       -n ruby-debug-ide
 Version:       0.7.3
-Release:       alt2
+Release:       alt1.1
 Summary:       IDE interface for ruby-debug executable(s)
 Summary(ru_RU.UTF-8): Исполнямка для самоцвета ruby-debug-ide
 Group:         Other
@@ -60,7 +60,7 @@ RubyMine.
 %if_enabled    doc
 %package       -n gem-ruby-debug-ide-doc
 Version:       0.7.3
-Release:       alt2
+Release:       alt1.1
 Summary:       IDE interface for ruby-debug documentation files
 Summary(ru_RU.UTF-8): Файлы сведений для самоцвета ruby-debug-ide
 Group:         Development/Documentation
@@ -84,7 +84,7 @@ RubyMine.
 %if_enabled    devel
 %package       -n gem-ruby-debug-ide-devel
 Version:       0.7.3
-Release:       alt2
+Release:       alt1.1
 Summary:       IDE interface for ruby-debug development package
 Summary(ru_RU.UTF-8): Файлы для разработки самоцвета ruby-debug-ide
 Group:         Development/Ruby
@@ -143,8 +143,9 @@ RubyMine.
 
 
 %changelog
-* Sat Nov 16 2024 Baltix Builder Bot <bbb@altlinux.org> 0.7.3-alt2
+* Sat Nov 16 2024 Baltix Builder Bot <bbb@altlinux.org> 0.7.3-alt1.1
 - * renamed package with subpackages
+- ! spec
 
 * Mon May 16 2022 Pavel Skrylev <majioa@altlinux.org> 0.7.3-alt1
 - + packaged gem with Ruby Policy 2.0

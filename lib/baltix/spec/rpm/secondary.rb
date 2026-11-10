@@ -175,8 +175,11 @@ class Baltix::Spec::Rpm::Secondary
       value_in || (is_exec? || is_app?) && of_state(:group)
    end
 
+   # Uses the main package's selected revision for every subpackage.
+   # @param _value_in [String, nil] unused historical subpackage release
+   # @return [String] current main-package release
    def _release _value_in
-      doc.changes.last.release
+      doc.release
    end
 
    def initialize doc: raise, source: nil, host: nil, kind: nil, state: {}, options: {}
