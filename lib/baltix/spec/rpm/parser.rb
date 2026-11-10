@@ -157,7 +157,8 @@ class Baltix::Spec::Rpm::Parser
       },
       ignored_names: {
          non_contexted: true,
-         regexp: /(^%ruby_ignore|--ignore=)\s*([^\s$]+)/i,
+         # Match the complete modern or legacy macro name before reading its list.
+         regexp: /(^%ruby_ignore(?:_names)?\s+|(?:^|\s)--ignore=)([^\s$]+)/i,
          parse_func: :parse_ignore
       },
       descriptions: {

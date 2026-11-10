@@ -26,13 +26,18 @@ Feature: Spec actor
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then the generated spec contains the lines:
-         | BuildRequires: %(eval echo %apache2_apr_buildreq)   |
-         | BuildRequires: apache2-devel >= 2.2.5               |
+         | BuildRequires: %(eval echo %apache2_apr_buildreq)                        |
+         | BuildRequires: apache2-devel >= 2.2.5                                    |
+         | %ruby_ignore_path_tokens dev,build,agent,cxx_supportlib,schema_printer   |
+      And the generated spec excludes the lines:
+         | %ruby_ignore_names _path_tokens   |
       And package "gem-passenger-devel" contains dependency lines:
          | Requires:      %(eval echo %apache2_apr_buildreq)   |
       And he acquires an "passenger" fixture spec for the baltix setup
       When the generated spec is refreshed 2 times
       Then the generated dependency sections match "gem.spec" from fixture "passenger"
+      And the generated spec excludes the lines:
+         | %ruby_ignore_names _path_tokens   |
 
    # ai/autoprefixer-rails 10.4.19.0; ALT gear b5d38f9ba56b197f31a2b733e07fc8f212761dca.
    @scratch @main_is_gem
