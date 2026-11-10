@@ -679,17 +679,21 @@ module Baltix::Spec::Rpm::SpecCore
    # @param value_in [Array<Gem::Dependency, String>] capabilities from configuration or state
    # @return [Array<Gem::Dependency, String>] explicit capabilities awaiting rendering
    # Packaged gems' capabilities are regenerated with their selected versions.
-   # Other gem capabilities retain their type and bounds. Plain package aliases retain
-   # the existing deduplication and implicit EVR behavior.
+   # Other gem capabilities retain their type and bounds. Plain aliases matching
+   # the current gem's literal name are removed, with or without version bounds.
+   # Other RPM aliases retain the existing deduplication and implicit EVR behavior.
    # Packaged sources are queried only when a parsed gem capability needs handling.
+   # The current gem's name is also checked when no typed gem capability was given.
    def _provides value_in
       packaged_names = value_in.any? { |value| value.is_a?(Gem::Dependency) } ?
          (Array(doc.sources) | [source]).grep(Baltix::Source::Gem).map(&:name) : []
+      gem_name = source.name if source.is_a?(Baltix::Source::Gem)
       value_in.reduce([]) do |res, o|
          if o.is_a?(Gem::Dependency)
             packaged_names.include?(o.name) ? res : res | [o]
          else
-            names.include?(o) ? res : o =~ /^[^\s]+$/ ? res | [o + " = %EVR"] : res | [o]
+            names.include?(o) || o.split.first == gem_name ?
+               res : o =~ /^[^\s]+$/ ? res | [o + " = %EVR"] : res | [o]
          end
       end.compact
    end

@@ -7,6 +7,33 @@ Feature: Spec actor
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
 
+   # ai/autoprefixer-rails 10.4.19.0; ALT gear b5d38f9ba56b197f31a2b733e07fc8f212761dca.
+   @scratch @main_is_gem
+   Scenario: Remove a plain gem-name capability imported from a packaged spec
+      - keep the typed gem capability and its packaged version
+      - remove the redundant plain RPM alias already present in the input
+      - retain runtime bounds and keep the result stable through repeated updates
+      Given blank space
+      And a spec from fixture "autoprefixer-rails"
+      When developer locks the time to "10.11.2026"
+      And he sets the space options as:
+         | options          | value                                |
+         | rootdir          | features/fixtures/autoprefixer-rails |
+         | maintainer.name  | Pavel Skrylev                        |
+         | maintainer.email | majioa@altlinux.org                  |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains each line once:
+         | Provides:      gem(autoprefixer-rails) = 10.4.19.0 |
+      And the generated spec excludes the lines:
+         | Provides:      autoprefixer-rails = %EVR |
+      And package "gem-autoprefixer-rails" contains dependency lines:
+         | Requires:      gem(execjs) >= 2 |
+         | Conflicts:     gem(execjs) >= 3 |
+      And he acquires an "autoprefixer-rails" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated spec matches "gem.spec" from fixture "autoprefixer-rails"
+
    # chef/license_scout v2.6.10, b7fbe3c; retain one matching gemspec from spec/fixtures.
    @scratch @blank_setup @main_is_gem
    Scenario: Keep matching test fixture gems out of generated source packages
