@@ -1,6 +1,39 @@
 @cli
 Feature: Baltix CLI
 
+   Scenario: Reject an unknown gem dependency mode
+      Then the CLI rejects gem dependency mode "unknown"
+
+   Scenario: Use the redep gem dependency mode by default
+      Given blank baltix CLI
+      And options for baltix CLI:
+         """
+         --rootdir=features/fixtures/rbvmomi
+         """
+      When developer loads baltix executable
+      Then property "gem_dependency_mode" of options is:
+         """
+         --- :redep
+         """
+
+   Scenario Outline: Select gem dependency override behavior from the CLI
+      Given blank baltix CLI
+      And options for baltix CLI:
+         """
+         --gem-dependency-mode=<mode>
+         """
+      When developer loads baltix executable
+      Then property "gem_dependency_mode" of options is:
+         """
+         --- :<mode>
+         """
+
+      Examples:
+         | mode    |
+         | regular |
+         | redep   |
+         | all     |
+
    Scenario: Baltix CLI rootdir validation
       Given blank baltix CLI
       And options for baltix CLI:

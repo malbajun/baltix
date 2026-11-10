@@ -69,6 +69,7 @@ error_io: 'stderr'
 info_io: 'stdout'
 debug_io:
 high_default_dependencies_priority: false
+gem_dependency_mode: redep
 autorender_name: false
 skip_platforms: [:jruby, :mingw, :mswin]
 ```
@@ -99,6 +100,21 @@ inside the current Ruby process, including imported and plugin-defined tasks.
 
 When updating an RPM spec, the obsolete `%ruby_build --pre=LIST` declaration
 is migrated to `%ruby_on_build_rake_tasks LIST`. `--pre` is not a Baltix CLI option.
+
+Use `--gem-dependency-mode=regular|redep|all` to control gem upper bounds:
+
+* `regular` preserves normal dependency and availability handling.
+* `redep` (default) emits only the source minimum for gems selected for a
+  `%ruby_use_gem_dependency` macro, including macros imported from the input spec.
+  Their gem `Conflicts` and `BuildConflicts` are omitted.
+* `all` also selects every gem listed in runtime or build conflicts, emits
+  a lower-bound-only override for each, and omits those gem conflicts.
+
+Both relaxation modes preserve source minimums and non-gem RPM conflicts.
+The equivalent config option is `gem_dependency_mode: redep` (or `all`).
+Pass the chosen mode when updating as well; selecting `regular` restores
+upper bounds from the current sources. Original Gemfile/gemspec requirements
+are not modified.
 
 
 ## Development

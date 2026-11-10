@@ -185,8 +185,9 @@ class Baltix::Deps
       # Converts a gem requirement to its strictest RPM lower bound.
       # @param req [Gem::Requirement] the combined source constraints
       # @return [Array] lower-bound operator and version, or an empty array for empty input
-      # If only upper bounds are given, an inclusive zero minimum keeps the gem
-      # required while its maximum is emitted separately as a conflict.
+      # If no lower bound is given, an inclusive zero minimum keeps the gem
+      # required while maximums and excluded versions become conflicts.
+      # Excluded versions do not raise the minimum; they narrow the maximum.
       def lower_to_rpm req
          minimum = req.requirements.reduce([]) do |res, r|
             merge(res, debound(r))
@@ -217,8 +218,6 @@ class Baltix::Deps
             ['>=', ver.release]
          when ">=", ">", "="
             [req[0], ver.release]
-         when "!="
-            ['>', ver.release]
          else
             nil
          end
@@ -233,7 +232,7 @@ class Baltix::Deps
          case req[0]
          when "~>"
             ['>=', ver.bump]
-         when "<"
+         when "<", "!="
             ['>=', ver.release]
          when "<="
             ['>', ver.release]

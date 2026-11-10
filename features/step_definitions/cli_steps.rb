@@ -16,6 +16,10 @@ Given('options for baltix CLI:') do |text|
    cli.option_parser.default_argv = args
 end
 
+Then('the CLI rejects gem dependency mode {string}') do |mode|
+   expect { Baltix::CLI.new(["--gem-dependency-mode=#{mode}"]).parse! }.to raise_error(OptionParser::InvalidArgument)
+end
+
 Given('blank baltix CLI') do
    @cli = nil
    cli.option_parser.default_argv = []

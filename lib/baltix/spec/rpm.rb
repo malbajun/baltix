@@ -596,35 +596,111 @@ class Baltix::Spec::Rpm
    # @return [OpenStruct] override requirements keyed by dependency name
    # An override is retained when it changes a dependency of the main source or
    # another packaged source, so secondary gems also receive a build-time macro.
+   # Version exclusions select one source interval even without available versions;
+   # its macro and RPM requirements/conflicts use the same bounds.
+   # If available versions are too old, exclusions still use the source interval.
    # If a gem is itself packaged from these sources, it is excluded from external
    # version overrides and retains its source version.
+   # In redep mode, generated and imported override macros retain only source
+   # minimums. All mode also selects gems with source or input RPM conflicts;
+   # inline comments do not introduce additional gem names.
+   # External requirements or imported macros supply a minimum when sources do
+   # not declare a selected gem; a conflict-only gem receives an inclusive zero.
    def _versioned_gem_list _value_in
       packaged_sources = Array(sources) | [source].compact
       packaged_names = packaged_sources.grep(Baltix::Source::Gem).map(&:name)
       dependencies = packaged_sources.flat_map(&:all_dependencies)
 
-      available_gem_ranges.reduce({}.to_os) do |result, name, available|
+      excluded_names = dependencies.select do |dependency|
+         dependency.requirement.requirements.any? { |operator, _| operator == '!=' }
+      end.map(&:name)
+      names = available_gem_ranges.to_h.keys.map(&:to_s) | excluded_names
+      overrides = names.reduce({}.to_os) do |result, name|
+         available = available_gem_ranges[name]
          next result if packaged_names.include?(name.to_s)
 
          matching = dependencies.select { |dep| dep.name == name.to_s }
          next result if matching.empty?
 
          override = _available_dependency_override(available, matching)
-         if override && matching.any? { |dep| combine_deps(dep, override).requirement.requirements != dep.requirement.expand.requirements }
+         override ||= _available_dependency_override(nil, matching) if excluded_names.include?(name)
+         if override && (excluded_names.include?(name) || matching.any? { |dep| combine_deps(dep, override).requirement.requirements != dep.requirement.expand.requirements })
             result[name] = override
          end
 
          result
       end
+
+      mode = gem_dependency_mode
+      return overrides if mode == :regular
+
+      declared = declared_gem_dependency_overrides
+      selected = overrides.to_h.keys.map(&:to_s) | declared.keys
+      if mode == :all
+         selected |= dependencies.select do |dependency|
+            !Baltix::Deps.upper_negate_to_rpm(dependency.requirement).empty?
+         end.map(&:name)
+         selected |= state.original_spec.to_s.lines.grep(/^(?:BuildConflicts|Conflicts):/).flat_map do |line|
+            line.split('#', 2).first.scan(/(?:gem|rubygem|ruby-gem)\(([^)]+)\)/).flatten
+         end
+      end
+
+      selected.reduce({}.to_os) do |result, name|
+         next result if packaged_names.include?(name)
+
+         matching = dependencies.select { |dependency| dependency.name == name }
+         if matching.empty?
+            matching = Array(state.build_requires).grep(Gem::Dependency).select { |dependency| dependency.name == name }
+            matching = [declared[name]].compact if matching.empty?
+            matching = [Gem::Dependency.new(name, '>= 0')] if matching.empty?
+         end
+         minimum = _available_dependency_override(nil, matching).requirement.requirements.first
+         result[name] = Gem::Dependency.new(name, minimum.join(' '))
+         result
+      end
+   end
+
+   # Resolves the configured gem upper-bound policy.
+   # Takes no parameters.
+   # @return [Symbol] :regular, :redep or :all
+   # Missing configuration selects redep. Strings from YAML are accepted;
+   # an unsupported configured value raises ArgumentError before rendering.
+   def gem_dependency_mode
+      mode = options.gem_dependency_mode.nil? ? :redep : options.gem_dependency_mode.to_s.to_sym
+      raise ArgumentError, "Unknown gem dependency mode: #{mode}" unless %i(regular redep all).include?(mode)
+
+      mode
+   end
+
+   # Reads dependency override macros retained by the input spec parser.
+   # Takes no parameters.
+   # @return [Hash<String, Gem::Dependency>] imported requirements keyed by gem name
+   # Repeated declarations are merged. A name without a constraint receives
+   # >= 0; missing macros return an empty hash. Malformed declarations raise
+   # ArgumentError, and invalid requirements propagate RubyGems' parsing error.
+   def declared_gem_dependency_overrides
+      Array(variables.ruby_use_gem_dependency).flat_map { |line| line.split(',') }.reduce({}) do |result, declaration|
+         match = declaration.strip.match(/\A([^\s<>=!~]+)\s*(.*)\z/)
+         raise ArgumentError, "Invalid gem dependency override: #{declaration}" unless match
+
+         name, requirement = match.captures
+         dependency = Gem::Dependency.new(name, requirement.empty? ? '>= 0' : requirement)
+         result[name] = result[name] ? result[name].merge(dependency) : dependency
+         result
+      end
    end
 
    # Builds an availability override without lowering any source minimum.
-   # @param available [Gem::Dependency] range inferred from the available gem list
+   # @param available [Gem::Dependency, nil] optional range inferred from the available gem list
    # @param dependencies [Array<Gem::Dependency>] current source requirements for this gem
    # @return [Gem::Dependency, nil] the corrected range, or nil when all available versions are too old
    # The lower bound is the greatest source minimum, independent of availability.
    # The source upper bound is the least source maximum; availability may raise
    # it, but cannot narrow it. If sources have no maximum, it stays unbounded.
+   # Excluded versions narrow the source maximum so RPM conflicts use >=.
+   # Without an available list, the resulting source interval is still returned.
+   # An exclusion at the minimum makes that minimum exclusive; exclusions below
+   # the minimum do not constrain the selected interval.
    # If a source uses >, its exclusive minimum is preserved; = and ~> supply
    # inclusive minimums. If no available version reaches the source minimum,
    # no override is produced. Historical spec macros do not participate.
@@ -638,8 +714,14 @@ class Baltix::Spec::Rpm
          end
       end
       minimum = minimums.max_by { |operator, version| [version, operator == '>' ? 1 : 0] } || ['>=', Gem::Version.new(0)]
+      excluded_minimum = dependencies.any? do |dependency|
+         dependency.requirement.requirements.any? { |operator, version| operator == '!=' && version.release == minimum[1] }
+      end
+      minimum = ['>', minimum[1]] if excluded_minimum
+      if available
       versions = Array(available_gem_list[available.name]).map { |version| Gem::Version.new(version.to_s) }
       return nil unless versions.any? { |version| minimum[0] == '>' ? version > minimum[1] : version >= minimum[1] }
+      end
 
       maximums = dependencies.flat_map do |dependency|
          dependency.requirement.requirements.filter_map do |operator, version|
@@ -647,16 +729,17 @@ class Baltix::Spec::Rpm
             when '<', '<=' then [operator, version]
             when '=' then ['<=', version]
             when '~>' then ['<', version.bump]
+            when '!=' then ['<', version.release] if version.release > minimum[1]
             end
          end
       end
       maximum = maximums.min_by { |operator, version| [version, operator == '<' ? 0 : 1] }
       requirements = [minimum]
       if maximum
-         available_maximums = available.requirement.requirements.select { |operator, _| %w(< <=).include?(operator) }
+         available_maximums = available ? available.requirement.requirements.select { |operator, _| %w(< <=).include?(operator) } : []
          requirements << ([maximum] + available_maximums).max_by { |operator, version| [version, operator == '<=' ? 1 : 0] }
       end
-      Gem::Dependency.new(available.name, Gem::Requirement.new(requirements.map { |pair| pair.join(' ') }))
+      Gem::Dependency.new(dependencies.first.name, Gem::Requirement.new(requirements.map { |pair| pair.join(' ') }))
    end
 
    def _gem_versionings_with_use value_in
@@ -876,7 +959,8 @@ class Baltix::Spec::Rpm
    # @return [Array<String>] requirements retained before source reconstruction
    # If a gem is declared in source metadata or provided by this spec, its old
    # requirement is removed for reconstruction, including ignored platform gems.
-   # Other gems retain their explicit bounds as RPM declarations. Ruby-prefixed
+   # Other gems retain their explicit bounds as RPM declarations unless the
+   # selected override mode replaces them with a source minimum. Ruby-prefixed
    # package strings are removed except for separate -headers-devel packages;
    # unrelated package strings are retained.
    def _filter_out_build_auto_requires value_in
@@ -889,7 +973,8 @@ class Baltix::Spec::Rpm
             if known_names.include?(value.name)
                []
             else
-               value.requirement.requirements.map { |relation, version| "#{prefix}(#{value.name}) #{relation} #{version}" }
+               effective = replace_versioning([value]).first
+               effective.requirement.requirements.map { |relation, version| "#{prefix}(#{value.name}) #{relation} #{version}" }
             end
          elsif value.is_a?(String) && /^(#{Baltix::Spec::Rpm::Name::PREFICES.join('|')})[\-(]/ =~ value &&
             !value.match?(/\A\S+-headers-devel(?:\s|\z)/)
