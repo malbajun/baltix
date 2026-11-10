@@ -19,7 +19,7 @@ BuildRequires(pre): rpm-macros-ruby setup-rb rake
 %if_enabled check
 BuildRequires: gem(hoe) >= 0
 BuildRequires: gem(rack) >= 0
-BuildRequires: gem(rake) = 0.9.3
+BuildRequires: gem(rake) >= 0.9.3
 BuildRequires: gem(rdoc) >= 4.0
 %endif
 
@@ -65,7 +65,7 @@ BuildArch:     noarch
 Requires:      gem(fast_xs) = 0.8.0
 Requires:      gem(hoe) >= 0
 Requires:      gem(rack) >= 0
-Requires:      gem(rake) = 0.9.3
+Requires:      gem(rake) >= 0.9.3
 Requires:      gem(rdoc) >= 4.0
 
 %description   -n gem-fast-xs-devel

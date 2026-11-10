@@ -1067,7 +1067,8 @@ class Baltix::Spec::Rpm
    # Other gems retain their explicit bounds as RPM declarations unless the
    # selected override mode replaces them with a source minimum. Ruby-prefixed
    # package strings are removed except for separate -headers-devel packages;
-   # unrelated package strings are retained.
+   # unrelated package strings are retained. An external exact gem requirement
+   # becomes an inclusive minimum; strict > and existing non-equality bounds remain.
    def _filter_out_build_auto_requires value_in
       known_names = space.dependencies.map(&:name) | space.valid_sources.flat_map do |source|
          [source.name] | source.dsl.dsl.dependencies.map(&:name)
@@ -1079,7 +1080,9 @@ class Baltix::Spec::Rpm
                []
             else
                effective = replace_versioning([value]).first
-               effective.requirement.requirements.map { |relation, version| "#{prefix}(#{value.name}) #{relation} #{version}" }
+               effective.requirement.requirements.map do |relation, version|
+                  "#{prefix}(#{value.name}) #{relation == '=' ? '>=' : relation} #{version}"
+               end
             end
          elsif value.is_a?(String) && /^(#{Baltix::Spec::Rpm::Name::PREFICES.join('|')})[\-(]/ =~ value &&
             !value.match?(/\A\S+-headers-devel(?:\s|\z)/)

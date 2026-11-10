@@ -31,7 +31,7 @@ BuildRequires: gem(pry) >= 0
 BuildRequires: gem(rake) >= 10.0
 BuildRequires: gem(rb-readline) >= 0
 BuildRequires: gem(rspec) >= 0
-BuildRequires: gem(rugged) = 0.27
+BuildRequires: gem(rugged) >= 0.27
 BuildRequires: gem(terminal-table) >= 0
 BuildRequires: gem(toml-rb) >= 1.0
 BuildRequires: gem(vcr) >= 0
@@ -77,7 +77,7 @@ Group:         Other
 BuildArch:     noarch
 
 Requires:      gem(license_scout) = 2.6.10
-Requires:      gem(rugged) = 0.27
+Requires:      gem(rugged) >= 0.27
 
 %description   -n license-scout
 Discovers license files of a project's dependencies executable(s).
@@ -121,7 +121,7 @@ Requires:      gem(pry) >= 0
 Requires:      gem(rake) >= 10.0
 Requires:      gem(rb-readline) >= 0
 Requires:      gem(rspec) >= 0
-Requires:      gem(rugged) = 0.27
+Requires:      gem(rugged) >= 0.27
 Requires:      gem(vcr) >= 0
 Requires:      gem(webmock) >= 0
 Conflicts:     gem(berkshelf) >= 5

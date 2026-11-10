@@ -19,7 +19,7 @@ Source:        %name-%version.tar
 BuildRequires(pre): rpm-macros-ruby setup-rb rake
 %if_enabled check
 BuildRequires: gem(chef-utils) >= 0
-BuildRequires: gem(chefstyle) = 1.6.2
+BuildRequires: gem(chefstyle) >= 1.6.2
 BuildRequires: gem(pry) >= 0
 BuildRequires: gem(pry-byebug) >= 0
 BuildRequires: gem(rake) >= 0
@@ -67,7 +67,7 @@ Group:         Development/Ruby
 BuildArch:     noarch
 
 Requires:      gem(mixlib-shellout) = 3.2.7
-Requires:      gem(chefstyle) = 1.6.2
+Requires:      gem(chefstyle) >= 1.6.2
 Requires:      gem(pry) >= 0
 Requires:      gem(pry-byebug) >= 0
 Requires:      gem(rake) >= 0

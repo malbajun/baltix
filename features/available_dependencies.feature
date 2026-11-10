@@ -3,6 +3,18 @@ Feature: Available gem versions and dependency override macros
    Existing interval examples exercise regular dependency bounds explicitly.
    Mode-selection examples override that setting; an unset option selects redep.
 
+   Scenario: Preserve strict external dependency boundaries in RPM tags
+      - external equality is an inclusive minimum, while > remains strict
+      - source < becomes Conflicts >= and source <= becomes Conflicts >
+      Given blank space
+      When he sets the space option "rootdir" to fixture "rbvmomi"
+      Then external gem bounds render as:
+         | requirement  | requires  | conflicts |
+         | = 4.2        | >= 4.2    |           |
+         | > 4.2        | > 4.2     |           |
+         | < 4.2        | >= 0      | >= 4.2    |
+         | <= 4.2       | >= 0      | > 4.2     |
+
    Scenario Outline: Selectively remove gem upper bounds without changing source minimums
       - regular retains the current dependency override behavior
       - redep relaxes only gems selected for dependency override macros
@@ -310,4 +322,6 @@ Feature: Available gem versions and dependency override macros
          | declaration        | expected           |
          | gem(cliver)        | gem(cliver) >= 0   |
          | gem(cliver) >= 1.0 | gem(cliver) >= 1.0 |
+         | gem(cliver) = 1.0  | gem(cliver) >= 1.0 |
+         | gem(cliver) > 1.0  | gem(cliver) > 1.0  |
          | gem(cliver) < 2    | gem(cliver) < 2    |

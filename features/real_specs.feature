@@ -28,6 +28,8 @@ Feature: Spec actor
       And he applies "spec" actor to the baltix setup
       Then package "gem-graphql" contains dependency lines:
          | Provides:      gem(graphql) = 2.4.8  |
+      And the unconditional build requirements include:
+         | BuildRequires: gem(capybara) >= 3.34.0  |
       And package "gem-graphql-c-parser" contains dependency lines:
          | Requires:      gem(graphql) = 2.4.8  |
       And the generated spec contains no override for "graphql"

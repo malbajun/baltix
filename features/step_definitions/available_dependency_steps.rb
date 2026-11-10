@@ -157,3 +157,12 @@ Then('internal gem requirements equal their provided versions without conflicts'
       expect(package.send(:render_deps, [loose])).to eql(["gem(#{capability.name}) = #{package.host.version}"])
    end
 end
+
+Then('external gem bounds render as:') do |table|
+   table.hashes.each do |row|
+      dependency = Gem::Dependency.new('external-policy-probe', row['requirement'])
+      expect(space.spec.send(:render_deps, [dependency])).to eql(["gem(external-policy-probe) #{row['requires']}"])
+      expected = row['conflicts'].empty? ? [] : ["gem(external-policy-probe) #{row['conflicts']}"]
+      expect(space.spec.send(:render_deps, [dependency], :negate)).to eql(expected)
+   end
+end

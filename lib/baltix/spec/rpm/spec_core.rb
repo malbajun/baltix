@@ -678,7 +678,9 @@ module Baltix::Spec::Rpm::SpecCore
    # @return [Array<String>] rendered dependency tags without duplicates
    # Internal requirements use the exact version actually provided by this spec;
    # internal conflicts are omitted. Capability rendering preserves its own bounds.
-   # External gems and non-gem constraints retain their normal bound conversion.
+   # External equality requirements become inclusive minimums. Strict external
+   # minimums and conflict boundaries retain >; provided capabilities and non-gem
+   # constraints retain their normal bound conversion.
    def render_deps deps_in, mode = :debound
       func = mode == :negate ? :upper_negate_to_rpm : :lower_to_rpm
 
@@ -689,7 +691,8 @@ module Baltix::Spec::Rpm::SpecCore
                deph = if supplied_version
                   mode == :negate ? [] : ['=', supplied_version]
                else
-                  Baltix::Deps.send(func, dep.requirement)
+                  boundary = Baltix::Deps.send(func, dep.requirement)
+                  mode == :debound && boundary.first == '=' ? ['>=', boundary.last] : boundary
                end
 
                deph.blank? ? [] : ["#{prefix}(#{dep.name}) #{deph.first} #{deph.last}"]

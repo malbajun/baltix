@@ -16,7 +16,7 @@ Packager:      Ruby Maintainers Team <ruby@packages.altlinux.org>
 
 Source:        %name-%version.tar
 BuildRequires(pre): rpm-macros-ruby setup-rb rake
-BuildRequires: gem(capybara) = 3.34.0
+BuildRequires: gem(capybara) >= 3.34.0
 BuildRequires: gem(puma) >= 0
 BuildRequires: gem(rails) >= 5.2.1
 BuildRequires: gem(selenium-webdriver) >= 3.0
