@@ -158,6 +158,7 @@ end
 
 Given('blank space') do
    @space = Baltix::Space.new
+   @space.options.gem_dependency_mode = :regular if @regular_dependency_mode
 end
 
 Given('blank space with empty sources') do

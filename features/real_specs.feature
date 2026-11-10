@@ -1,8 +1,10 @@
-@actor @spec @gem @policy2_1
+@actor @spec @gem @policy2_1 @regular_dependencies
 Feature: Spec actor
    All generated specs target the Ruby Policy 2.1 draft currently under development.
    Tags @policy1_0 and @policy2_0 identify obsolete input policies being migrated.
    The obsolete rpm-build-ruby prerequisite is replaced by rpm-macros-ruby, setup-rb and rake.
+   Historical migration snapshots explicitly exercise regular dependency bounds.
+   Default redep and all-mode specs are covered in available_dependencies.feature.
    Shared availability checks also cover the behavior reported for rdoc and prometheus-client:
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
@@ -218,10 +220,12 @@ Feature: Spec actor
    Scenario Outline: Preserve complete development dependencies from Hoe and gemspec sources
       - import Hoe spec_extras assignments before collecting development dependencies
       - isolate each project's metadata from previously imported Rakefiles
+      - keep installed Hoe plugins isolated from the metadata adapter across imports
       - keep development requirements and upper bounds out of the runtime package
       - retain dependency ranges after parsing and updating the generated spec
       Given blank space
       When developer locks the time to "13.12.2022"
+      And the "fast-xs" fixture has already been imported
       And the "<previous>" fixture has already been imported
       And he sets the space options as:
          | options          | value               |

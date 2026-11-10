@@ -2,6 +2,16 @@ Then('the generated spec contains the lines:') do |table|
    expect(@spec.lines.map(&:strip)).to include(*table.raw.flatten)
 end
 
+When('the input spec has dependency override macros:') do |table|
+   declarations = table.raw.flatten.map { |value| "%ruby_use_gem_dependency #{value}\n" }.join
+   @spec_in = @spec_in.sub(/^%prep/, declarations + "\n%prep")
+end
+
+Then('the generated gem conflicts are {string}') do |names|
+   actual = @spec.scan(/^(?:BuildConflicts|Conflicts):\s+gem\(([^)]+)\)/).flatten.uniq.sort
+   expect(actual).to eql(names.split(',').reject(&:empty?).sort)
+end
+
 When('the input spec has build prerequisites:') do |table|
    @spec_in = @spec_in.gsub(/^BuildRequires\(pre\):[^\n]*\n/, '')
    declarations = table.raw.flatten.map { |requirement| "BuildRequires(pre): #{requirement}\n" }.join
