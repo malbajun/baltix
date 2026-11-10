@@ -220,10 +220,12 @@ Feature: Spec actor
    Scenario Outline: Preserve complete development dependencies from Hoe and gemspec sources
       - import Hoe spec_extras assignments before collecting development dependencies
       - isolate each project's metadata from previously imported Rakefiles
+      - keep installed Hoe plugins isolated from the metadata adapter across imports
       - keep development requirements and upper bounds out of the runtime package
       - retain dependency ranges after parsing and updating the generated spec
       Given blank space
       When developer locks the time to "13.12.2022"
+      And the "fast-xs" fixture has already been imported
       And the "<previous>" fixture has already been imported
       And he sets the space options as:
          | options          | value               |

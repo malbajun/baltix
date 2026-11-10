@@ -98,7 +98,9 @@ Given('the {string} fixture has already been imported') do |name|
    options = space.options.deep_dup
    options.rootdir = "features/fixtures/#{name}"
    previous = Baltix::Space.new(options: options)
-   expect(previous.valid_sources.any? { |source| source.is_a?(Baltix::Source::Gem) && source.name == name }).to eql(true)
+   expect(previous.valid_sources.any? do |source|
+      source.is_a?(Baltix::Source::Gem) && source.name.tr('_', '-') == name.tr('_', '-')
+   end).to eql(true)
 end
 
 Then('the project root remains the {string} fixture') do |name|
