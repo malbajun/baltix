@@ -129,7 +129,7 @@ class Baltix::Spec::Rpm
          default: {}.to_os,
       },
       devel_dependencies: {
-         seq: %w(of_options of_state of_default >_prepare_dependencies >_devel_dependencies >_fix_dependencies_groups >_replace_versioning_dependencies >_dependencies_sort),
+         seq: %w(of_options of_state of_default >_prepare_dependencies >_devel_dependencies >_replace_versioning_dependencies >_dependencies_sort),
          default: [],
       },
       binary_dependencies: {
@@ -141,11 +141,11 @@ class Baltix::Spec::Rpm
          default: [],
       },
       build_dependencies: {
-         seq: %w(of_options of_state of_default >_prepare_dependencies >_build_dependencies >_fix_dependencies_groups >_build_dependencies_filter >_replace_versioning_dependencies >_dependencies_sort),
+         seq: %w(of_options of_state of_default >_prepare_dependencies >_build_dependencies >_build_dependencies_filter >_replace_versioning_dependencies >_dependencies_sort),
          default: [],
       },
       check_dependencies: {
-         seq: %w(of_options of_state of_default >_prepare_dependencies >_check_dependencies >_fix_dependencies_groups >_check_dependencies_filter >_replace_versioning_dependencies >_dependencies_sort),
+         seq: %w(of_options of_state of_default >_prepare_dependencies >_check_dependencies >_check_dependencies_filter >_replace_versioning_dependencies >_dependencies_sort),
          default: [],
       },
       build_requires: {
@@ -153,15 +153,15 @@ class Baltix::Spec::Rpm
          default: [],
       },
       check_requires: {
-         seq: %w(of_options of_state of_default |_check_requires),
+         seq: %w(of_options of_state of_default >_filter_out_build_auto_requires |_check_requires),
          default: [],
       },
       build_conflicts: {
-         seq: %w(of_options of_state of_default |_build_conflicts),
+         seq: %w(of_options of_state of_default >_filter_out_build_auto_requires |_build_conflicts),
          default: [],
       },
       check_conflicts: {
-         seq: %w(of_options of_state of_default |_check_conflicts),
+         seq: %w(of_options of_state of_default >_filter_out_build_auto_requires |_check_conflicts),
          default: [],
       },
       build_pre_requires: {
@@ -709,8 +709,9 @@ class Baltix::Spec::Rpm
    # In redep mode, generated and imported override macros retain only source
    # minimums. All mode also selects gems with source or input RPM conflicts;
    # inline comments do not introduce additional gem names.
-   # External requirements or imported macros supply a minimum when sources do
-   # not declare a selected gem; a conflict-only gem receives an inclusive zero.
+   # Historical names select the override policy only. A gem absent from current
+   # source/discovery metadata is omitted; old RPM tags and macro bounds never
+   # create dependencies or supply their minimums.
    def _versioned_gem_list _value_in
       packaged_sources = Array(sources) | [source].compact
       packaged_names = packaged_sources.grep(Baltix::Source::Gem).map(&:name)
@@ -754,11 +755,7 @@ class Baltix::Spec::Rpm
          next result if packaged_names.include?(name)
 
          matching = dependencies.select { |dependency| dependency.name == name }
-         if matching.empty?
-            matching = Array(state.build_requires).grep(Gem::Dependency).select { |dependency| dependency.name == name }
-            matching = [declared[name]].compact if matching.empty?
-            matching = [Gem::Dependency.new(name, '>= 0')] if matching.empty?
-         end
+         next result if matching.empty?
          minimum = _available_dependency_override(nil, matching).requirement.requirements.first
          result[name] = Gem::Dependency.new(name, minimum.join(' '))
          result
@@ -1020,27 +1017,6 @@ class Baltix::Spec::Rpm
       dep_hash.values | space.all_dependencies_for(kinds_in: :test)
    end
 
-   # Adjusts test groups for dependencies declared as build requirements.
-   # @param value_in [Array<Gem::Dependency>] dependencies with Bundler group metadata
-   # @return [Array<Gem::Dependency>] dependencies with copied entries where groups change
-   # If default dependency priority is disabled and the input spec names a
-   # dependency as a build requirement, its copy omits groups used for tests.
-   # Otherwise the original entry is retained. Source dependency objects and
-   # their group arrays are never modified.
-   def _fix_dependencies_groups value_in
-      state_build_requires_names = state.build_requires&.select {|x| x.is_a?(Gem::Dependency) }&.map {|x| x.name } || []
-
-      value_in.map do |dep|
-         if !options.high_default_dependencies_priority && state_build_requires_names.include?(dep.name)
-            dep.dup.tap do |dependency|
-               dependency.groups = dep.groups - Baltix::DSL.defined_groups_for(:test)
-            end
-         else
-            dep
-         end
-      end
-   end
-
    def _check_dependencies_filter value_in
       #binding.pry
       value_in.reject do |dep|
@@ -1048,37 +1024,18 @@ class Baltix::Spec::Rpm
       end
    end
 
-   # Retains external gem build requirements while reconstructing known gems.
-   # @param value_in [Array<Gem::Dependency, String>] parsed RPM build requirements
-   # @return [Array<String>] requirements retained before source reconstruction
-   # If a gem is declared in source metadata or provided by this spec, its old
-   # requirement is removed for reconstruction, including ignored platform gems.
-   # Other gems retain their explicit bounds as RPM declarations unless the
-   # selected override mode replaces them with a source minimum. Ruby-prefixed
-   # package strings are removed except for separate -headers-devel packages;
-   # unrelated package strings are retained. An external exact gem requirement
-   # becomes an inclusive minimum, != becomes >, and other explicit bounds remain.
+   # Retains only non-gem RPM constraints before rebuilding gem dependencies.
+   # @param value_in [Array<Gem::Dependency, String>] imported build/check constraints
+   # @return [Array<String>] manually declared RPM constraints to preserve
+   # Every imported gem dependency is discarded, including names absent from the
+   # current sources. Names, bounds and phases are rebuilt from source/discovery
+   # metadata. Obsolete Ruby package aliases are removed; explicit header packages
+   # and other non-gem requirements remain unchanged.
    def _filter_out_build_auto_requires value_in
-      known_names = space.dependencies.map(&:name) | space.valid_sources.flat_map do |source|
-         [source.name] | source.dsl.dsl.dependencies.map(&:name)
-      end
-
-      value_in.flat_map do |value|
-         if value.is_a?(Gem::Dependency)
-            if known_names.include?(value.name)
-               []
-            else
-               effective = replace_versioning([value]).first
-               effective.requirement.requirements.map do |relation, version|
-                  "#{prefix}(#{value.name}) #{relation == '=' ? '>=' : relation == '!=' ? '>' : relation} #{version}"
-               end
-            end
-         elsif value.is_a?(String) && /^(#{Baltix::Spec::Rpm::Name::PREFICES.join('|')})[\-(]/ =~ value &&
-            !value.match?(/\A\S+-headers-devel(?:\s|\z)/)
-            []
-         else
-            [value]
-         end
+      Array(value_in).reject do |value|
+         value.is_a?(Gem::Dependency) ||
+            (value.is_a?(String) && /^(#{Baltix::Spec::Rpm::Name::PREFICES.join('|')})[\-(]/ =~ value &&
+             !value.match?(/\A\S+-headers-devel(?:\s|\z)/))
       end
    end
 
@@ -1117,7 +1074,7 @@ class Baltix::Spec::Rpm
    end
 
    # Normalizes Ruby build prerequisites while retaining explicit version constraints.
-   # @param value_in [Array<String>, nil] grouped or individually parsed prerequisites
+   # @param value_in [Array<String, Gem::Dependency>, nil] imported/grouped prerequisites
    # @return [Array<String>] canonical prerequisite lines without duplicate Ruby entries
    # Obsolete Ruby Policy 2.0's rpm-build-ruby is replaced with the Ruby Policy 2.1
    # prerequisites rpm-macros-ruby, setup-rb and rake. If that legacy prerequisite
@@ -1125,8 +1082,13 @@ class Baltix::Spec::Rpm
    # defaults are added. If a default package already has a versioned requirement,
    # that requirement is kept instead of adding an unversioned one. Remaining
    # unversioned defaults are grouped so parsing and rendering stay consistent.
+   # Imported gem prerequisites are discarded and rebuilt in their source-defined
+   # build/check phases. Embedded RPM expressions remain unexpanded.
    def _build_pre_requires value_in
-      build_pre_requires = Array(value_in).flat_map { |line| line.scan(/[^\s]+(?:\s+[<=>]+\s+[^\s]+)?/) }.uniq
+      parser = Parser.new
+      build_pre_requires = Array(value_in).flat_map do |line|
+         line.is_a?(Gem::Dependency) ? [] : parser.parse_dep([nil, line], preserve_versions: true)
+      end.reject { |dependency| dependency.is_a?(Gem::Dependency) }.uniq
       stated_name = of_state(:name)
       defaults = of_default(:build_pre_requires)[0].split
 

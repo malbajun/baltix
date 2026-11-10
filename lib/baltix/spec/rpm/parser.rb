@@ -111,7 +111,7 @@ class Baltix::Spec::Rpm::Parser
       },
       build_pre_requires: {
          non_contexted: true,
-         regexp: /(?:BuildPreReq|BuildRequires\(pre\)):\s+([\w\s<=>\.\-_]+)/i,
+         regexp: /^(?:BuildPreReq|BuildRequires\(pre\)):\s*([^#]+)/i,
          parse_func: :parse_dep
       },
       build_requires: {

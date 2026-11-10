@@ -55,6 +55,12 @@ For `gem-*` packages, `%def* pkgname` and `%global pkgname` are obsolete; use
 updated spec. Literal aliases matching `gemname` are migrated to that macro;
 other definitions still needed by custom packaging code are retained.
 
+Gem dependencies and their build/check/runtime assignments are always regenerated
+from current source and discovery metadata. Input RPM gem tags and old dependency
+macro bounds do not supply missing dependencies. The legacy
+`--[no-]use-high-default-dependencies-priority` switch remains accepted for
+compatibility and no longer lets old RPM tags override source groups.
+
 ### Confguration file
 
 Create default config file for baltix, placed it to: ~/.baltix.yaml

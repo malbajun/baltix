@@ -10,6 +10,12 @@ runtime and build requirements and applicable conflicts before the RPM package
 build starts. Include dependencies needed by configured build tasks, even when
 they are loaded inside a Rake task rather than at Rakefile import time.
 
+When updating a spec, recalculate every `gem(...)` dependency, its version bounds
+and its build/check/runtime assignment from the current source and discovery
+metadata. A gem removed from those inputs must disappear from the generated tags
+and dependency overrides. Preserve non-gem RPM tools and packaging commands.
+Historical RPM tags must not supply missing gems, old bounds or group assignments.
+
 Use the appropriate RPM declarations:
 
 | Declaration | Purpose |

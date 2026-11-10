@@ -87,9 +87,9 @@ Feature: Available gem versions and dependency override macros
          | all    |                                      |
 
 
-   Scenario: Relax an external gem found only in input build conflicts
-      - include external build tools even without a source Gemfile declaration
-      - preserve the explicit build minimum when creating the lower-only override
+   Scenario: Do not resurrect a removed gem through old conflicts or dependency overrides
+      - generate dependencies and minimums only from current source/discovery metadata
+      - ignore historical RPM bounds for gems absent from those inputs
       Given blank space
       And a spec from fixture "rbvmomi"
       When he sets the space options as:
@@ -100,17 +100,19 @@ Feature: Available gem versions and dependency override macros
          | gem(cliver) >= 1.0 |
       And the input spec has extra build conflicts:
          | gem(cliver) >= 2 # gem(comment-only) is not a declaration |
+      And the input spec has dependency override macros:
+         | cliver >= 1.0,cliver < 2 |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
-      Then the generated spec contains each line once:
-         | %ruby_use_gem_dependency cliver >= 1.0  |
-         | BuildRequires: gem(cliver) >= 1.0       |
+      Then the generated spec has no gem dependencies named:
+         | cliver |
+      And the generated spec contains no override for "cliver"
       And the generated gem conflicts are ""
       And the generated spec contains no override for "comment-only"
       When the generated spec is refreshed 2 times
-      Then the generated spec contains each line once:
-         | %ruby_use_gem_dependency cliver >= 1.0  |
-         | BuildRequires: gem(cliver) >= 1.0       |
+      Then the generated spec has no gem dependencies named:
+         | cliver |
+      And the generated spec contains no override for "cliver"
       And the generated gem conflicts are ""
 
    Scenario Outline: Preserve explicit package build conflicts across spec updates
@@ -160,6 +162,8 @@ Feature: Available gem versions and dependency override macros
          | rpm-build-ruby                 |
          | rpm-macros-ruby setup-rb rake  |
          | rake >= 12                     |
+         | gem(cliver) >= 99              |
+         | gem(rake) >= 99                |
          | gcc >= 10                      |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
@@ -291,10 +295,9 @@ Feature: Available gem versions and dependency override macros
          | Requires:      gem(ruby2_keywords) >= 0.0.1   |
          | Conflicts:     gem(ruby2_keywords) >= 0.1     |
 
-   Scenario Outline: Preserve external gem build requirements absent from source metadata
-      - retain an externally identified tool such as Ruby Next parser's cliver
-      - keep explicit version bounds outside the optional checks section
-      - reconstruct known source dependencies rather than retaining stale input bounds
+   Scenario Outline: Recompute all gem dependencies without stale RPM declarations
+      - discard old gem bounds and phase assignments when updating a spec
+      - retain non-gem RPM build tools and reconstruct current source requirements
       Given blank space
       And a spec from fixture "rbvmomi"
       When developer locks the time to "21.04.2021"
@@ -305,25 +308,44 @@ Feature: Available gem versions and dependency override macros
       And the input spec has extra build requirements:
          | <declaration>   |
          | gem(rake) >= 99 |
+         | curl >= 7       |
+      And the input spec has gem dependency declarations:
+         | tag                | dependency         |
+         | Requires           | <declaration>      |
+         | Requires           | gem(rake) >= 99    |
+         | Conflicts          | gem(cliver) >= 2   |
+         | BuildRequires(pre) | gem(cliver) >= 99  |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then the unconditional build requirements include:
-         | BuildRequires: <expected>   |
+         | BuildRequires: curl >= 7 |
+      And the generated spec has no gem dependencies named:
+         | cliver |
+      And the generated spec contains no override for "cliver"
       And the generated build requirements for "rake" are:
          | BuildRequires: gem(rake) >= 10.5  |
       And package "gem-rbvmomi" does not require "cliver"
+      And package "gem-rbvmomi" does not require "rake"
+      And the check build requirements include:
+         | BuildRequires: gem(rake) >= 10.5  |
       When the generated spec is refreshed 2 times
       Then the unconditional build requirements include:
-         | BuildRequires: <expected>   |
+         | BuildRequires: curl >= 7 |
+      And the generated spec has no gem dependencies named:
+         | cliver |
+      And the generated spec contains no override for "cliver"
       And the generated build requirements for "rake" are:
          | BuildRequires: gem(rake) >= 10.5  |
       And package "gem-rbvmomi" does not require "cliver"
+      And package "gem-rbvmomi" does not require "rake"
+      And the check build requirements include:
+         | BuildRequires: gem(rake) >= 10.5  |
 
       Examples:
-         | declaration        | expected           |
-         | gem(cliver)        | gem(cliver) >= 0   |
-         | gem(cliver) >= 1.0 | gem(cliver) >= 1.0 |
-         | gem(cliver) = 1.0  | gem(cliver) >= 1.0 |
-         | gem(cliver) > 1.0  | gem(cliver) > 1.0  |
-         | gem(cliver) != 1.0 | gem(cliver) > 1.0  |
-         | gem(cliver) < 2    | gem(cliver) < 2    |
+         | declaration        |
+         | gem(cliver)        |
+         | gem(cliver) >= 1.0 |
+         | gem(cliver) = 1.0  |
+         | gem(cliver) > 1.0  |
+         | gem(cliver) != 1.0 |
+         | gem(cliver) < 2    |

@@ -17,7 +17,9 @@ release, increment the significant packaging revision for changes outside
 
 Declare Ruby dependencies, version constraints, and conflicts explicitly in the
 RPM spec during spec generation. Use `gem(name)` capabilities with gem versions;
-address development header packages by their RPM names.
+address development header packages by their RPM names. Recompute every gem
+dependency and its build/check/runtime assignment from current source and discovery
+metadata when updating a spec; historical gem tags do not supply dependencies or bounds.
 
 ## Package macros
 
