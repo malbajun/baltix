@@ -638,7 +638,7 @@ Feature: Spec actor
       And he applies "spec" actor to the baltix setup
       Then he acquires an "ucf" fixture spec for the baltix setup
 
-   @policy1_0 @gem_change @gem_obsolete_list @main_is_gem
+   @policy1_0 @gem_change @gem_obsolete_list @main_is_gem @loader_gc
    Scenario: Migrate zip-container from obsolete Ruby Policy 1.0 to 2.1
       - blank packager
       - both gem dependencies are runtime and development
@@ -653,7 +653,9 @@ Feature: Spec actor
          | maintainer.name       | Pavel Skrylev                                 |
          | maintainer.email      | majioa@altlinux.org                           |
       And he loads the spec into the space
-      And he applies "spec" actor to the baltix setup
+      Then the main source is the "zip_container" gem
+      And the main source metadata file is "zip-container.gemspec"
+      When he applies "spec" actor to the baltix setup
       Then he acquires an "zip-container" fixture spec for the baltix setup
 
    @policy1_0 @gem_change @olddoc @wrongdoc @main_is_gem
