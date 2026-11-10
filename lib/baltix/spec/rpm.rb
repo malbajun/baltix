@@ -529,9 +529,10 @@ class Baltix::Spec::Rpm
    # Renders custom script commands while regenerating standard Ruby packaging code.
    # @param section [Symbol] :prep, :build, :install or :check
    # @return [String] section commands, preserving custom arguments and ordering
-   # Obsolete wrappers are removed. With a source gemspec, standard setup commands
-   # are normalized and obsolete gemspec copying, VERSION exports and commented
-   # test wrappers are omitted. Custom commands, arguments and ordering survive.
+   # Obsolete wrappers and lines mentioning bundler/setup or ruby-tool-setup are
+   # removed. With a source gemspec, standard setup commands are normalized and
+   # obsolete gemspec copying, VERSION exports and commented test wrappers are
+   # omitted. Custom commands, arguments and ordering survive.
    # Legacy ruby_build selection and rake flags move to their generated macros.
    # Standard RI cleanup and its preceding generated comment are removed together.
    # If migration empties a section, its current default is used.
@@ -557,8 +558,11 @@ class Baltix::Spec::Rpm
    # redundant only when a native gemspec is available. Unknown commands, custom
    # arguments and malformed shell quoting remain unchanged; no shell is executed.
    # Standard RI cache cleanup is omitted from installation with a native gemspec.
+   # Lines matching bundler/setup or ruby-tool-setup are omitted in every section,
+   # with or without source metadata; dependency declarations are handled separately.
    def migrate_script_line section, line
       return if line.match?(/^\s*%(?:update_setup_rb|ruby_config|rdoc)(?:\s|$)/)
+      return if line.match?(/bundler\/setup|ruby-tool-setup/)
 
       line = line.sub(/^\s*%gem_build\b/, '%ruby_build').sub(/^\s*%gem_install\b/, '%ruby_install')
       line = line.gsub(/\s+--(?:pre|use|alias|ignore)=\S+/, '') if line.match?(/^\s*%ruby_build\b/)

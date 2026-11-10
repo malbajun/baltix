@@ -110,7 +110,6 @@ Format (OCF).
 
 %prep
 %setup
-subst 's,\(require.*bundler/setup\),#\1,' lib/%gemname.rb
 
 %build
 %ruby_build

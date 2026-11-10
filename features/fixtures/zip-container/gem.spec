@@ -115,7 +115,6 @@ UCF specification.
 
 %prep
 %setup
-subst 's,\(require.*bundler/setup\),#\1,' lib/zip-container.rb
 
 %build
 %ruby_build

@@ -668,7 +668,7 @@ Feature: Spec actor
       - both gem dependencies are runtime and development
       - there is a dependency to ruby
       - migrate a used pkgname alias to gemname without changing custom commands
-      - remove obsolete RI cache cleanup while retaining the upstream Bundler workaround
+      - remove obsolete RI cache cleanup and lines containing bundler/setup or ruby-tool-setup
       Given blank space
       And a spec from fixture "ucf"
       When developer locks the time to "21.04.2021"
@@ -681,7 +681,13 @@ Feature: Spec actor
          | pkgname                     |
          | ruby_ri_sitedir             |
          | # Remove unnecessary files  |
+         | bundler/setup               |
+         | ruby-tool-setup             |
       And he acquires an "ucf" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated spec contains none of these packaging tokens:
+         | bundler/setup   |
+         | ruby-tool-setup |
 
    @policy1_0 @gem_change @gem_obsolete_list @main_is_gem @loader_gc
    Scenario: Migrate zip-container from obsolete Ruby Policy 1.0 to 2.1
@@ -704,7 +710,13 @@ Feature: Spec actor
       Then the generated spec contains none of these packaging tokens:
          | ruby_ri_sitedir             |
          | # Remove unnecessary files  |
+         | bundler/setup               |
+         | ruby-tool-setup             |
       And he acquires an "zip-container" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated spec contains none of these packaging tokens:
+         | bundler/setup   |
+         | ruby-tool-setup |
 
    @policy1_0 @gem_change @olddoc @wrongdoc @main_is_gem
    Scenario: Migrate kgio with Olddoc/Wrongdoc from obsolete Ruby Policy 1.0 to 2.1
@@ -756,6 +768,13 @@ Feature: Spec actor
          | install   | rm -f %buildroot%ruby_ri_sitedir/custom.ri                                           | rm -f %buildroot%ruby_ri_sitedir/custom.ri                |
          | install   | rm -f %buildroot%ruby_ri_sitedir/cache.ri && touch marker                            | rm -f %buildroot%ruby_ri_sitedir/cache.ri && touch marker |
          | prep      | rm -f %buildroot%ruby_ri_sitedir/cache.ri                                            | rm -f %buildroot%ruby_ri_sitedir/cache.ri                 |
+         | prep      | subst 's,bundler/setup,,' lib/example.rb                                             | %setup                                                    |
+         | build     | ruby -rbundler/setup build.rb                                                        | %ruby_build                                               |
+         | install   | sed -i s,bundler/setup,, lib/example.rb                                              | %ruby_install                                             |
+         | check     | ruby -rbundler/setup test.rb                                                         | %ruby_test                                                |
+         | prep      | echo bundler-setup                                                                   | echo bundler-setup                                        |
+         | build     | ruby-tool-setup build                                                                | %ruby_build                                               |
+         | build     | setup-rb build                                                                       | setup-rb build                                            |
       And deprecated package-name definitions follow these rules:
          | package   | definition                  | use                            | retained  |
          | gem-kgio  | %define pkgname kgio        |                                | no        |
