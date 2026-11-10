@@ -186,8 +186,8 @@ class Baltix::Deps
       # @param req [Gem::Requirement] the combined source constraints
       # @return [Array] lower-bound operator and version, or an empty array for empty input
       # If no lower bound is given, an inclusive zero minimum keeps the gem
-      # required while maximums and excluded versions become conflicts.
-      # Excluded versions do not raise the minimum; they narrow the maximum.
+      # required while maximums become conflicts. Each excluded version contributes
+      # a strict minimum; the greatest lower boundary wins without mutating the source.
       def lower_to_rpm req
          minimum = req.requirements.reduce([]) do |res, r|
             merge(res, debound(r))
@@ -207,9 +207,11 @@ class Baltix::Deps
          end || []
       end
 
-      # TODO for requirement
-      # +debound+ crop upper limitation bound from the requirement rule
-      #
+      # Extracts a lower RPM boundary from one source constraint.
+      # @param req [Array<String, Gem::Version>] source operator and version
+      # @return [Array<String, Gem::Version>, nil] lower boundary, or nil without a minimum
+      # Pessimistic constraints use their release minimum. Exclusions become strict
+      # minimums; other lower operators are retained. Upper-only constraints return nil.
       def debound req
          ver = Gem::Version.new("#{req[1]}".gsub(/x/, '0'))
 
@@ -218,21 +220,25 @@ class Baltix::Deps
             ['>=', ver.release]
          when ">=", ">", "="
             [req[0], ver.release]
+         when "!="
+            ['>', ver.release]
          else
             nil
          end
       end
 
-      # TODO for requirement
-      # +negate+ megates requirement rule
-      #
+      # Converts a source upper boundary to an RPM conflict boundary.
+      # @param req [Array<String, Gem::Version>] source operator and version
+      # @return [Array<String, Gem::Version>, nil] conflict boundary, or nil without a maximum
+      # Pessimistic limits use the bumped release; < becomes >= and <= becomes >.
+      # Exclusions supply lower boundaries instead and do not create conflicts.
       def negate req
          ver = Gem::Version.new("#{req[1]}".gsub(/x/, '0'))
 
          case req[0]
          when "~>"
             ['>=', ver.bump]
-         when "<", "!="
+         when "<"
             ['>=', ver.release]
          when "<="
             ['>', ver.release]

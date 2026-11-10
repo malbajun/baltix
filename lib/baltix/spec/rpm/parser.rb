@@ -471,7 +471,7 @@ class Baltix::Spec::Rpm::Parser
       deps = []
       until tokens.empty?
          declaration = tokens.shift
-         if tokens.first&.match?(/\A[<=>]+\z/) && tokens[1]
+         if tokens.first&.match?(/\A(?:[<=>]+|!=)\z/) && tokens[1]
             declaration = [declaration, tokens.shift, tokens.shift].join(' ')
          end
          deps << declaration

@@ -14,6 +14,7 @@ Feature: Available gem versions and dependency override macros
          | > 4.2        | > 4.2     |           |
          | < 4.2        | >= 0      | >= 4.2    |
          | <= 4.2       | >= 0      | > 4.2     |
+         | != 4.2       | > 4.2     |           |
 
    Scenario Outline: Selectively remove gem upper bounds without changing source minimums
       - regular retains the current dependency override behavior
@@ -324,4 +325,5 @@ Feature: Available gem versions and dependency override macros
          | gem(cliver) >= 1.0 | gem(cliver) >= 1.0 |
          | gem(cliver) = 1.0  | gem(cliver) >= 1.0 |
          | gem(cliver) > 1.0  | gem(cliver) > 1.0  |
+         | gem(cliver) != 1.0 | gem(cliver) > 1.0  |
          | gem(cliver) < 2    | gem(cliver) < 2    |

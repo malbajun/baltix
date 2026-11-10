@@ -912,37 +912,43 @@ Feature: Spec actor
          | %ruby_test      |
 
    @scratch @blank_setup @main_is_gem
-   Scenario Outline: Preserve a common source interval for rails-html-sanitizer security exclusions
-      - use the upstream 1.7.2 gemspec and Gemfile
-      - keep the source minimum and narrow the maximum at the first excluded version
-      - use identical bounds in the dependency macro, Requires and Conflicts
-      - work without an available list and widen the maximum only when one is supplied
-      - preserve the selected interval through repeated spec updates
+   Scenario Outline: Raise RPM minimums past rails-html-sanitizer security exclusions
+      - retain the original upstream exclusions in gem metadata
+      - use the greatest excluded version as a strict RPM minimum
+      - keep the macro, Requires and BuildRequires on the same > boundary
+      - do not create a conflict from an excluded version
+      - preserve the boundary with absent, old and newer available versions
       Given blank space
       When developer locks the time to "09.11.2026"
       And he sets the space options as:
-         | options            | value                                      |
-         | rootdir            | features/fixtures/rails-html-sanitizer-1.7 |
-         | available_gem_list | <available>                                |
-         | maintainer.name    | Pavel Skrylev                              |
-         | maintainer.email   | majioa@altlinux.org                        |
+         | options               | value                                      |
+         | rootdir               | features/fixtures/rails-html-sanitizer-1.7 |
+         | available_gem_list    | <available>                                |
+         | gem_dependency_mode   | <mode>                                     |
+         | maintainer.name       | Pavel Skrylev                              |
+         | maintainer.email      | majioa@altlinux.org                        |
       And he applies "spec" actor to the baltix setup
       Then package "gem-rails-html-sanitizer" contains dependency lines:
-         | Requires:      gem(nokogiri) >= 1.15.7     |
-         | Conflicts:     gem(nokogiri) >= <maximum>  |
+         | Requires:      gem(nokogiri) > 1.16.7   |
       And the generated spec contains each line once:
-         | %ruby_use_gem_dependency nokogiri >= 1.15.7,nokogiri < <maximum>   |
-         | BuildRequires: gem(nokogiri) >= 1.15.7                             |
-         | BuildConflicts: gem(nokogiri) >= <maximum>                         |
-      And the generated spec matches "<expected>" from fixture "rails-html-sanitizer-1.7"
+         | %ruby_use_gem_dependency nokogiri > 1.16.7 |
+         | BuildRequires: gem(nokogiri) > 1.16.7      |
+      And the generated spec has no gem conflicts for "nokogiri"
+      And the source "rails-html-sanitizer" dependency "nokogiri" has version compatibility:
+         | version   | allowed   |
+         | 1.15.7    | yes       |
+         | 1.16.7    | no        |
+         | 1.16.8    | yes       |
+      And the generated spec matches "gem.spec" from fixture "rails-html-sanitizer-1.7"
       When the generated spec is refreshed 2 times
-      Then the generated dependency sections match "<expected>" from fixture "rails-html-sanitizer-1.7"
+      Then the generated dependency sections match "gem.spec" from fixture "rails-html-sanitizer-1.7"
+      And the generated spec has no gem conflicts for "nokogiri"
 
       Examples:
-         | available             | maximum   | expected        |
-         | {}                    | 1.16.0    | gem.spec        |
-         | {nokogiri: '1.14.0'}  | 1.16.0    | gem.spec        |
-         | {nokogiri: '1.16.8'}  | 2         | available.spec  |
+         | available             | mode      |
+         | {}                    | regular   |
+         | {nokogiri: '1.14.0'}  | redep     |
+         | {nokogiri: '1.16.8'}  | regular   |
 
    @policy2_0 @gem_change @main_is_gem
    Scenario: Migrate rbvmomi from obsolete Ruby Policy 2.0 to 2.1 using available gem versions

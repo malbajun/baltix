@@ -166,3 +166,7 @@ Then('external gem bounds render as:') do |table|
       expect(space.spec.send(:render_deps, [dependency], :negate)).to eql(expected)
    end
 end
+
+Then('the generated spec has no gem conflicts for {string}') do |name|
+   expect(@spec).to_not match(/^(?:BuildConflicts|Conflicts):\s+gem\(#{Regexp.escape(name)}\)/)
+end
