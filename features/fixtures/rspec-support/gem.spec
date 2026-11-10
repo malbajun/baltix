@@ -1,4 +1,3 @@
-%define        pkgname rspec-support
 %define        _unpackaged_files_terminate_build 1
 %def_enable    check
 %def_enable    doc

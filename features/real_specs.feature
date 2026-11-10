@@ -699,6 +699,7 @@ Feature: Spec actor
       - gem dependencies are development only
       - has extension containing call to #gem dep
       - regenerate standard policy sections instead of retaining obsolete setup commands
+      - omit obsolete pkgname definitions once their generated uses disappear
       Given blank space
       And a spec from fixture "kgio"
       When developer locks the time to "21.04.2021"
@@ -715,6 +716,7 @@ Feature: Spec actor
          | %ruby_install   |
          | %ruby_test      |
       And the generated spec excludes the lines:
+         | %define pkgname kgio                    |
          | %setup -q -n %pkgname-%version          |
          | rm -rf setup.rb *.gemspec               |
          | cp %SOURCE1 %pkgname-%version.gemspec   |
@@ -734,6 +736,18 @@ Feature: Spec actor
          | install   | export VERSION=%version && touch marker | export VERSION=%version && touch marker |
          | check     | #ruby_test_unit -Ilib:test test         | %ruby_test                              |
          | check     | # custom test instructions              | # custom test instructions              |
+      And deprecated package-name definitions follow these rules:
+         | package   | definition                  | use                            | retained  |
+         | gem-kgio  | %define pkgname kgio        |                                | no        |
+         | gem-kgio  | %global pkgname kgio        |                                | no        |
+         | gem-kgio  | %def_legacy pkgname kgio    |                                | no        |
+         | gem-kgio  | %define pkgname kgio        | echo %pkgname                  | yes       |
+         | gem-kgio  | %global pkgname kgio        | echo %{pkgname}                | yes       |
+         | gem-kgio  | %define pkgname kgio        | echo %{?pkgname:enabled}       | yes       |
+         | gem-kgio  | %define pkgname kgio        | %define source_name %{pkgname} | yes       |
+         | gem-kgio  | %define pkgname_suffix kgio |                                | yes       |
+         | gem-kgio  | %define service_user _kgio  |                                | yes       |
+         | kgio      | %define pkgname kgio        |                                | yes       |
       And he acquires an "kgio" fixture spec for the baltix setup
       When the generated spec is refreshed 2 times
       Then the generated dependency sections match "gem.spec" from fixture "kgio"

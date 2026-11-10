@@ -350,7 +350,21 @@ class Baltix::Spec::Rpm
    def render_template template
       b = binding
 
-      ERB.new(template, trim_mode: "<>-", eoutvar: "@spec").result(b).strip
+      omit_obsolete_pkgname(ERB.new(template, trim_mode: "<>-", eoutvar: "@spec").result(b)).strip
+   end
+
+   # Omits unused legacy package-name definitions from a generated gem RPM spec.
+   # @param spec [String] rendered spec, inspected without expanding RPM macros
+   # @return [String] spec with unused pkgname definitions removed
+   # Only gem-* packages are migrated. Definitions using def* or global are
+   # obsolete; other definitions remain unchanged. If the remaining spec still
+   # mentions pkgname, including in custom macros or conditionals, its definitions
+   # are retained for compatibility with that code. Non-gem specs are unchanged.
+   def omit_obsolete_pkgname spec
+      return spec unless spec[/^Name:[ \t]+(\S+)/, 1].to_s.start_with?('gem-')
+
+      body = spec.gsub(/^[ \t]*%(?:def\S*|global)[ \t]+pkgname(?:[ \t]+[^\r\n]*)?(?:\r?\n|\z)/, '')
+      body.match?(/\bpkgname\b/) ? spec : body
    end
 
    # Selects a spec-only revision by comparing a preview with the original spec.

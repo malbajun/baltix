@@ -25,3 +25,12 @@ Then('packaging section migration produces these commands:') do |table|
       expect(spec.preserved_script(row['section'].to_sym)).to eql(row['output']), row.inspect
    end
 end
+
+Then('deprecated package-name definitions follow these rules:') do |table|
+   table.hashes.each do |row|
+      body = ["Name: #{row['package']}", row['use']].reject(&:empty?).join("\n")
+      template = row['definition'] + "\n" + body
+      expected = row['retained'] == 'yes' ? template : body
+      expect(space.spec.render_template(template)).to eql(expected), row.inspect
+   end
+end

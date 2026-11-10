@@ -50,6 +50,10 @@ BuildRequires(pre): rpm-macros-ruby setup-rb rake
 When updating an existing spec, Baltix migrates the old prerequisite to this
 replacement. Legacy prerequisites remain in test input fixtures to verify migration.
 
+For `gem-*` packages, `%def* pkgname` and `%global pkgname` are obsolete; use
+`gemname` instead. Baltix omits unused legacy definitions after rendering the
+updated spec, retaining definitions still needed by custom packaging code.
+
 ### Confguration file
 
 Create default config file for baltix, placed it to: ~/.baltix.yaml
