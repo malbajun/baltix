@@ -541,6 +541,59 @@ Feature: Spec actor
       And he applies "spec" actor to the baltix setup
       Then he acquires an "rails-html-sanitizer" fixture spec for the baltix setup
 
+   # jfelchner/ruby-progressbar, ALT 0a5d8aa; keep one Gemfile variant that imports ruby-progressbar first.
+   @scratch @main_is_gem
+   Scenario: Prefer the literal progressbar gem over a legacy ruby package alias
+      - select progressbar for the input RPM name gem-progressbar
+      - retain ruby-progressbar as a distinct source with its own gem provide
+      - preserve both packages through repeated spec updates
+      Given blank space
+      And a spec from fixture "progressbar"
+      When developer locks the time to "09.11.2026"
+      And he sets the space options as:
+         | options          | value                         |
+         | rootdir          | features/fixtures/progressbar |
+         | maintainer.name  | Pavel Skrylev                 |
+         | maintainer.email | majioa@altlinux.org           |
+      And he loads the spec into the space
+      Then the main source is the "progressbar" gem
+      When he applies "spec" actor to the baltix setup
+      Then he acquires an "progressbar" fixture spec for the baltix setup
+      And the generated package names are unique
+      And package "gem-progressbar" contains dependency lines:
+         | Provides:      gem(progressbar) = 1.13.0.5 |
+      And package "gem-ruby-progressbar" contains dependency lines:
+         | Provides:      gem(ruby-progressbar) = 1.13.0.5 |
+      When the generated spec is refreshed 2 times
+      Then the main source is the "progressbar" gem
+      And the generated package names are unique
+      And the generated dependency sections match "gem.spec" from fixture "progressbar"
+
+   @scratch @main_is_gem
+   Scenario: Select ruby-progressbar explicitly without removing the progressbar gem
+      - keep a real ruby- gem prefix distinct from an obsolete RPM package prefix
+      Given blank space
+      And a spec from fixture "progressbar"
+      When the input spec is named "gem-ruby-progressbar"
+      And developer locks the time to "09.11.2026"
+      And he sets the space options as:
+         | options          | value                         |
+         | rootdir          | features/fixtures/progressbar |
+         | maintainer.name  | Pavel Skrylev                 |
+         | maintainer.email | majioa@altlinux.org           |
+      And he loads the spec into the space
+      Then the main source is the "ruby-progressbar" gem
+      When he applies "spec" actor to the baltix setup
+      And the generated spec is refreshed 2 times
+      Then the main source is the "ruby-progressbar" gem
+      And the generated package names are unique
+      And the generated spec contains the lines:
+         | Name:          gem-ruby-progressbar |
+      And package "gem-ruby-progressbar" contains dependency lines:
+         | Provides:      gem(ruby-progressbar) = 1.13.0.5 |
+      And package "gem-progressbar" contains dependency lines:
+         | Provides:      gem(progressbar) = 1.13.0.5 |
+
    @policy1_0 @gem_change @main_is_gem
    Scenario: Migrate ucf from obsolete Ruby Policy 1.0 to 2.1
       - blank packager
