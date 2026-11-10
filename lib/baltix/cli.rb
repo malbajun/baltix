@@ -22,6 +22,7 @@ class Baltix::CLI
       regarded_path_tokens: [].freeze,
       spec_file: nil,
       available_gem_list: {}.to_os.freeze,
+      gem_dependency_mode: :redep,
       maintainer: {}.to_os.freeze,
       packager: {}.to_os.freeze,
       devel_dep_baltix: :include,
@@ -111,6 +112,10 @@ class Baltix::CLI
 
             opts.on("-g", "--available-gem-list-file=[FILE]", String, "Path to a YAML-formatted file with the list of available gems to replace in dependencies") do |file|
                options.available_gem_list = Baltix.load(IO.read(file)).to_os
+            end
+
+            opts.on("--gem-dependency-mode=MODE", %i(regular redep all), "Gem upper bounds: regular, redep (overrides only), all (all gem conflicts)") do |mode|
+               options.gem_dependency_mode = mode
             end
 
             opts.on("--debug-io=[FILE|IO| |-|--]", String, "IO for debug level. Value is file name, or --/stderr for stderr, or -/stdout for stdout, or blank to disable") do |str|

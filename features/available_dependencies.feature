@@ -1,4 +1,107 @@
+@regular_dependencies
 Feature: Available gem versions and dependency override macros
+   Existing interval examples exercise regular dependency bounds explicitly.
+   Mode-selection examples override that setting; an unset option selects redep.
+
+   Scenario Outline: Selectively remove gem upper bounds without changing source minimums
+      - regular retains the current dependency override behavior
+      - redep relaxes only gems selected for dependency override macros
+      - all also relaxes every gem appearing in runtime or build conflicts
+      - preserve non-gem build conflicts and the original gem metadata
+      Given blank space
+      And a spec from fixture "rbvmomi"
+      When developer locks the time to "21.04.2021"
+      And he sets the space options as:
+         | options             | value                                         |
+         | rootdir             | features/fixtures/rbvmomi                     |
+         | available_gem_list  | {racc: 1.5.1, rake: '15.0', test-unit: '3.0'} |
+         | gem_dependency_mode | <setting>                                     |
+         | maintainer.name     | Pavel Skrylev                                 |
+         | maintainer.email    | majioa@altlinux.org                           |
+      And the input spec has extra build conflicts:
+         | ragel6 >= 7 |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains each line once:
+         | %ruby_use_gem_dependency <rake_override> |
+         | BuildConflicts: ragel6 >= 7              |
+      And the generated gem conflicts are "<conflicts>"
+      And the source "rbvmomi" dependency "rake" has version compatibility:
+         | version | allowed |
+         | 10.5    | yes     |
+         | 15.0    | no      |
+      And the generated spec matches "<expected>" from fixture "rbvmomi"
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "<expected>" from fixture "rbvmomi"
+      And the generated gem conflicts are "<conflicts>"
+      When he sets the space option "gem_dependency_mode" to ":regular"
+      And the generated spec is refreshed 1 times
+      Then the generated gem conflicts are "builder,nokogiri,optimist,rake,simplecov,yard"
+      And the generated spec contains each line once:
+         | %ruby_use_gem_dependency rake >= 10.5,rake < 16 |
+
+      Examples:
+         | setting  | rake_override          | conflicts                                     | expected          |
+         | :regular | rake >= 10.5,rake < 16 | builder,nokogiri,optimist,rake,simplecov,yard | mode-regular.spec |
+         | :redep   | rake >= 10.5           | builder,nokogiri,optimist,simplecov,yard      | mode-redep.spec   |
+         | :all     | rake >= 10.5           |                                               | mode-all.spec     |
+         | null     | rake >= 10.5           | builder,nokogiri,optimist,simplecov,yard      | mode-redep.spec   |
+
+   Scenario Outline: Relax imported dependency macros without an available gem list
+      - include gems already named in ruby_use_gem_dependency
+      - recompute the minimum from sources rather than a historical macro
+      Given blank space
+      And a spec from fixture "rbvmomi"
+      When he sets the space options as:
+         | options             | value                     |
+         | rootdir             | features/fixtures/rbvmomi |
+         | gem_dependency_mode | <mode>                    |
+      And the input spec has dependency override macros:
+         | nokogiri >= 1.14,nokogiri < 2 |
+         | json >= 2                     |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains each line once:
+         | %ruby_use_gem_dependency nokogiri >= 1.5 |
+         | %ruby_use_gem_dependency json >= 1.8     |
+      And the generated gem conflicts are "<conflicts>"
+      When the generated spec is refreshed 2 times
+      Then the generated spec contains each line once:
+         | %ruby_use_gem_dependency nokogiri >= 1.5 |
+         | %ruby_use_gem_dependency json >= 1.8     |
+      And the generated gem conflicts are "<conflicts>"
+
+      Examples:
+         | mode  | conflicts                            |
+         | redep | builder,optimist,rake,simplecov,yard |
+         | all   |                                      |
+
+
+   Scenario: Relax an external gem found only in input build conflicts
+      - include external build tools even without a source Gemfile declaration
+      - preserve the explicit build minimum when creating the lower-only override
+      Given blank space
+      And a spec from fixture "rbvmomi"
+      When he sets the space options as:
+         | options             | value                     |
+         | rootdir             | features/fixtures/rbvmomi |
+         | gem_dependency_mode | :all                      |
+      And the input spec has extra build requirements:
+         | gem(cliver) >= 1.0 |
+      And the input spec has extra build conflicts:
+         | gem(cliver) >= 2 # gem(comment-only) is not a declaration |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains each line once:
+         | %ruby_use_gem_dependency cliver >= 1.0 |
+         | BuildRequires: gem(cliver) >= 1.0      |
+      And the generated gem conflicts are ""
+      And the generated spec contains no override for "comment-only"
+      When the generated spec is refreshed 2 times
+      Then the generated spec contains each line once:
+         | %ruby_use_gem_dependency cliver >= 1.0 |
+         | BuildRequires: gem(cliver) >= 1.0      |
+      And the generated gem conflicts are ""
 
    Scenario Outline: Preserve explicit package build conflicts across spec updates
       - retain external tool bounds such as Ruby Next parser's ragel6 constraint

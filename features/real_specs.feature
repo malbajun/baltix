@@ -1,8 +1,10 @@
-@actor @spec @gem @policy2_1
+@actor @spec @gem @policy2_1 @regular_dependencies
 Feature: Spec actor
    All generated specs target the Ruby Policy 2.1 draft currently under development.
    Tags @policy1_0 and @policy2_0 identify obsolete input policies being migrated.
    The obsolete rpm-build-ruby prerequisite is replaced by rpm-macros-ruby, setup-rb and rake.
+   Historical migration snapshots explicitly exercise regular dependency bounds.
+   Default redep and all-mode specs are covered in available_dependencies.feature.
    Shared availability checks also cover the behavior reported for rdoc and prometheus-client:
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.

@@ -2939,6 +2939,7 @@ Feature: Spec actor
             - :valid
          """
       When developer loads the space
+      And developer sets the space option "gem_dependency_mode" to ":regular"
       And developer sets the space option "available_gem_list" to:
          """
          --- !ruby/object:OpenStruct
