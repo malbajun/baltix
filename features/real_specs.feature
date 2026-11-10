@@ -526,6 +526,40 @@ Feature: Spec actor
       And he applies "spec" actor to the baltix setup
       Then he acquires an "mixlib-shellout" fixture spec for the baltix setup
 
+   # packethost/packet-rb, ALT 9d7354c; rdoc, sinatra and webmock use > and < together.
+   @scratch @main_is_gem
+   Scenario: Preserve valid intervals with exclusive lower and upper dependency bounds
+      - keep strict source intervals instead of replacing them with an impossible < 0
+      - emit the matching build and development requirements and conflicts
+      - preserve the intervals through repeated spec updates
+      Given blank space
+      And a spec from fixture "packethost"
+      When developer locks the time to "09.11.2026"
+      And he sets the space options as:
+         | options          | value                        |
+         | rootdir          | features/fixtures/packethost |
+         | maintainer.name  | Pavel Skrylev                |
+         | maintainer.email | majioa@altlinux.org          |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then he acquires an "packethost" fixture spec for the baltix setup
+      And the generated spec contains each line once:
+         | BuildRequires: gem(rdoc) > 4       |
+         | BuildConflicts: gem(rdoc) >= 7     |
+         | BuildRequires: gem(sinatra) > 1.4  |
+         | BuildConflicts: gem(sinatra) >= 3  |
+         | BuildRequires: gem(webmock) > 1.20 |
+         | BuildConflicts: gem(webmock) >= 4  |
+      And package "gem-packethost-devel" contains dependency lines:
+         | Requires:      gem(rdoc) > 4       |
+         | Conflicts:     gem(rdoc) >= 7      |
+         | Requires:      gem(sinatra) > 1.4  |
+         | Conflicts:     gem(sinatra) >= 3   |
+         | Requires:      gem(webmock) > 1.20 |
+         | Conflicts:     gem(webmock) >= 4   |
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "packethost"
+
    @scratch @blank_setup @main_is_gem
    Scenario: Generate a spec for rails-html-sanitizer with Gemfile development dependencies
       Given blank space
