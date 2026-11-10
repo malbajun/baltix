@@ -667,6 +667,7 @@ Feature: Spec actor
       - blank packager
       - both gem dependencies are runtime and development
       - there is a dependency to ruby
+      - migrate a used pkgname alias to gemname without changing custom commands
       Given blank space
       And a spec from fixture "ucf"
       When developer locks the time to "21.04.2021"
@@ -675,7 +676,9 @@ Feature: Spec actor
       And he sets the space option "maintainer.email" to "majioa@altlinux.org"
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
-      Then he acquires an "ucf" fixture spec for the baltix setup
+      Then the generated spec contains none of these packaging tokens:
+         | pkgname   |
+      And he acquires an "ucf" fixture spec for the baltix setup
 
    @policy1_0 @gem_change @gem_obsolete_list @main_is_gem @loader_gc
    Scenario: Migrate zip-container from obsolete Ruby Policy 1.0 to 2.1

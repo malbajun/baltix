@@ -1,4 +1,3 @@
-%define  pkgname ucf
 %define        _unpackaged_files_terminate_build 1
 %def_enable    check
 %def_enable    doc
@@ -111,7 +110,7 @@ Format (OCF).
 
 %prep
 %setup
-subst 's,\(require.*bundler/setup\),#\1,' lib/%pkgname.rb
+subst 's,\(require.*bundler/setup\),#\1,' lib/%gemname.rb
 
 %build
 %ruby_build

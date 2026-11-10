@@ -52,7 +52,8 @@ replacement. Legacy prerequisites remain in test input fixtures to verify migrat
 
 For `gem-*` packages, `%def* pkgname` and `%global pkgname` are obsolete; use
 `gemname` instead. Baltix omits unused legacy definitions after rendering the
-updated spec, retaining definitions still needed by custom packaging code.
+updated spec. Literal aliases matching `gemname` are migrated to that macro;
+other definitions still needed by custom packaging code are retained.
 
 ### Confguration file
 

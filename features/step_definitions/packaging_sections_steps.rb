@@ -34,3 +34,8 @@ Then('deprecated package-name definitions follow these rules:') do |table|
       expect(space.spec.render_template(template)).to eql(expected), row.inspect
    end
 end
+
+Then('the generated spec contains none of these packaging tokens:') do |table|
+   packaging = @spec.split(/^%changelog\b/, 2).first
+   table.raw.flatten.each { |token| expect(packaging).to_not include(token) }
+end
