@@ -9,6 +9,46 @@ Feature: Spec actor
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
 
+   # chef/chef v19.4.12; ALT gem-chef 19.4.12-alt1.1, altlinux/specs 4d2273b2.
+   @policy2_1 @main_is_gem
+   Scenario: Update Chef together with its component gems and service package
+      - retain exact internal requirements for chef-config, chef-utils and chef-bin
+      - preserve service installation commands, configuration ownership and scriptlets
+      - exclude the Windows-only gemspec and keep the repository root unchanged
+      Given blank space
+      And a spec from fixture "chef"
+      When developer locks the time to "10.11.2026"
+      And he sets the space options as:
+         | options            | value                    |
+         | rootdir            | features/fixtures/chef   |
+         | maintainer.name    | Pavel Skrylev            |
+         | maintainer.email   | majioa@altlinux.org      |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the main source is the "chef" gem
+      And the main source metadata file is "chef.gemspec"
+      And the project root remains the "chef" fixture
+      And the generated package names are unique
+      And the generated spec preserves the input packaging sections for package "chef"
+      And internal gem requirements equal their provided versions without conflicts
+      And package "gem-chef" contains dependency lines:
+         | Release:       alt1.2                      |
+         | Provides:      gem(chef) = 19.4.12         |
+         | Requires:      gem(chef-config) = 19.4.12  |
+         | Requires:      gem(chef-utils) = 19.4.12   |
+         | Requires:      gem(ffi-yajl) > 3.0.0       |
+         | Conflicts:     gem(ffi-yajl) >= 4.0        |
+      And the project dependencies exclude:
+         | name         |
+         | win32-api    |
+         | win32-event  |
+         | wmi-lite     |
+      And he acquires an "chef" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "chef"
+      And the generated spec preserves the input packaging sections for package "chef"
+      And internal gem requirements equal their provided versions without conflicts
+
    # rmosolgo/graphql-ruby dca54e3cf68b; the C parser declares graphql >= 2.2.10.
    @policy2_1 @main_is_gem
    Scenario: Bind GraphQL C parser requirements to the gem provided by this spec
