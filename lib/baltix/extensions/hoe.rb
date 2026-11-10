@@ -43,9 +43,20 @@ class Hoe
          end
       end
 
+      # Loads an optional plugin without allowing real Hoe to reopen this adapter.
+      # @param lib [String] library or plugin name to require
+      # @return [Boolean, nil] Ruby's require result, or nil when loading fails
+      # If the Rake library manager is available, real plugin constants are isolated
+      # and metadata adapters are restored even on failure. Standalone adapters
+      # require the plugin directly. Optional plugin errors remain nonfatal.
       def try_require lib
-         require(lib)
+         if defined?(Baltix::Rake)
+            Baltix::Rake.with_task_libraries { require(lib) }
+         else
+            require(lib)
+         end
       rescue Exception
+         nil
       end
 
       def plugin? name
