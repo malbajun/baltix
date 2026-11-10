@@ -18,3 +18,9 @@ release, increment the significant packaging revision for changes outside
 Declare Ruby dependencies, version constraints, and conflicts explicitly in the
 RPM spec during spec generation. Use `gem(name)` capabilities with gem versions;
 address development header packages by their RPM names.
+
+## Package macros
+
+For `gem-*` packages, `pkgname` definitions (`%def*` and `%global`) are obsolete;
+use `gemname` for the source gem name. Omit unused legacy definitions when updating
+specs; retain definitions still referenced by custom packaging code for compatibility.

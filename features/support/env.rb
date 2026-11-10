@@ -22,6 +22,10 @@ RSpec::Matchers.define :match_record_yaml do |yaml|
    end
 end
 
+Before('@regular_dependencies') do
+   @regular_dependency_mode = true
+end
+
 After do
    instance_variables.reject do |name|
       name.to_s =~ /__/

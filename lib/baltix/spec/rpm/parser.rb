@@ -1,5 +1,62 @@
 class Baltix::Spec::Rpm::Parser
    MATCHER = /^Name:\s+([^\s]+)/i
+   SCRIPT_SECTIONS = %w(prep build install check clean conf generate_buildrequires
+      pretrans posttrans preuntrans postuntrans preun postun pre post verifyscript
+      triggerprein triggerin triggerun triggerpostun filetriggerin filetriggerun
+      filetriggerpostun transfiletriggerin transfiletriggerun transfiletriggerpostun).freeze
+   SECTION_HEADER = /^%(#{(SCRIPT_SECTIONS + %w(package description files changelog)).join('|')})(?:\s|$)/
+
+   DEPENDENCY_TOKEN_GROUPS = { '(' => ')', '{' => '}' }.freeze
+
+   # The first matching rule handles a character without evaluating its contents.
+   # Matchers and actions receive the character, its index and the scanner state.
+   # Escape and quote rules precede grouping and whitespace rules so delimiters
+   # inside escaped or quoted text remain part of their original token.
+   DEPENDENCY_TOKEN_SCHEME = {
+      escaped: [
+         ->(_character, _index, state) { state[:escaped] },
+         ->(_character, _index, state) { state[:escaped] = false }
+      ],
+      escape: [
+         ->(character, _index, _state) { character == "\\" },
+         ->(_character, _index, state) { state[:escaped] = true }
+      ],
+      quote_end: [
+         ->(character, _index, state) { character == state[:quote] },
+         ->(_character, _index, state) { state[:quote] = nil }
+      ],
+      quoted: [
+         ->(_character, _index, state) { state[:quote] },
+         ->(_character, _index, _state) {}
+      ],
+      quote_start: [
+         ->(character, _index, _state) { %q{"'}.include?(character) },
+         ->(character, _index, state) { state[:quote] = character }
+      ],
+      group_start: [
+         ->(character, _index, _state) { DEPENDENCY_TOKEN_GROUPS.key?(character) },
+         ->(character, _index, state) { state[:closing] << DEPENDENCY_TOKEN_GROUPS[character] }
+      ],
+      group_end: [
+         ->(character, _index, state) { character == state[:closing].last },
+         ->(_character, _index, state) { state[:closing].pop }
+      ],
+      token_end: [
+         ->(character, index, state) { character.match?(/\s/) && state[:closing].empty? && state[:start] < index },
+         lambda do |_character, index, state|
+            state[:tokens] << state[:text][state[:start]...index]
+            state[:start] = index + 1
+         end
+      ],
+      whitespace: [
+         ->(character, _index, state) { character.match?(/\s/) && state[:closing].empty? },
+         ->(_character, index, state) { state[:start] = index + 1 }
+      ],
+      text: [
+         ->(_character, _index, _state) { true },
+         ->(_character, _index, _state) {}
+      ]
+   }.transform_values(&:freeze).freeze
 
    SCHEME = {
       name: {
@@ -100,7 +157,8 @@ class Baltix::Spec::Rpm::Parser
       },
       ignored_names: {
          non_contexted: true,
-         regexp: /(^%ruby_ignore|--ignore=)\s*([^\s$]+)/i,
+         # Match the complete modern or legacy macro name before reading its list.
+         regexp: /(^%ruby_ignore(?:_names)?\s+|(?:^|\s)--ignore=)([^\s$]+)/i,
          parse_func: :parse_ignore
       },
       descriptions: {
@@ -206,9 +264,75 @@ class Baltix::Spec::Rpm::Parser
       store_value(state, matched.match, matched.name, matched.flow, context)
 
       state.original_spec = source(source_in).map(&:chomp).join("\n").strip
+      preserve_sections(source(source_in), state)
 
       #binding.pry
       state
+   end
+
+   # Retains executable section bodies and manual file entries before macro expansion.
+   # @param lines [Array<String>] original spec lines
+   # @param state [OpenStruct] parsed spec state, updated in place
+   # @return [OpenStruct] state containing raw script bodies, scriptlets and file lists
+   # Build sections replace their lossy parsed values. File sections are keyed by
+   # their original package names; scriptlets retain their headers and order.
+   # Leading custom define/global macros are retained except generated definitions.
+   def preserve_sections lines, state
+      blocks = []
+      leading = []
+      lines.each do |line|
+         line = line.chomp
+         match = SECTION_HEADER.match(line)
+         if match
+            blocks << [match[1], line, []]
+         elsif blocks.empty?
+            leading << line
+         else
+            blocks.last[2] << line
+         end
+      end
+
+      state.custom_macros = leading.grep(/^%(?:define|global)\s/).reject do |line|
+         line.match?(/^%(?:define|global)\s+(?:gemname|_unpackaged_files_terminate_build)\s/)
+      end
+      state.scriptlets = []
+      state.preserved_file_lists = {}.to_os
+      blocks.each do |kind, header, body|
+         case kind
+         when 'prep', 'build', 'install', 'check'
+            state[kind] = body.join("\n").strip
+         when 'files'
+            expanded_header = reeval(header, state)
+            package = expanded_header[/\s-n\s+(\S+)/, 1] ||
+               (expanded_header.strip == '%files' ? state.name.original_fullname : nil)
+            state.preserved_file_lists[package] = clean_file_section(body) if package
+         when 'package', 'description', 'changelog'
+         else
+            state.scriptlets << ([header] + body).join("\n").rstrip
+         end
+      end
+      state
+   end
+
+   # Removes enclosing generated package conditionals from a captured file section.
+   # @param lines [Array<String>] lines following a files header
+   # @return [Array<String>] file entries with internal conditionals retained
+   # Closing conditionals opened outside the section are omitted. Trailing
+   # doc/devel guards belong to the next package and are omitted as well.
+   def clean_file_section lines
+      depth = 0
+      result = lines.reject do |line|
+         if line.match?(/^%if(?:\b|_enabled\b|_disabled\b|arch\b|narch\b|os\b|nos\b)/)
+            depth += 1
+            false
+         elsif line.match?(/^%endif\b/)
+            external = depth.zero?
+            depth -= 1 unless external
+            external
+         end
+      end
+      result.pop while result.last && (result.last.strip.empty? || result.last.match?(/^%if_(?:enabled|disabled)\s+(?:doc|devel)\s*$/))
+      result
    end
 
    def store_value opts, match, key, flow, context
@@ -312,14 +436,46 @@ class Baltix::Spec::Rpm::Parser
       end.reverse
    end
 
+   # Splits dependency tokens without evaluating embedded RPM or shell expressions.
+   # @param text [String] a dependency tag's value
+   # @return [Array<String>] tokens with their original grouped contents
+   # Whitespace separates tokens only outside parentheses, braces and quotes.
+   # Nested groups, quoted delimiters and escaped characters stay in their token.
+   # An unfinished group or quote is retained as text rather than partially split.
+   # The ordered schema chooses one action per character; empty trailing tokens
+   # are omitted. Neither RPM macros nor shell expressions are evaluated.
+   def dependency_tokens text
+      state = { text: text, tokens: [], start: 0, closing: [], quote: nil, escaped: false }
+
+      text.each_char.with_index do |character, index|
+         rule = DEPENDENCY_TOKEN_SCHEME.each_value.find do |matcher, _action|
+            matcher.call(character, index, state)
+         end
+         rule.last.call(character, index, state)
+      end
+
+      state[:tokens] << text[state[:start]..]
+      state[:tokens].reject(&:empty?)
+   end
+
    # Parses RPM dependency declarations into gem dependencies or package strings.
    # @param match [Array<String>] captures with declarations at index 1
    # @param preserve_versions [Boolean] whether to retain explicit gem constraints
    # @return [Array<Gem::Dependency, String>] parsed gem and package dependencies
    # If version preservation is enabled, a gem's explicit constraint is retained.
    # Otherwise gem constraints default to >= 0. Non-gem declarations stay strings.
+   # A comparison token and following version are attached to the preceding name.
+   # Embedded expressions remain intact, including nested groups and quoted spaces.
    def parse_dep match, *_, preserve_versions: false
-      deps = match[1].scan(/[^\s]+(?:\s+[<=>]+\s+[^\s]+)?/)
+      tokens = dependency_tokens(match[1])
+      deps = []
+      until tokens.empty?
+         declaration = tokens.shift
+         if tokens.first&.match?(/\A[<=>]+\z/) && tokens[1]
+            declaration = [declaration, tokens.shift, tokens.shift].join(' ')
+         end
+         deps << declaration
+      end
       deps.map do |declaration|
          if gem = /\A(?:gem|rubygem|ruby-gem)\(([^\)]+)\)/.match(declaration)
             requirement = preserve_versions && declaration[gem.end(0)..].strip

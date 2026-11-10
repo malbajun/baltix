@@ -3,6 +3,8 @@ require "erb"
 require 'baltix/spec'
 require 'baltix/i18n'
 
+require 'shellwords'
+
 class Baltix::Spec::Rpm
    attr_reader :comment, :space, :host
 
@@ -186,6 +188,14 @@ class Baltix::Spec::Rpm
          seq: %w(of_options of_state),
          default: "%ruby_test",
       },
+      custom_macros: {
+         seq: %w(of_state),
+         default: [],
+      },
+      scriptlets: {
+         seq: %w(of_state),
+         default: [],
+      },
       secondaries: {
          seq: %w(of_options of_state of_default >_secondaries),
          default: [],
@@ -340,7 +350,27 @@ class Baltix::Spec::Rpm
    def render_template template
       b = binding
 
-      ERB.new(template, trim_mode: "<>-", eoutvar: "@spec").result(b).strip
+      omit_obsolete_pkgname(ERB.new(template, trim_mode: "<>-", eoutvar: "@spec").result(b)).strip
+   end
+
+   # Omits unused legacy package-name definitions from a generated gem RPM spec.
+   # @param spec [String] rendered spec, inspected without expanding RPM macros
+   # @return [String] spec with unused pkgname definitions removed
+   # Only gem-* packages are migrated. If literal pkgname and gemname values are
+   # identical, direct and braced references use gemname. Definitions using def*
+   # or global are obsolete; other definitions remain unchanged. If the remaining
+   # spec still mentions pkgname, its definitions remain for compatibility.
+   # Different or unresolved aliases and non-gem specs are left unchanged.
+   def omit_obsolete_pkgname spec
+      return spec unless spec[/^Name:[ \t]+(\S+)/, 1].to_s.start_with?('gem-')
+
+      body = spec.gsub(/^[ \t]*%(?:def\S*|global)[ \t]+pkgname(?:[ \t]+[^\r\n]*)?(?:\r?\n|\z)/, '')
+      legacy = spec.scan(/^%(?:define|global)[ \t]+pkgname[ \t]+([^\r\n]+)/).flatten.last
+      current = spec.scan(/^%(?:define|global)[ \t]+gemname[ \t]+([^\r\n]+)/).flatten.last
+      if legacy && legacy == current && legacy.match?(/\A[\w.+-]+\z/)
+         body = body.gsub(/%pkgname\b/, '%gemname').gsub(/(%\{[!?]*)pkgname\b/, '\1gemname')
+      end
+      body.match?(/\bpkgname\b/) ? spec : body
    end
 
    # Selects a spec-only revision by comparing a preview with the original spec.
@@ -491,7 +521,142 @@ class Baltix::Spec::Rpm
 
    def valid_secondaries
      @valid_secondaries ||= secondaries.select do |s|
-        s.source&.source_file
+        s.source&.source_file ||
+           (s.source.is_a?(Baltix::Source::Fake) && %i(app exec).include?(s.kind) && has_custom_packaging_files?(s.state.name))
+     end
+   end
+
+   # Renders custom script commands while regenerating standard Ruby packaging code.
+   # @param section [Symbol] :prep, :build, :install or :check
+   # @return [String] section commands, preserving custom arguments and ordering
+   # Obsolete wrappers and lines mentioning bundler/setup or ruby-tool-setup are
+   # removed. With a source gemspec, standard setup commands are normalized and
+   # obsolete gemspec copying, VERSION exports and commented test wrappers are
+   # omitted. Custom commands, arguments and ordering survive.
+   # Legacy ruby_build selection and rake flags move to their generated macros.
+   # Standard RI cleanup and its preceding generated comment are removed together.
+   # If migration empties a section, its current default is used.
+   def preserved_script section
+      lines = public_send(section).to_s.lines.each_with_object([]) do |line, retained|
+         migrated = migrate_script_line(section, line.chomp)
+         if migrated
+            retained << migrated
+         elsif section == :install && obsolete_ri_cleanup?(line) && retained.last&.strip == '# Remove unnecessary files'
+            retained.pop
+         end
+      end
+      result = lines.join("\n").strip
+      result.empty? ? self.class::STATE[section][:default] : result
+   end
+
+   # Classifies a script line using its section and the available source metadata.
+   # @param section [Symbol] :prep, :build, :install or :check
+   # @param line [String] original command, never evaluated
+   # @return [String, nil] retained/rebuilt command, or nil for obsolete generated code
+   # Standard preparation is rebuilt in place so following custom commands still
+   # run after setup. Gem metadata cleanup/copying and a package VERSION export are
+   # redundant only when a native gemspec is available. Unknown commands, custom
+   # arguments and malformed shell quoting remain unchanged; no shell is executed.
+   # Standard RI cache cleanup is omitted from installation with a native gemspec.
+   # Lines matching bundler/setup or ruby-tool-setup are omitted in every section,
+   # with or without source metadata; dependency declarations are handled separately.
+   def migrate_script_line section, line
+      return if line.match?(/^\s*%(?:update_setup_rb|ruby_config|rdoc)(?:\s|$)/)
+      return if line.match?(/bundler\/setup|ruby-tool-setup/)
+
+      line = line.sub(/^\s*%gem_build\b/, '%ruby_build').sub(/^\s*%gem_install\b/, '%ruby_install')
+      line = line.gsub(/\s+--(?:pre|use|alias|ignore)=\S+/, '') if line.match?(/^\s*%ruby_build\b/)
+      return line unless space && sources.any? { |item| item.source_file.to_s.end_with?('.gemspec') }
+      return if section == :check && line.match?(/^\s*#+\s*%*ruby_test(?:_unit)?(?:\s|$)/)
+      return if section == :install && obsolete_ri_cleanup?(line)
+
+      command, *arguments = Shellwords.shellsplit(line)
+      case section
+      when :prep
+         if command == '%setup'
+            arguments.delete('-q')
+            standard = arguments.empty? || (arguments.size == 2 && arguments.first == '-n' && generated_gem_filename?(arguments.last))
+            return self.class::STATE[:prep][:default] if standard
+         elsif command == 'rm' && arguments.first&.match?(/\A-(?:r*f|fr*)\z/)
+            files = arguments.drop(1)
+            return if files.any? && files.all? { |file| %w(setup.rb *.gemspec).include?(file) || generated_gem_filename?(file, '.gemspec') }
+         elsif command == 'cp' && arguments.size == 2 && arguments.first.match?(/\A%(?:SOURCE\d+|\{SOURCE\d+\})\z/)
+            return if generated_gem_filename?(arguments.last, '.gemspec')
+         end
+      when :build, :install
+         return if command == 'export' && arguments.size == 1 && arguments.first.match?(/\AVERSION=%(?:version|\{version\})\z/)
+      end
+      line
+   rescue ArgumentError
+      line
+   end
+
+   # Recognizes obsolete generated cleanup of the old shared Ruby RI caches.
+   # @param line [String] shell command inspected without execution or expansion
+   # @return [Boolean] whether every removal target is a known obsolete RI cache
+   # Only standalone forced rm commands with known literal cache paths qualify.
+   # Mixed targets, shell operators, custom paths and malformed quoting return false.
+   def obsolete_ri_cleanup? line
+      command, flag, *files = Shellwords.shellsplit(line)
+      return false unless command == 'rm' && %w(-f -rf -fr).include?(flag) && !files.empty?
+
+      files.all? do |file|
+         file.match?(/\A%(?:buildroot|\{buildroot\})%(?:ruby_ri_sitedir|\{ruby_ri_sitedir\})\/(?:Object\/cdesc-Object\.ri|cache\.ri|created\.rid|\{Object\/cdesc-Object\.ri,cache\.ri,created\.rid\})\z/)
+      end
+   rescue ArgumentError
+      false
+   end
+
+   # Recognizes conventional generated gem paths without expanding RPM macros.
+   # @param filename [String] candidate setup directory or generated gemspec path
+   # @param suffix [String] required file suffix, empty for a setup directory
+   # @return [Boolean] whether the path is a conventional gem-name/version template
+   # Known package-name macros and actual source gem names are accepted; literal
+   # custom directories, other versions and unrelated file names are not matched.
+   def generated_gem_filename? filename, suffix = ''
+      names = sources.grep(Baltix::Source::Gem).map { |item| Regexp.escape(item.name) }
+      name = "(?:%(?:pkgname|gemname|name|\\{(?:pkgname|gemname|name)\\})|#{names.join('|')})"
+      filename.match?(/\A#{name}-%(?:version|\{version\})#{Regexp.escape(suffix)}\z/)
+   end
+
+   # Selects retained manual file entries for a generated package.
+   # @param package [Rpm, Secondary] package whose original file list is requested
+   # @return [Array<String>] custom file entries absent from automatic Ruby lists
+   # State-only application packages retain the complete list. Source-backed
+   # packages omit old documentation/Ruby layout macros and duplicate executable
+   # entries because those are regenerated from current metadata. Gem-backed
+   # packages omit bindir globs and paths belonging to declared executables, even
+   # when these occur in a library or documentation file list. Non-gem executable
+   # packages omit entries matching their known commands. Other manual files remain.
+   def preserved_files package
+      lists = state.preserved_file_lists || {}.to_os
+      key = package.state.name&.original_fullname || package.name.original_fullname
+      lines = Array(lists[key]).reject { |line| line.strip.empty? }
+      return lines if package.source.is_a?(Baltix::Source::Fake)
+
+      gem_source = package.source.is_a?(Baltix::Source::Gem)
+      executable_paths = (gem_source || package.is_exec? ? package.executables : []).map { |file| "%_bindir/#{file}" }
+      lines.reject do |line|
+         path = line.strip.sub(/\A%\{_bindir\}/, '%_bindir')
+         line.match?(/^\s*%(?:doc\b|ruby_(?:gem|site|ri|include)|rubygem_)/) ||
+            (gem_source && path.match?(/\A%_bindir\/.*[*?\[]/)) ||
+            executable_paths.any? { |file| File.fnmatch?(path, file) }
+      end
+   end
+
+   # Detects manual files that need a separately declared RPM package.
+   # @param package_name [Name, nil] original package name from the parsed spec
+   # @return [Boolean] whether non-generated file entries remain for this package
+   # Ruby/documentation layout macros and executables already provided by known
+   # sources do not keep obsolete aliases alive. A missing package name has no files.
+   def has_custom_packaging_files? package_name
+      return false unless package_name
+
+      lists = state.preserved_file_lists || {}.to_os
+      executables = space.valid_sources.grep(Baltix::Source::Gem).flat_map { |source| source.spec.executables }
+      Array(lists[package_name.original_fullname]).any? do |line|
+         !line.strip.empty? && !line.match?(/^\s*%(?:doc\b|ruby_|rubygem_)/) &&
+            !executables.any? { |file| line.strip == "%_bindir/#{file}" }
      end
    end
 
@@ -536,35 +701,111 @@ class Baltix::Spec::Rpm
    # @return [OpenStruct] override requirements keyed by dependency name
    # An override is retained when it changes a dependency of the main source or
    # another packaged source, so secondary gems also receive a build-time macro.
+   # Version exclusions select one source interval even without available versions;
+   # its macro and RPM requirements/conflicts use the same bounds.
+   # If available versions are too old, exclusions still use the source interval.
    # If a gem is itself packaged from these sources, it is excluded from external
    # version overrides and retains its source version.
+   # In redep mode, generated and imported override macros retain only source
+   # minimums. All mode also selects gems with source or input RPM conflicts;
+   # inline comments do not introduce additional gem names.
+   # External requirements or imported macros supply a minimum when sources do
+   # not declare a selected gem; a conflict-only gem receives an inclusive zero.
    def _versioned_gem_list _value_in
       packaged_sources = Array(sources) | [source].compact
       packaged_names = packaged_sources.grep(Baltix::Source::Gem).map(&:name)
       dependencies = packaged_sources.flat_map(&:all_dependencies)
 
-      available_gem_ranges.reduce({}.to_os) do |result, name, available|
+      excluded_names = dependencies.select do |dependency|
+         dependency.requirement.requirements.any? { |operator, _| operator == '!=' }
+      end.map(&:name)
+      names = available_gem_ranges.to_h.keys.map(&:to_s) | excluded_names
+      overrides = names.reduce({}.to_os) do |result, name|
+         available = available_gem_ranges[name]
          next result if packaged_names.include?(name.to_s)
 
          matching = dependencies.select { |dep| dep.name == name.to_s }
          next result if matching.empty?
 
          override = _available_dependency_override(available, matching)
-         if override && matching.any? { |dep| combine_deps(dep, override).requirement.requirements != dep.requirement.expand.requirements }
+         override ||= _available_dependency_override(nil, matching) if excluded_names.include?(name)
+         if override && (excluded_names.include?(name) || matching.any? { |dep| combine_deps(dep, override).requirement.requirements != dep.requirement.expand.requirements })
             result[name] = override
          end
 
          result
       end
+
+      mode = gem_dependency_mode
+      return overrides if mode == :regular
+
+      declared = declared_gem_dependency_overrides
+      selected = overrides.to_h.keys.map(&:to_s) | declared.keys
+      if mode == :all
+         selected |= dependencies.select do |dependency|
+            !Baltix::Deps.upper_negate_to_rpm(dependency.requirement).empty?
+         end.map(&:name)
+         selected |= state.original_spec.to_s.lines.grep(/^(?:BuildConflicts|Conflicts):/).flat_map do |line|
+            line.split('#', 2).first.scan(/(?:gem|rubygem|ruby-gem)\(([^)]+)\)/).flatten
+         end
+      end
+
+      selected.reduce({}.to_os) do |result, name|
+         next result if packaged_names.include?(name)
+
+         matching = dependencies.select { |dependency| dependency.name == name }
+         if matching.empty?
+            matching = Array(state.build_requires).grep(Gem::Dependency).select { |dependency| dependency.name == name }
+            matching = [declared[name]].compact if matching.empty?
+            matching = [Gem::Dependency.new(name, '>= 0')] if matching.empty?
+         end
+         minimum = _available_dependency_override(nil, matching).requirement.requirements.first
+         result[name] = Gem::Dependency.new(name, minimum.join(' '))
+         result
+      end
+   end
+
+   # Resolves the configured gem upper-bound policy.
+   # Takes no parameters.
+   # @return [Symbol] :regular, :redep or :all
+   # Missing configuration selects redep. Strings from YAML are accepted;
+   # an unsupported configured value raises ArgumentError before rendering.
+   def gem_dependency_mode
+      mode = options.gem_dependency_mode.nil? ? :redep : options.gem_dependency_mode.to_s.to_sym
+      raise ArgumentError, "Unknown gem dependency mode: #{mode}" unless %i(regular redep all).include?(mode)
+
+      mode
+   end
+
+   # Reads dependency override macros retained by the input spec parser.
+   # Takes no parameters.
+   # @return [Hash<String, Gem::Dependency>] imported requirements keyed by gem name
+   # Repeated declarations are merged. A name without a constraint receives
+   # >= 0; missing macros return an empty hash. Malformed declarations raise
+   # ArgumentError, and invalid requirements propagate RubyGems' parsing error.
+   def declared_gem_dependency_overrides
+      Array(variables.ruby_use_gem_dependency).flat_map { |line| line.split(',') }.reduce({}) do |result, declaration|
+         match = declaration.strip.match(/\A([^\s<>=!~]+)\s*(.*)\z/)
+         raise ArgumentError, "Invalid gem dependency override: #{declaration}" unless match
+
+         name, requirement = match.captures
+         dependency = Gem::Dependency.new(name, requirement.empty? ? '>= 0' : requirement)
+         result[name] = result[name] ? result[name].merge(dependency) : dependency
+         result
+      end
    end
 
    # Builds an availability override without lowering any source minimum.
-   # @param available [Gem::Dependency] range inferred from the available gem list
+   # @param available [Gem::Dependency, nil] optional range inferred from the available gem list
    # @param dependencies [Array<Gem::Dependency>] current source requirements for this gem
    # @return [Gem::Dependency, nil] the corrected range, or nil when all available versions are too old
    # The lower bound is the greatest source minimum, independent of availability.
    # The source upper bound is the least source maximum; availability may raise
    # it, but cannot narrow it. If sources have no maximum, it stays unbounded.
+   # Excluded versions narrow the source maximum so RPM conflicts use >=.
+   # Without an available list, the resulting source interval is still returned.
+   # An exclusion at the minimum makes that minimum exclusive; exclusions below
+   # the minimum do not constrain the selected interval.
    # If a source uses >, its exclusive minimum is preserved; = and ~> supply
    # inclusive minimums. If no available version reaches the source minimum,
    # no override is produced. Historical spec macros do not participate.
@@ -578,8 +819,14 @@ class Baltix::Spec::Rpm
          end
       end
       minimum = minimums.max_by { |operator, version| [version, operator == '>' ? 1 : 0] } || ['>=', Gem::Version.new(0)]
+      excluded_minimum = dependencies.any? do |dependency|
+         dependency.requirement.requirements.any? { |operator, version| operator == '!=' && version.release == minimum[1] }
+      end
+      minimum = ['>', minimum[1]] if excluded_minimum
+      if available
       versions = Array(available_gem_list[available.name]).map { |version| Gem::Version.new(version.to_s) }
       return nil unless versions.any? { |version| minimum[0] == '>' ? version > minimum[1] : version >= minimum[1] }
+      end
 
       maximums = dependencies.flat_map do |dependency|
          dependency.requirement.requirements.filter_map do |operator, version|
@@ -587,16 +834,17 @@ class Baltix::Spec::Rpm
             when '<', '<=' then [operator, version]
             when '=' then ['<=', version]
             when '~>' then ['<', version.bump]
+            when '!=' then ['<', version.release] if version.release > minimum[1]
             end
          end
       end
       maximum = maximums.min_by { |operator, version| [version, operator == '<' ? 0 : 1] }
       requirements = [minimum]
       if maximum
-         available_maximums = available.requirement.requirements.select { |operator, _| %w(< <=).include?(operator) }
+         available_maximums = available ? available.requirement.requirements.select { |operator, _| %w(< <=).include?(operator) } : []
          requirements << ([maximum] + available_maximums).max_by { |operator, version| [version, operator == '<=' ? 1 : 0] }
       end
-      Gem::Dependency.new(available.name, Gem::Requirement.new(requirements.map { |pair| pair.join(' ') }))
+      Gem::Dependency.new(dependencies.first.name, Gem::Requirement.new(requirements.map { |pair| pair.join(' ') }))
    end
 
    def _gem_versionings_with_use value_in
@@ -690,7 +938,8 @@ class Baltix::Spec::Rpm
       # binding.pry
       secondaries =
          names.reduce(secondaries) do |secs, an|
-            next secs if secs.find { |sec| sec.name == an }
+            next secs if secs.any? { |sec| sec.name.fullname == an.fullname } ||
+               (secs.any? { |sec| sec.name == an } && !has_custom_packaging_files?(an))
             sec = value_in.find { |sec| sec.name == an }
       # binding.pry if sec
 
@@ -700,9 +949,10 @@ class Baltix::Spec::Rpm
                #source = sources.find { |s| sec.name == s.name } || Baltix::Source::Fake.new
                source = Baltix::Source::Fake.new
                host = secs.find { |sec_in| sec_in.name.eql_by?(:name, sec.name) }
+               host ||= self if name.eql_by?(:name, sec.name)
 
                secs | [Secondary.new(doc: self,
-                             kind: sec.name.kind,#an.kind
+                             kind: sec.name.kind || (sec.name.prefix.nil? ? :exec : nil),
                              host: host,
                              state: sec,
                              source: source,
@@ -814,7 +1064,8 @@ class Baltix::Spec::Rpm
    # @return [Array<String>] requirements retained before source reconstruction
    # If a gem is declared in source metadata or provided by this spec, its old
    # requirement is removed for reconstruction, including ignored platform gems.
-   # Other gems retain their explicit bounds as RPM declarations. Ruby-prefixed
+   # Other gems retain their explicit bounds as RPM declarations unless the
+   # selected override mode replaces them with a source minimum. Ruby-prefixed
    # package strings are removed except for separate -headers-devel packages;
    # unrelated package strings are retained.
    def _filter_out_build_auto_requires value_in
@@ -827,7 +1078,8 @@ class Baltix::Spec::Rpm
             if known_names.include?(value.name)
                []
             else
-               value.requirement.requirements.map { |relation, version| "#{prefix}(#{value.name}) #{relation} #{version}" }
+               effective = replace_versioning([value]).first
+               effective.requirement.requirements.map { |relation, version| "#{prefix}(#{value.name}) #{relation} #{version}" }
             end
          elsif value.is_a?(String) && /^(#{Baltix::Spec::Rpm::Name::PREFICES.join('|')})[\-(]/ =~ value &&
             !value.match?(/\A\S+-headers-devel(?:\s|\z)/)

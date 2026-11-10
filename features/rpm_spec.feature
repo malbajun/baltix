@@ -168,30 +168,42 @@ Feature: RPM Spec
       And property "patches" of space has "patch1.patch" at position "1"
 
    Scenario: Parse RPM Spec for requires
+      - keep Passenger's shell-expanded Apache dependency intact
       Given RPM spec file:
          """
          Name:                rpm
          Requires:            req >= 1 req_new < 0.1
          Requires:            req_newline >= 2
+         Requires:            %(eval echo %apache2_apr_buildreq)
          """
-      When developer loads the spec
+      When developer loads the spec without evaluating expressions
       And developer sets the space option "rootdir" to "features/fixtures/blank"
       Then property "requires" of space has "req >= 1" at position "0"
       And property "requires" of space has "req_new < 0.1" at position "1"
       And property "requires" of space has "req_newline >= 2" at position "2"
+      And property "requires" of space has "%(eval echo %apache2_apr_buildreq)" at position "3"
 
    Scenario: Parse RPM Spec for build requires
+      - keep macro arguments and nested expansions together with adjacent dependencies
       Given RPM spec file:
          """
          Name:                rpm
          BuildRequires:       req >= 1 req_new < 0.1
          BuildRequires:       req_newline >= 2
+         BuildRequires:       %(eval echo %apache2_apr_buildreq) apache2-devel >= 2.2.5
+         BuildRequires:       %{?with_apache:%(printf '%s' "pkgconfig(apr-1)")}
          """
-      When developer loads the spec
+      When developer loads the spec without evaluating expressions
       And developer sets the space option "rootdir" to "features/fixtures/blank"
       Then property "build_requires" of space has "req >= 1" at position "0"
       And property "build_requires" of space has "req_new < 0.1" at position "1"
       And property "build_requires" of space has "req_newline >= 2" at position "2"
+      And property "build_requires" of space has "%(eval echo %apache2_apr_buildreq)" at position "3"
+      And property "build_requires" of space has "apache2-devel >= 2.2.5" at position "4"
+      And property "build_requires" of space has text:
+         """
+         %{?with_apache:%(printf '%s' "pkgconfig(apr-1)")}
+         """
 
    Scenario: Parse RPM Spec for build pre-requires
       Given RPM spec file:
@@ -417,12 +429,12 @@ Feature: RPM Spec
          | release      | rc1                   |
          | description  | - ! of important bug  |
       And space's property "changes" at position "1" has fields:
-         | date         | Tue Jan 02 2001       |
-         | author       | FIO Packer            |
-         | email        | fio@example.com       |
-         | version      | 2.0                   |
-         | release      |                       |
-         | description  | - ^ new version       |
+         | date         | Tue Jan 02 2001 |
+         | author       | FIO Packer      |
+         | email        | fio@example.com |
+         | version      | 2.0             |
+         | release      |                 |
+         | description  | - ^ new version |
 
    Scenario: Parse RPM Spec for variables support
       Given RPM spec file:
