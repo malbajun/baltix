@@ -533,10 +533,16 @@ class Baltix::Spec::Rpm
    # are normalized and obsolete gemspec copying, VERSION exports and commented
    # test wrappers are omitted. Custom commands, arguments and ordering survive.
    # Legacy ruby_build selection and rake flags move to their generated macros.
+   # Standard RI cleanup and its preceding generated comment are removed together.
    # If migration empties a section, its current default is used.
    def preserved_script section
-      lines = public_send(section).to_s.lines.filter_map do |line|
-         migrate_script_line(section, line.chomp)
+      lines = public_send(section).to_s.lines.each_with_object([]) do |line, retained|
+         migrated = migrate_script_line(section, line.chomp)
+         if migrated
+            retained << migrated
+         elsif section == :install && obsolete_ri_cleanup?(line) && retained.last&.strip == '# Remove unnecessary files'
+            retained.pop
+         end
       end
       result = lines.join("\n").strip
       result.empty? ? self.class::STATE[section][:default] : result
@@ -550,6 +556,7 @@ class Baltix::Spec::Rpm
    # run after setup. Gem metadata cleanup/copying and a package VERSION export are
    # redundant only when a native gemspec is available. Unknown commands, custom
    # arguments and malformed shell quoting remain unchanged; no shell is executed.
+   # Standard RI cache cleanup is omitted from installation with a native gemspec.
    def migrate_script_line section, line
       return if line.match?(/^\s*%(?:update_setup_rb|ruby_config|rdoc)(?:\s|$)/)
 
@@ -557,6 +564,7 @@ class Baltix::Spec::Rpm
       line = line.gsub(/\s+--(?:pre|use|alias|ignore)=\S+/, '') if line.match?(/^\s*%ruby_build\b/)
       return line unless space && sources.any? { |item| item.source_file.to_s.end_with?('.gemspec') }
       return if section == :check && line.match?(/^\s*#+\s*%*ruby_test(?:_unit)?(?:\s|$)/)
+      return if section == :install && obsolete_ri_cleanup?(line)
 
       command, *arguments = Shellwords.shellsplit(line)
       case section
@@ -577,6 +585,22 @@ class Baltix::Spec::Rpm
       line
    rescue ArgumentError
       line
+   end
+
+   # Recognizes obsolete generated cleanup of the old shared Ruby RI caches.
+   # @param line [String] shell command inspected without execution or expansion
+   # @return [Boolean] whether every removal target is a known obsolete RI cache
+   # Only standalone forced rm commands with known literal cache paths qualify.
+   # Mixed targets, shell operators, custom paths and malformed quoting return false.
+   def obsolete_ri_cleanup? line
+      command, flag, *files = Shellwords.shellsplit(line)
+      return false unless command == 'rm' && %w(-f -rf -fr).include?(flag) && !files.empty?
+
+      files.all? do |file|
+         file.match?(/\A%(?:buildroot|\{buildroot\})%(?:ruby_ri_sitedir|\{ruby_ri_sitedir\})\/(?:Object\/cdesc-Object\.ri|cache\.ri|created\.rid|\{Object\/cdesc-Object\.ri,cache\.ri,created\.rid\})\z/)
+      end
+   rescue ArgumentError
+      false
    end
 
    # Recognizes conventional generated gem paths without expanding RPM macros.

@@ -122,8 +122,6 @@ subst 's,\(require.*bundler/setup\),#\1,' lib/zip-container.rb
 
 %install
 %ruby_install
-# Remove unnecessary files
-rm -f %buildroot%ruby_ri_sitedir/{Object/cdesc-Object.ri,cache.ri,created.rid}
 
 %check
 %ruby_test

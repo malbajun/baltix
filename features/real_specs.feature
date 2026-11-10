@@ -668,6 +668,7 @@ Feature: Spec actor
       - both gem dependencies are runtime and development
       - there is a dependency to ruby
       - migrate a used pkgname alias to gemname without changing custom commands
+      - remove obsolete RI cache cleanup while retaining the upstream Bundler workaround
       Given blank space
       And a spec from fixture "ucf"
       When developer locks the time to "21.04.2021"
@@ -677,7 +678,9 @@ Feature: Spec actor
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then the generated spec contains none of these packaging tokens:
-         | pkgname   |
+         | pkgname                     |
+         | ruby_ri_sitedir             |
+         | # Remove unnecessary files  |
       And he acquires an "ucf" fixture spec for the baltix setup
 
    @policy1_0 @gem_change @gem_obsolete_list @main_is_gem @loader_gc
@@ -698,7 +701,10 @@ Feature: Spec actor
       Then the main source is the "zip_container" gem
       And the main source metadata file is "zip-container.gemspec"
       When he applies "spec" actor to the baltix setup
-      Then he acquires an "zip-container" fixture spec for the baltix setup
+      Then the generated spec contains none of these packaging tokens:
+         | ruby_ri_sitedir             |
+         | # Remove unnecessary files  |
+      And he acquires an "zip-container" fixture spec for the baltix setup
 
    @policy1_0 @gem_change @olddoc @wrongdoc @main_is_gem
    Scenario: Migrate kgio with Olddoc/Wrongdoc from obsolete Ruby Policy 1.0 to 2.1
@@ -731,19 +737,25 @@ Feature: Spec actor
          | export VERSION=%version                 |
          | #%%ruby_test_unit -Iext/kgio:lib test   |
       And packaging section migration produces these commands:
-         | section   | input                                   | output                                  |
-         | prep      | %setup -q -n "%{gemname}-%{version}"    | %setup                                  |
-         | prep      | %setup -q -n custom-tree                | %setup -q -n custom-tree                |
-         | prep      | %setup -q -a 1                          | %setup -q -a 1                          |
-         | prep      | rm -rf setup.rb *.gemspec               | %setup                                  |
-         | prep      | rm -rf setup.rb custom.txt              | rm -rf setup.rb custom.txt              |
-         | prep      | cp %SOURCE1 %pkgname-%version.gemspec   | %setup                                  |
-         | prep      | cp %SOURCE2 patched.gemspec             | cp %SOURCE2 patched.gemspec             |
-         | install   | export VERSION=%{version}               | %ruby_install                           |
-         | install   | export VERSION=custom                   | export VERSION=custom                   |
-         | install   | export VERSION=%version && touch marker | export VERSION=%version && touch marker |
-         | check     | #ruby_test_unit -Ilib:test test         | %ruby_test                              |
-         | check     | # custom test instructions              | # custom test instructions              |
+         | section   | input                                                                                | output                                                    |
+         | prep      | %setup -q -n "%{gemname}-%{version}"                                                 | %setup                                                    |
+         | prep      | %setup -q -n custom-tree                                                             | %setup -q -n custom-tree                                  |
+         | prep      | %setup -q -a 1                                                                       | %setup -q -a 1                                            |
+         | prep      | rm -rf setup.rb *.gemspec                                                            | %setup                                                    |
+         | prep      | rm -rf setup.rb custom.txt                                                           | rm -rf setup.rb custom.txt                                |
+         | prep      | cp %SOURCE1 %pkgname-%version.gemspec                                                | %setup                                                    |
+         | prep      | cp %SOURCE2 patched.gemspec                                                          | cp %SOURCE2 patched.gemspec                               |
+         | install   | export VERSION=%{version}                                                            | %ruby_install                                             |
+         | install   | export VERSION=custom                                                                | export VERSION=custom                                     |
+         | install   | export VERSION=%version && touch marker                                              | export VERSION=%version && touch marker                   |
+         | check     | #ruby_test_unit -Ilib:test test                                                      | %ruby_test                                                |
+         | check     | # custom test instructions                                                           | # custom test instructions                                |
+         | install   | rm -f %buildroot%ruby_ri_sitedir/cache.ri                                            | %ruby_install                                             |
+         | install   | rm -rf %{buildroot}%{ruby_ri_sitedir}/{Object/cdesc-Object.ri,cache.ri,created.rid}  | %ruby_install                                             |
+         | install   | rm -f %buildroot%ruby_ri_sitedir/cache.ri custom.txt                                 | rm -f %buildroot%ruby_ri_sitedir/cache.ri custom.txt      |
+         | install   | rm -f %buildroot%ruby_ri_sitedir/custom.ri                                           | rm -f %buildroot%ruby_ri_sitedir/custom.ri                |
+         | install   | rm -f %buildroot%ruby_ri_sitedir/cache.ri && touch marker                            | rm -f %buildroot%ruby_ri_sitedir/cache.ri && touch marker |
+         | prep      | rm -f %buildroot%ruby_ri_sitedir/cache.ri                                            | rm -f %buildroot%ruby_ri_sitedir/cache.ri                 |
       And deprecated package-name definitions follow these rules:
          | package   | definition                  | use                            | retained  |
          | gem-kgio  | %define pkgname kgio        |                                | no        |
