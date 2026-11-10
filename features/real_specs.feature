@@ -9,6 +9,36 @@ Feature: Spec actor
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
 
+   # rmosolgo/graphql-ruby dca54e3cf68b; the C parser declares graphql >= 2.2.10.
+   @policy2_1 @main_is_gem
+   Scenario: Bind GraphQL C parser requirements to the gem provided by this spec
+      - replace the loose internal minimum with the exact generated GraphQL capability
+      - ignore availability overrides for gems provided by the same spec
+      - omit conflicts on gems supplied by this spec through repeated updates
+      Given blank space
+      And a spec from fixture "graphql"
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options            | value                       |
+         | rootdir            | features/fixtures/graphql   |
+         | available_gem_list | {graphql: '99.0.0'}         |
+         | maintainer.name    | Pavel Skrylev               |
+         | maintainer.email   | majioa@altlinux.org         |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then package "gem-graphql" contains dependency lines:
+         | Provides:      gem(graphql) = 2.4.8  |
+      And package "gem-graphql-c-parser" contains dependency lines:
+         | Requires:      gem(graphql) = 2.4.8  |
+      And the generated spec contains no override for "graphql"
+      And internal gem requirements equal their provided versions without conflicts
+      And he acquires an "graphql" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "graphql"
+      And internal gem requirements equal their provided versions without conflicts
+      And package "gem-graphql-c-parser" contains dependency lines:
+         | Requires:      gem(graphql) = 2.4.8  |
+
    # Passenger 3a958d427e6a, ALT gem-passenger spec from altlinux/specs 4d2273b2.
    @policy2_1 @main_is_gem
    Scenario: Preserve Passenger shell-expanded RPM dependency declarations

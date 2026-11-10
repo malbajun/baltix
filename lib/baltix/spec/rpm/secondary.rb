@@ -55,7 +55,7 @@ class Baltix::Spec::Rpm::Secondary
          default: [],
       },
       provides: {
-         seq: %w(of_options of_state of_default >_provides |_find_provides |_lib_provide -_post_provides >_render_bottom_dep),
+         seq: %w(of_options of_state of_default >_provides |_find_provides |_lib_provide -_post_provides >_render_provided_deps),
          default: [],
       },
       obsoletes: {

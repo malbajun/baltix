@@ -2412,6 +2412,7 @@ Feature: Spec actor
          - + packaged gem with Ruby Policy 2.1
          - * define explicit dependencies
          """
+      And internal gem requirements equal their provided versions without conflicts
 
    Scenario: Space gem pure source render validation with predefined spec to
          a few gems with renaming

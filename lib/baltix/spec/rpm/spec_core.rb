@@ -643,13 +643,54 @@ module Baltix::Spec::Rpm::SpecCore
       @variables ||= context.__macros || {}.to_os
    end
 
+   # Renders gem capabilities without resolving them as requirements.
+   # @param value_in [Array<Gem::Dependency, String>] provided capabilities
+   # @return [Array<String>] RPM Provides declarations with their selected versions
+   # Capability rendering bypasses the internal-requirement map to avoid recursive
+   # collection of Provides while dependencies are being rendered.
+   def _render_provided_deps value_in
+      render_deps(value_in, :provide)
+   end
+
+   # Collects exact gem capabilities supplied by packages in this generated spec.
+   # Takes no parameters.
+   # @return [Hash<String, String>] gem names mapped to their actual Provides versions
+   # Only exact rendered gem capabilities participate; non-gem aliases and
+   # unversioned or ranged capabilities are ignored. The current package and its
+   # host, when present, also participate so custom templates rendering saved
+   # metadata retain their own exact host requirements. Results are cached per package.
+   def provided_gem_versions
+      return @provided_gem_versions if @provided_gem_versions
+
+      packages = ([doc] + doc.valid_secondaries) | [self]
+      packages |= [host].compact if respond_to?(:host)
+      @provided_gem_versions = packages.each_with_object({}) do |package, result|
+         package.provides.each do |capability|
+            match = capability.match(/\Agem\(([^)]+)\)\s+=\s+(\S+)\z/)
+            result[match[1]] = match[2] if match
+         end
+      end
+   end
+
+   # Renders requirements, conflicts or provided gem capabilities as RPM strings.
+   # @param deps_in [Array<Gem::Dependency, Hash, String>] constraints to render
+   # @param mode [Symbol] :debound for minimums, :negate for conflicts, :provide for capabilities
+   # @return [Array<String>] rendered dependency tags without duplicates
+   # Internal requirements use the exact version actually provided by this spec;
+   # internal conflicts are omitted. Capability rendering preserves its own bounds.
+   # External gems and non-gem constraints retain their normal bound conversion.
    def render_deps deps_in, mode = :debound
-      func = mode == :debound ? :lower_to_rpm : :upper_negate_to_rpm
+      func = mode == :negate ? :upper_negate_to_rpm : :lower_to_rpm
 
       deps_in.reduce([]) do |deps, dep|
          deps |
             if dep.is_a?(Gem::Dependency)
-               deph = Baltix::Deps.send(func, dep.requirement)
+               supplied_version = provided_gem_versions[dep.name] unless mode == :provide
+               deph = if supplied_version
+                  mode == :negate ? [] : ['=', supplied_version]
+               else
+                  Baltix::Deps.send(func, dep.requirement)
+               end
 
                deph.blank? ? [] : ["#{prefix}(#{dep.name}) #{deph.first} #{deph.last}"]
             elsif dep.is_a?(Hash)
@@ -705,7 +746,7 @@ module Baltix::Spec::Rpm::SpecCore
    end
 
    def _lib_provide
-      render_deps([provide_dep].compact) if self.kind == :lib
+      render_deps([provide_dep].compact, :provide) if self.kind == :lib
    end
 
    def _find_provides
