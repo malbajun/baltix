@@ -3,6 +3,8 @@ require "erb"
 require 'baltix/spec'
 require 'baltix/i18n'
 
+require 'shellwords'
+
 class Baltix::Spec::Rpm
    attr_reader :comment, :space, :host
 
@@ -504,21 +506,69 @@ class Baltix::Spec::Rpm
      end
    end
 
-   # Renders a retained script section while migrating obsolete Ruby build wrappers.
+   # Renders custom script commands while regenerating standard Ruby packaging code.
    # @param section [Symbol] :prep, :build, :install or :check
    # @return [String] section commands, preserving custom arguments and ordering
-   # Obsolete configuration/documentation wrappers are removed. Legacy ruby_build
-   # selection and rake flags move to their generated macros; other flags survive.
+   # Obsolete wrappers are removed. With a source gemspec, standard setup commands
+   # are normalized and obsolete gemspec copying, VERSION exports and commented
+   # test wrappers are omitted. Custom commands, arguments and ordering survive.
+   # Legacy ruby_build selection and rake flags move to their generated macros.
    # If migration empties a section, its current default is used.
    def preserved_script section
-      lines = public_send(section).to_s.lines.map(&:chomp).reject do |line|
-         line.match?(/^\s*%(?:update_setup_rb|ruby_config|rdoc)(?:\s|$)/)
-      end.map do |line|
-         line = line.sub(/^\s*%gem_build\b/, '%ruby_build').sub(/^\s*%gem_install\b/, '%ruby_install')
-         line.match?(/^\s*%ruby_build\b/) ? line.gsub(/\s+--(?:pre|use|alias|ignore)=\S+/, '') : line
+      lines = public_send(section).to_s.lines.filter_map do |line|
+         migrate_script_line(section, line.chomp)
       end
       result = lines.join("\n").strip
       result.empty? ? self.class::STATE[section][:default] : result
+   end
+
+   # Classifies a script line using its section and the available source metadata.
+   # @param section [Symbol] :prep, :build, :install or :check
+   # @param line [String] original command, never evaluated
+   # @return [String, nil] retained/rebuilt command, or nil for obsolete generated code
+   # Standard preparation is rebuilt in place so following custom commands still
+   # run after setup. Gem metadata cleanup/copying and a package VERSION export are
+   # redundant only when a native gemspec is available. Unknown commands, custom
+   # arguments and malformed shell quoting remain unchanged; no shell is executed.
+   def migrate_script_line section, line
+      return if line.match?(/^\s*%(?:update_setup_rb|ruby_config|rdoc)(?:\s|$)/)
+
+      line = line.sub(/^\s*%gem_build\b/, '%ruby_build').sub(/^\s*%gem_install\b/, '%ruby_install')
+      line = line.gsub(/\s+--(?:pre|use|alias|ignore)=\S+/, '') if line.match?(/^\s*%ruby_build\b/)
+      return line unless space && sources.any? { |item| item.source_file.to_s.end_with?('.gemspec') }
+      return if section == :check && line.match?(/^\s*#+\s*%*ruby_test(?:_unit)?(?:\s|$)/)
+
+      command, *arguments = Shellwords.shellsplit(line)
+      case section
+      when :prep
+         if command == '%setup'
+            arguments.delete('-q')
+            standard = arguments.empty? || (arguments.size == 2 && arguments.first == '-n' && generated_gem_filename?(arguments.last))
+            return self.class::STATE[:prep][:default] if standard
+         elsif command == 'rm' && arguments.first&.match?(/\A-(?:r*f|fr*)\z/)
+            files = arguments.drop(1)
+            return if files.any? && files.all? { |file| %w(setup.rb *.gemspec).include?(file) || generated_gem_filename?(file, '.gemspec') }
+         elsif command == 'cp' && arguments.size == 2 && arguments.first.match?(/\A%(?:SOURCE\d+|\{SOURCE\d+\})\z/)
+            return if generated_gem_filename?(arguments.last, '.gemspec')
+         end
+      when :build, :install
+         return if command == 'export' && arguments.size == 1 && arguments.first.match?(/\AVERSION=%(?:version|\{version\})\z/)
+      end
+      line
+   rescue ArgumentError
+      line
+   end
+
+   # Recognizes conventional generated gem paths without expanding RPM macros.
+   # @param filename [String] candidate setup directory or generated gemspec path
+   # @param suffix [String] required file suffix, empty for a setup directory
+   # @return [Boolean] whether the path is a conventional gem-name/version template
+   # Known package-name macros and actual source gem names are accepted; literal
+   # custom directories, other versions and unrelated file names are not matched.
+   def generated_gem_filename? filename, suffix = ''
+      names = sources.grep(Baltix::Source::Gem).map { |item| Regexp.escape(item.name) }
+      name = "(?:%(?:pkgname|gemname|name|\\{(?:pkgname|gemname|name)\\})|#{names.join('|')})"
+      filename.match?(/\A#{name}-%(?:version|\{version\})#{Regexp.escape(suffix)}\z/)
    end
 
    # Selects retained manual file entries for a generated package.

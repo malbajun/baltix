@@ -115,7 +115,7 @@ UCF specification.
 
 
 %prep
-%setup -n %pkgname-%version
+%setup
 subst 's,\(require.*bundler/setup\),#\1,' lib/zip-container.rb
 
 %build
@@ -127,7 +127,7 @@ subst 's,\(require.*bundler/setup\),#\1,' lib/zip-container.rb
 rm -f %buildroot%ruby_ri_sitedir/{Object/cdesc-Object.ri,cache.ri,created.rid}
 
 %check
-#ruby_test_unit -Ilib:test test
+%ruby_test
 
 %files
 %doc ReadMe.rdoc

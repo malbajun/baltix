@@ -95,19 +95,16 @@ platforms).
 
 
 %prep
-%setup -q -n %pkgname-%version
-rm -rf setup.rb *.gemspec
-cp %SOURCE1 %pkgname-%version.gemspec
+%setup
 
 %build
 %ruby_build
 
 %install
-export VERSION=%version
 %ruby_install
 
 %check
-#%%ruby_test_unit -Iext/kgio:lib test
+%ruby_test
 
 %files
 %doc README

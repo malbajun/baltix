@@ -698,6 +698,7 @@ Feature: Spec actor
       - blank packager
       - gem dependencies are development only
       - has extension containing call to #gem dep
+      - regenerate standard policy sections instead of retaining obsolete setup commands
       Given blank space
       And a spec from fixture "kgio"
       When developer locks the time to "21.04.2021"
@@ -708,7 +709,39 @@ Feature: Spec actor
          | maintainer.email   | majioa@altlinux.org      |
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
-      Then he acquires an "kgio" fixture spec for the baltix setup
+      Then the generated spec contains each line once:
+         | %setup          |
+         | %ruby_build     |
+         | %ruby_install   |
+         | %ruby_test      |
+      And the generated spec excludes the lines:
+         | %setup -q -n %pkgname-%version          |
+         | rm -rf setup.rb *.gemspec               |
+         | cp %SOURCE1 %pkgname-%version.gemspec   |
+         | export VERSION=%version                 |
+         | #%%ruby_test_unit -Iext/kgio:lib test   |
+      And packaging section migration produces these commands:
+         | section   | input                                   | output                                  |
+         | prep      | %setup -q -n "%{gemname}-%{version}"    | %setup                                  |
+         | prep      | %setup -q -n custom-tree                | %setup -q -n custom-tree                |
+         | prep      | %setup -q -a 1                          | %setup -q -a 1                          |
+         | prep      | rm -rf setup.rb *.gemspec               | %setup                                  |
+         | prep      | rm -rf setup.rb custom.txt              | rm -rf setup.rb custom.txt              |
+         | prep      | cp %SOURCE1 %pkgname-%version.gemspec   | %setup                                  |
+         | prep      | cp %SOURCE2 patched.gemspec             | cp %SOURCE2 patched.gemspec             |
+         | install   | export VERSION=%{version}               | %ruby_install                           |
+         | install   | export VERSION=custom                   | export VERSION=custom                   |
+         | install   | export VERSION=%version && touch marker | export VERSION=%version && touch marker |
+         | check     | #ruby_test_unit -Ilib:test test         | %ruby_test                              |
+         | check     | # custom test instructions              | # custom test instructions              |
+      And he acquires an "kgio" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "kgio"
+      And the generated spec contains each line once:
+         | %setup          |
+         | %ruby_build     |
+         | %ruby_install   |
+         | %ruby_test      |
 
    @scratch @blank_setup @main_is_gem
    Scenario Outline: Preserve a common source interval for rails-html-sanitizer security exclusions

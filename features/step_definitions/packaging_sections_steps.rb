@@ -16,3 +16,12 @@ Then('the generated spec preserves the input packaging sections') do
       expect(matching.last).to eql(body), "Changed packaging section #{header}"
    end
 end
+
+Then('packaging section migration produces these commands:') do |table|
+   table.hashes.each do |row|
+      options = space.options.deep_dup
+      options[row['section']] = row['input']
+      spec = Baltix::Spec.load_from(source: @spec_in, options: options, space: space)
+      expect(spec.preserved_script(row['section'].to_sym)).to eql(row['output']), row.inspect
+   end
+end
