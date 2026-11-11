@@ -88,6 +88,29 @@ Feature: Spec actor
       And package "gem-kitchen-tests-devel" contains dependency lines:
          | Version:       20261111  |
 
+   # googleapis/gapic-generator-ruby 58a40fa: shared/Gemfile, no base summary.
+   @scratch @summaryless_gemfile
+   Scenario: Keep auxiliary summaries stable when a Gemfile has no base summary
+      - retain the repository root and original shared dependency Gemfile
+      - render the development label once when neither source nor host has a summary
+      - preserve the full spec, revision and descriptions through repeated updates
+      Given blank space
+      When developer locks the time to "11.11.2026"
+      And he sets the space options as:
+         | options            | value                                   |
+         | rootdir            | features/fixtures/gapic-generator-ruby  |
+         | maintainer.name    | Pavel Skrylev                           |
+         | maintainer.email   | majioa@altlinux.org                     |
+      And he applies "spec" actor to the baltix setup
+      Then package "shared-devel" contains dependency lines:
+         | Summary:       development package   |
+      And he acquires an "gapic-generator-ruby" fixture spec for the baltix setup
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+      And package "shared-devel" contains dependency lines:
+         | Summary:       development package   |
+
    # chef/chef v19.4.12; ALT gem-chef 19.4.12-alt1.1, altlinux/specs 4d2273b2.
    @policy2_1 @main_is_gem
    Scenario: Update Chef together with its component gems and service package

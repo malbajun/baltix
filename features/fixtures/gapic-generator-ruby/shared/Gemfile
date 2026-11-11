@@ -1,0 +1,23 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+gem "gapic-generator", path: "../gapic-generator"
+gem "gapic-generator-ads", path: "../gapic-generator-ads"
+gem "gapic-generator-cloud", path: "../gapic-generator-cloud"
+
+# The following two dependencies are for the showcase test.
+# They should be updated if the showcase client dependencies are changed.
+gem "google-cloud-location", ">= 0.4", "< 2.a"
+gem "google-iam-v1", ">= 0.4", "< 2.a"
+
+# The showcase test loads the generated library from $LOAD_PATH, so its gemspec
+# floor is not enforced. Resumable upload needs ::Gapic::ResumableUpload (1.5+).
+gem "gapic-common", "~> 1.6"
+
+gem "grpc-tools", ">= 1.60.0", "< 1.75.1"
+gem "minitest", "~> 5.16"
+gem "minitest-autotest", "~> 1.0"
+gem "minitest-focus", "~> 1.0"
+gem "ostruct", "0.6.3"
+gem "rake", ">= 12.0"
