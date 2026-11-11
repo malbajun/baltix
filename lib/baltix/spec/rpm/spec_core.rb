@@ -568,11 +568,19 @@ module Baltix::Spec::Rpm::SpecCore
       render_deps(value_in)
    end
 
+   # Selects dependencies for the current RPM package kind.
+   # Takes no parameters.
+   # @return [Array<Gem::Dependency, String>] dependencies before RPM rendering
+   # Applications combine main-source runtime declarations with real gem sources'
+   # capabilities; fake and Gemfile-only sources add no synthetic gem requirement.
+   # Libraries use runtime dependencies. Development packages of the main
+   # application use its development dependencies; other development and executable
+   # packages use their own dependency lists. Other kinds add no dependencies.
    def _kind_deps
       case self.kind
       when :app
          main = doc.space.main_source.dsl.all_dependencies_for(kinds_in: :runtime)
-         depended = doc.space.valid_sources.map {|x| x != doc.space.main_source ? x.provide : nil}.compact
+         depended = doc.space.valid_sources.grep(Baltix::Source::Gem).reject { |source| source == doc.space.main_source }.map(&:provide)
 
          Baltix::DSL.merge_dependencies(main, depended).sort
       when :lib
