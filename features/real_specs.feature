@@ -266,6 +266,32 @@ Feature: Spec actor
       When the generated spec is refreshed 2 times
       Then the generated spec matches "gem.spec" from fixture "autoprefixer-rails"
 
+   @scratch @main_is_gem @migrated_gem_alias
+   Scenario: Rename a legacy gem RPM without creating a plain gem-name capability
+      - retain the typed gem capability and obsolete the previous RPM name
+      - do not recreate a forbidden alias while migrating an unprefixed package
+      - keep the complete spec unchanged through subsequent updates
+      Given blank space
+      And a spec from fixture "autoprefixer-rails"
+      When the input spec is named "autoprefixer-rails"
+      And developer locks the time to "10.11.2026"
+      And he sets the space options as:
+         | options            | value                                |
+         | rootdir            | features/fixtures/autoprefixer-rails |
+         | maintainer.name    | Pavel Skrylev                        |
+         | maintainer.email   | majioa@altlinux.org                  |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains each line once:
+         | Name:          gem-autoprefixer-rails               |
+         | Provides:      gem(autoprefixer-rails) = 10.4.19.0  |
+         | Obsoletes:     autoprefixer-rails < %EVR            |
+      And the generated spec excludes the lines:
+         | Provides:      autoprefixer-rails = %EVR   |
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
    # chef/license_scout v2.6.10, b7fbe3c; retain one matching gemspec from spec/fixtures.
    @scratch @blank_setup @main_is_gem
    Scenario: Keep matching test fixture gems out of generated source packages

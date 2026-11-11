@@ -835,8 +835,16 @@ module Baltix::Spec::Rpm::SpecCore
       render_deps([provide_dep].compact, :provide) if self.kind == :lib
    end
 
+   # Builds a compatibility capability when an imported RPM package is renamed.
+   # @return [Array<String>] the old RPM name with EVR, or an empty list
+   # No alias is emitted without a renamed input package. For a real gem source,
+   # its literal name is also excluded: the typed gem capability represents it.
+   # Other legacy RPM names retain their compatibility alias.
    def _find_provides
-      state.name && state.name.original_fullname != name.fullname ? [state.name.original_fullname + " = %EVR"] : []
+      return [] unless state.name && state.name.original_fullname != name.fullname
+      return [] if source.is_a?(Baltix::Source::Gem) && state.name.original_fullname == source.name
+
+      [state.name.original_fullname + " = %EVR"]
    end
 
    def _obsoletes value_in
