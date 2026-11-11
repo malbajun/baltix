@@ -681,6 +681,7 @@ Feature: Spec actor
    @scratch @blank_setup @documentation_source
    Scenario: Keep nested Compass documentation paths relative to the repository root
       - preserve the repository root while importing the cli, core and import-once gems
+      - import the full upstream dependency set independently of caller CI and PKG variables
       - qualify nested README and license entries with their source directories
       - retain the root-level shared license and valid paths through repeated updates
       - reuse the repository README.markdown when the main CLI gem has no README
