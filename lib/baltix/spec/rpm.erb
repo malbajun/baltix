@@ -174,7 +174,7 @@ Provides:      <%= dep %>
 %ruby_gemspec
 %ruby_gemlibdir
 <% end -%>
-<% if has_compilables? -%>
+<% if needs_extension_directory? -%>
 %ruby_gemextdir
 <% end -%>
 <% preserved_files(self).each do |line| -%>

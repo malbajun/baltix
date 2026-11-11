@@ -501,6 +501,38 @@ Feature: RPM Spec
          file2
          """
 
+   @native_manifest
+   Scenario Outline: Keep a retained native extension directory only once
+      - preserve state-only file entries and their ownership attributes
+      - avoid adding the same automatically generated Ruby extension directory
+      - retain the complete manifest across repeated spec updates
+      Given blank space with empty sources
+      And RPM spec file:
+         """
+         Name: native-example
+         Version: 1.0
+         Release: alt1
+         Summary: Native files
+         License: MIT
+         %files
+         <entry>
+         """
+      When developer sets the space option "rootdir" to "features/fixtures/blank"
+      And developer sets the space option "compilables" to "[ext/native.c]"
+      And developer loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated extension directory entries are:
+         | <entry>   |
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
+      Examples:
+         | entry                                         |
+         | %ruby_gemextdir                               |
+         | %{ruby_gemextdir}                             |
+         | %dir %attr(0750, root, root) %ruby_gemextdir  |
+
    @changelog_history
    Scenario Outline: Preserve old changelog EVRs and version newly generated entries
       - preserve old Ruby changelog entries that omit version and release

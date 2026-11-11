@@ -44,3 +44,8 @@ Given('the input main package file list also contains:') do |table|
    entries = table.raw.flatten.join("\n")
    @spec_in = @spec_in.sub(/^%files[ \t]*$/, "%files\n#{entries}")
 end
+
+Then('the generated extension directory entries are:') do |table|
+   entries = @spec.lines.grep(/ruby_gemextdir/).map(&:strip)
+   expect(entries).to eql(table.raw.flatten)
+end
