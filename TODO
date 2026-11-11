@@ -41,7 +41,8 @@ vcs_url for snaky_hash gem
 [setup.rb][INFO]> X *RubyGems:3.3.7 [./Rakefile]
 [setup.rb][INFO]> X *Ruby:3.1.1.18 [./Rakefile]
 
-uwsgi, aws-s3 проверить гегерацию нового спека
+
+uwsgi проверить генерацию нового спека
 
 rubocop-shopify должен генерить без doc пакета
 
@@ -62,7 +63,6 @@ azure-for.ruby - compare old spec and newly generated, to ensure no avoid manual
 
 detect tag - rubocop-lts 24.0.2
 
-man file - rake
 
 analyze.
 fake-version-increase (like turn gem to 1.0.0): cond: no-bump(in git), no-tag, no-pushlish-rubygems

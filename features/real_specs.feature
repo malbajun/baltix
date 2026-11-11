@@ -841,6 +841,68 @@ Feature: Spec actor
          | legacy macro |
          | build option |
 
+   # ruby/rake 3f29d39: keep original metadata and its direct version import only.
+   @scratch @main_is_gem @documentation_source @rake_manpages
+   Scenario: Include the installed Rake manual in its executable package
+      - discover doc/rake.1 through the same man tree used by setup-rb
+      - assign the installed page to rake alongside its declared executable
+      - keep one explicit page entry and a stable spec through repeated updates
+      Given blank space
+      When developer locks the time to "12.11.2026"
+      And he sets the space options as:
+         | options            | value                 |
+         | maintainer.name    | Pavel Skrylev         |
+         | maintainer.email   | majioa@altlinux.org   |
+      And he imports fixture "rake" with documentation paths:
+         | doc/rake.1   |
+      And he applies "spec" actor to the baltix setup
+      Then package "rake" contains file lines:
+         | %_bindir/rake      |
+         | %_mandir/rake.1*   |
+      And the generated spec contains each line once:
+         | %_mandir/rake.1*   |
+      And he acquires an "rake" fixture spec for the baltix setup
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
+   @scratch @main_is_gem @documentation_source @rake_manpages
+   Scenario Outline: Retain an existing Rake manual file entry when refreshing its spec
+      - retain an existing active entry instead of adding a second owner
+      - replace a commented-out declaration with an actual generated entry
+      - keep executable and manual page ownership in the same package
+      Given blank space
+      And a spec from fixture "rake"
+      When the input spec uses manual page file entry "<entry>"
+      And developer locks the time to "12.11.2026"
+      And he sets the space options as:
+         | options            | value                 |
+         | maintainer.name    | Pavel Skrylev         |
+         | maintainer.email   | majioa@altlinux.org   |
+      And he imports fixture "rake" with documentation paths:
+         | doc/rake.1   |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then package "rake" contains file lines:
+         | %_bindir/rake   |
+         | <page>          |
+      And the generated spec contains each line once:
+         | <page> |
+      And the generated manual page entries are:
+         | <page> |
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
+      Examples:
+         | entry                                      | page                                       |
+         | %_mandir/rake.*                            | %_mandir/rake.*                            |
+         | %{_mandir}/rake.1*                         | %{_mandir}/rake.1*                         |
+         | %{_mandir}/rake.1.gz                       | %{_mandir}/rake.1.gz                       |
+         | %{_mandir}/rake.1.*                        | %{_mandir}/rake.1.*                        |
+         | %attr(0644, root, root) %{_mandir}/rake.1* | %attr(0644, root, root) %{_mandir}/rake.1* |
+         | # %_mandir/rake.1*                         | %_mandir/rake.1*                           |
+
    # Compass 07ad85d with ALT 584eab7 version patch; recreate document paths in a temporary tree.
    @scratch @blank_setup @documentation_source
    Scenario: Keep nested Compass documentation paths relative to the repository root

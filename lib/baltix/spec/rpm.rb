@@ -37,6 +37,8 @@ class Baltix::Spec::Rpm
       new: :new,
    }
 
+   MANPAGE_SUFFIXES = ['', '.gz', '.bz2', '.xz', '.zst', '.lzma', '.lz', '.Z'].freeze
+
    STATE = {
       name: {
          seq: %w(of_options of_state of_source of_default >_name >_global_rename -_post_name),
@@ -654,6 +656,37 @@ class Baltix::Spec::Rpm
             (gem_source && path.match?(/\A%_bindir\/.*[*?\[]/)) ||
             executable_paths.any? { |file| File.fnmatch?(path, file) }
       end
+   end
+
+   # Lists installed preformatted manual pages absent from retained file lists.
+   # @param package [Rpm, Secondary] package whose automatic manifest is rendered
+   # @return [Array<String>] explicit RPM manual paths with compression wildcards
+   # Gem executables own their source's pages; a gem without executables keeps
+   # them in its library package. Other package kinds return no entries. The
+   # existing man tree supplies paths relative to the installer's manual root.
+   # Ronn inputs are omitted because their compiler is optional. If no ready
+   # pages exist, the result is empty. Matching retained entries in any emitted
+   # package suppress automatic copies, including braced paths, attributes and
+   # explicit compression suffixes. Commented entries do not supply ownership.
+   # Retained entries themselves stay unchanged.
+   def manpage_entries package
+      gem = package.source
+      return [] unless gem.is_a?(Baltix::Source::Gem) &&
+         (package.is_exec? || (package.is_lib? && gem.executables.empty?))
+
+      pages = gem.mantree.values.flatten.grep(/\.[1-8]\z/).uniq.map { |file| "%_mandir/#{file}" }
+      return [] if pages.empty?
+
+      retained = state.preserved_file_lists.present? ?
+         ([self] + valid_secondaries).flat_map { |item| preserved_files(item) } : []
+      patterns = retained.reject { |line| line.lstrip.start_with?('#') }.filter_map do |line|
+         line[/%(?:_mandir|\{_mandir\})\/\S+/]&.sub('%{_mandir}', '%_mandir')
+      end
+      pages.reject do |file|
+         MANPAGE_SUFFIXES.any? do |suffix|
+            patterns.any? { |pattern| File.fnmatch?(pattern, file + suffix) }
+         end
+      end.map { |file| "#{file}*" }
    end
 
    # Detects manual files that need a separately declared RPM package.
