@@ -1146,7 +1146,13 @@ class Baltix::Spec::Rpm
       end
    end
 
-         #aif change_list.any?
+   # Appends a versioned changelog entry for the current package changes.
+   # @param value_in [Array<OpenStruct>] existing changelog history
+   # @return [Array<OpenStruct>] history with a new entry when changes are present
+   # Revision previews and unchanged specs retain the original history. If changes
+   # exist, the new entry uses the current package version and calculated release,
+   # plus the package epoch when set. Historical entries, including omitted EVRs,
+   # are retained unchanged; their missing fields never seed a new entry.
    def _changes value_in
       return value_in if @checking_revision || @unchanged_spec
 

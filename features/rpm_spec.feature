@@ -496,31 +496,58 @@ Feature: RPM Spec
          file2
          """
 
-   Scenario: Parse RPM Spec for changelog section
+   @changelog_history
+   Scenario Outline: Preserve old changelog EVRs and version newly generated entries
+      - preserve old Ruby changelog entries that omit version and release
+      - retain authors, dates and descriptions without inventing an EVR
+      - keep ordinary versioned entries in their original chronological order
+      - give each new entry the package version and release, including epoch when set
       Given RPM spec file:
          """
          Name:                rpm
+         Version:             2.0
+         Release:             alt1
+         <epoch_header>
          %changelog
-         * Tue Jan 02 2001 FIO Packer <fio@example.com> 2.0
+         * Tue Jan 02 2001 FIO Packer <fio@example.com> 2.0-alt1
          - ^ new version
          * Mon Jan 01 2001 FIO Packer <fio@example.com> 1.0-rc1
          - ! of important bug
+         * Wed Dec 08 1999 Atsushi Yamagata <yamagata@plathome.co.jp>
+         - Updated to version 1.4.3
          """
       When developer loads the spec
-      Then space's property "changes" at position "0" has fields:
+      Then stringified property "version" of space is "2.0"
+      And space's property "changes" at position "0" has fields:
+         | date         | Wed Dec 08 1999             |
+         | author       | Atsushi Yamagata            |
+         | email        | yamagata@plathome.co.jp     |
+         | epoch        |                             |
+         | version      |                             |
+         | release      |                             |
+         | description  | - Updated to version 1.4.3  |
+      And space's property "changes" at position "1" has fields:
          | date         | Mon Jan 01 2001       |
          | author       | FIO Packer            |
          | email        | fio@example.com       |
          | version      | 1.0                   |
          | release      | rc1                   |
          | description  | - ! of important bug  |
-      And space's property "changes" at position "1" has fields:
+      And space's property "changes" at position "2" has fields:
          | date         | Tue Jan 02 2001 |
          | author       | FIO Packer      |
          | email        | fio@example.com |
          | version      | 2.0             |
-         | release      |                 |
+         | release      | alt1            |
          | description  | - ^ new version |
+      And the parsed changelog survives rendering and reparsing
+      When he applies "spec" actor to the baltix setup
+      Then the new changelog entry has the package EVR and preserves earlier entries
+
+      Examples:
+         | epoch_header |
+         |              |
+         | Epoch: 1     |
 
    Scenario: Parse RPM Spec for variables support
       Given RPM spec file:

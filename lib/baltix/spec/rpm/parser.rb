@@ -440,17 +440,26 @@ class Baltix::Spec::Rpm::Parser
       splitten_flow(flow)
    end
 
-   def parse_changes _, flow, *_
+   # Reads versioned and unversioned RPM changelog entries.
+   # @param _match [Array<String>] unused section-header match
+   # @param flow [String] complete changelog block
+   # @param _arguments [Array<Object>] unused parser state and package context
+   # @return [Array<OpenStruct>] changelog records in oldest-first order
+   # If a header omits its EVR, version, epoch and release remain nil. Versioned
+   # entries keep their parsed EVR; no version is inferred from the description.
+   # Trailing header whitespace is accepted, including the template's empty EVR slot.
+   # Missing changelog EVRs do not change the main package Version header.
+   def parse_changes _match, flow, *_arguments
       rows = flow.split("\n* ").map { |p| p.strip }.compact.map { |p| p.split("\n") }
 
       rows[1..-1].map do |row|
-         /(?<date>^\w+\s+\w+\s+\w+\s+\w+)\s+(?<author>.*)\s*(?:<(?<email>.*)>)\s+(?:(?<epoch>[0-9]+):)?(?<version>[\w\.]+)(?:-(?<release>[\w\._]+))?$/ =~ row[0]
+         /(?<date>^\w+\s+\w+\s+\w+\s+\w+)\s+(?<author>.*)\s*(?:<(?<email>.*)>)(?:\s+(?:(?<epoch>[0-9]+):)?(?<version>[\w\.]+)(?:-(?<release>[\w\._]+))?)?\s*$/ =~ row[0]
 
          {
             date: date,
             author: author.strip,
             email: email,
-            version: Gem::Version.new(version),
+            version: version && Gem::Version.new(version),
             release: release,
             epoch: epoch,
             description: row[1..-1].join("\n")

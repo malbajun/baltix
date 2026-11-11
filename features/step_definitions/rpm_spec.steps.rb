@@ -174,3 +174,25 @@ Given('blank space with empty sources') do
    @space = Baltix::Space.load_from(state: StringIO.new({sources: []}.to_yaml), options: options)
 end
 
+
+Then('the parsed changelog survives rendering and reparsing') do
+   expected = space.changes.map(&:to_h)
+   rendered = space.spec.render_template(space.spec.spec_template)
+   parsed = Baltix::Spec::Rpm::Parser.new.parse(rendered)
+   expect(parsed.version).to eql(space.spec.version)
+   expect(parsed.changes.map(&:to_h)).to eql(expected)
+end
+
+Then('the new changelog entry has the package EVR and preserves earlier entries') do
+   parsed = Baltix::Spec::Rpm::Parser.new.parse(@spec)
+   earlier = space.spec.state.changes.map(&:to_h)
+   expect(parsed.changes.size).to eql(earlier.size + 1)
+   expect(parsed.changes[0...-1].map(&:to_h)).to eql(earlier)
+
+   latest = parsed.changes.last
+   expect(latest.version.to_s).to_not be_empty
+   expect(latest.release.to_s).to_not be_empty
+   expect([latest.epoch, latest.version, latest.release]).to eql([parsed.epoch, parsed.version, parsed.release])
+   evr = [parsed.epoch, "#{parsed.version}-#{parsed.release}"].compact.join(':')
+   expect(@spec.split(/^%changelog\s*\n/, 2).last.lines.first.strip).to end_with(" #{evr}")
+end
