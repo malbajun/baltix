@@ -58,6 +58,8 @@ class Baltix::Spec::Rpm::Parser
       ]
    }.transform_values(&:freeze).freeze
 
+   PACKAGE_VERSION_FIELDS = %w(version epoch release).freeze
+
    SCHEME = {
       name: {
          non_contexted: true,
@@ -343,6 +345,8 @@ class Baltix::Spec::Rpm::Parser
       reflown = reeval(flow, opts)
       rematched = match.to_a.map { |x| x.is_a?(String) && reeval(x, opts) || x }
       value = method(parse_func)[rematched, reflown, opts, context]
+      return store_package_version(opts, key, value, context) if PACKAGE_VERSION_FIELDS.include?(key)
+
       mode = data.is_a?(OpenStruct) && data.mode || :append
       copts = !non_contexted && context.name && opts.secondaries.find do |sec|
          sec.name == Baltix::Spec::Rpm::Name.parse(
@@ -371,6 +375,24 @@ class Baltix::Spec::Rpm::Parser
       end
 
       #binding.pry if key =~ /summar/
+      opts
+   end
+
+   # Stores an RPM version field independently from its globally visible macro.
+   # @param opts [OpenStruct] parsed main package and macro state, updated in place
+   # @param key [String] version, epoch or release header field
+   # @param value [Gem::Version, String] parsed field value
+   # @param context [OpenStruct] current package selector
+   # @return [OpenStruct] updated parsed main package state
+   # If a named subpackage exists, only its header is changed; otherwise the main
+   # header is changed. Both cases update the lowercase global macro. Main fields
+   # also define uppercase macros, which later subpackage fields do not replace.
+   def store_package_version opts, key, value, context
+      package = context.name && secondary_for_context(opts, context) || opts
+      package[key] = value
+      macros = opts.context.__macros ||= {}.to_os
+      macros[key] = value
+      macros[key.upcase] = value if package.equal?(opts)
       opts
    end
 
@@ -528,12 +550,18 @@ class Baltix::Spec::Rpm::Parser
       splitten_flow(flow)
    end
 
-   # secondary without suffix by default has kind of lib
+   # Opens a subpackage with inherited main-package metadata.
+   # @param match [Array<String>] package-header matches, including its selector
+   # @param flow [String] unused original package block
+   # @param opts [OpenStruct] parsed main package and macro state
+   # @param context [OpenStruct] current package selector, replaced in place
+   # @return [Array<OpenStruct>] one subpackage with inherited version fields and summaries
+   # Explicit fields parsed after the package header override its inherited values.
    def parse_secondary match, flow, opts, context
       context.replace(parse_context_line(match[1], opts))
       name = Baltix::Spec::Rpm::Name.parse(context.name, aliases: aliased_names(opts))
 
-      [{ "name" => name, "version" => opts.version, "release" => opts.release, "summaries" => opts.summaries.dup }.to_os ]
+      [{ "name" => name, "version" => opts.version, "epoch" => opts.epoch, "release" => opts.release, "summaries" => opts.summaries.dup }.to_os ]
    end
 
    def parse_description match, flow, opts, context
