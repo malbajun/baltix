@@ -2,15 +2,17 @@ require 'tmpdir'
 require 'fileutils'
 
 Around('@documentation_source') do |_scenario, run|
-   previous_version_setting = ENV['SAME_VERSION']
-   # Upstream's release Rakefiles otherwise bump the packaged version on import.
-   ENV['SAME_VERSION'] = 'true'
+   fixture_environment = { 'SAME_VERSION' => 'true', 'CI' => nil, 'PKG' => nil }
+   previous_environment = fixture_environment.keys.to_h { |name| [name, ENV[name]] }
+   # Keep upstream's release version and full dependency set independent of the
+   # caller: CI and PKG otherwise omit parts of Compass's Gemfile on import.
+   fixture_environment.each { |name, value| value.nil? ? ENV.delete(name) : ENV[name] = value }
    Dir.mktmpdir('baltix-doc-source-') do |directory|
       @documentation_source_directory = directory
       run.call
    end
 ensure
-   previous_version_setting.nil? ? ENV.delete('SAME_VERSION') : ENV['SAME_VERSION'] = previous_version_setting
+   previous_environment.each { |name, value| value.nil? ? ENV.delete(name) : ENV[name] = value }
 end
 
 When('he imports fixture {string} with documentation paths:') do |fixture, table|
