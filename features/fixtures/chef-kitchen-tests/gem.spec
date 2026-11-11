@@ -441,7 +441,6 @@ Requires:      gem(ffi-libarchive) >= 1.0.3
 Requires:      gem(ffi-yajl) > 3.0.0
 Requires:      gem(iniparse) >= 1.4
 Requires:      gem(inspec-core) >= 7.1.7
-Requires:      gem(kitchen-tests) >= 0
 Requires:      gem(license-acceptance) >= 1.0.5
 Requires:      gem(mixlib-archive) >= 0.4
 Requires:      gem(mixlib-authentication) >= 2.1

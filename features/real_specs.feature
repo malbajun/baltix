@@ -71,12 +71,15 @@ Feature: Spec actor
          | maintainer.email   | majioa@altlinux.org   |
       And he applies "spec" actor to the baltix setup
       Then package "kitchen-tests" inherits the main summary
+      And the generated spec has no gem dependencies named:
+         | kitchen-tests   |
       And package "gem-chef" contains dependency lines:
          | Version:       19.4.12   |
       And package "kitchen-tests" contains dependency lines:
          | Version:       20261111  |
       And package "gem-kitchen-tests-devel" contains dependency lines:
-         | Version:       20261111  |
+         | Version:       20261111                       |
+         | Requires:      kitchen-tests = 20261111-alt1  |
       And he acquires an "chef-kitchen-tests" fixture spec for the baltix setup
       When he keeps the generated spec for comparison
       And developer locks the time to "12.11.2026"
@@ -93,6 +96,7 @@ Feature: Spec actor
    Scenario: Keep auxiliary summaries stable when a Gemfile has no base summary
       - retain the repository root and original shared dependency Gemfile
       - render the development label once when neither source nor host has a summary
+      - retain declared Gemfile dependencies without inventing a gem for the repository wrapper
       - preserve the full spec, revision and descriptions through repeated updates
       Given blank space
       When developer locks the time to "11.11.2026"
@@ -104,6 +108,11 @@ Feature: Spec actor
       And he applies "spec" actor to the baltix setup
       Then package "shared-devel" contains dependency lines:
          | Summary:       development package   |
+      And the generated spec has no gem dependencies named:
+         | gapic-generator-ruby  |
+      And package "shared" contains dependency lines:
+         | Requires:      gem(gapic-generator) >= 0   |
+         | Requires:      gem(grpc-tools) >= 1.60.0   |
       And he acquires an "gapic-generator-ruby" fixture spec for the baltix setup
       When he keeps the generated spec for comparison
       And the generated spec is refreshed 2 times
