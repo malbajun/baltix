@@ -30,7 +30,6 @@ gem-lemon update stable ver to unstable
 gem-nokogiri - crop changelog, fix gem deps on the file  (example for mini_portile2, see patch)
 ffi - 1. git describe --tags command to fix in gemspec; 2. update to 1.15.5 add the wrnog tag
 io-event - erroneous update form event
-hoe-bunder - crop long patch number for v.5.0
 add default-license and license-replacement-list options
 
 ?raindrops
