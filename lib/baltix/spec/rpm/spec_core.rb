@@ -474,11 +474,11 @@ module Baltix::Spec::Rpm::SpecCore
       end
    end
 
-   # Replaces parsed numeric interpreter minimums with the merged requirements.
+   # Replaces parsed numeric interpreter and RubyGems minimums with merged requirements.
    # @param value_in [Array<String>] retained non-gem RPM requirements
-   # @return [Array<String, Hash>] opaque requirements and combined interpreter bounds
-   # Numeric Ruby constraints are merged; unrelated packages and RPM macros remain
-   # unchanged. Rendering selects the strictest lower boundary for each interpreter.
+   # @return [Array<String, Hash>] opaque requirements and combined Ruby/RubyGems bounds
+   # Numeric Ruby and RubyGems constraints are merged; unrelated packages and RPM
+   # macros remain unchanged. Rendering selects the strictest lower boundary for each interpreter.
    # Merged bounds occupy the first numeric interpreter entry's position. If none
    # exists, they are appended so source-only generation and updates keep the same order.
    def _requires_ruby value_in
@@ -487,10 +487,10 @@ module Baltix::Spec::Rpm::SpecCore
       dependencies.reject { |dependency| ruby_dependency(dependency) }.insert(position, ruby_requirements).uniq
    end
 
-   # Replaces parsed numeric interpreter conflicts with the merged requirements.
+   # Replaces numeric interpreter and RubyGems conflicts with merged requirements.
    # @param value_in [Array<String>] retained non-gem RPM conflicts
-   # @return [Array<String, Hash>] opaque conflicts and combined interpreter bounds
-   # Numeric Ruby conflicts are merged; unrelated packages and RPM macros remain
+   # @return [Array<String, Hash>] opaque conflicts and combined Ruby/RubyGems bounds
+   # Numeric Ruby and RubyGems conflicts are merged; unrelated RPM entries remain
    # unchanged. Rendering selects the strictest upper boundary for each interpreter.
    def _conflicts_ruby value_in
       Array(value_in).reject { |dependency| ruby_dependency(dependency) } | [ruby_requirements]
@@ -498,28 +498,33 @@ module Baltix::Spec::Rpm::SpecCore
 
    # Parses one numeric interpreter constraint without expanding RPM expressions.
    # @param dependency [Object] an imported RPM dependency
-   # @return [Array<String>, nil] interpreter, operator and version, or no match
-   # Only Ruby and engines declared by this library/application are recognized.
+   # @return [Array<String>, nil] package name, operator and version, or no match
+   # Ruby, RubyGems and engines declared by this library/application are recognized.
    # Other packages, non-string inputs and opaque versions are left untouched.
    def ruby_dependency dependency
       return unless dependency.is_a?(String)
 
       match = /\A(?<name>\S+)\s+(?<operator>!=|>=|<=|=|>|<)\s+(?<version>\S+)\z/.match(dependency)
-      engines = ['ruby'] | (%i(lib app).include?(kind) ? source.dsl.required_rubies.keys : [])
+      engines = ['ruby', 'rubygems'] | (%i(lib app).include?(kind) ? source.dsl.required_rubies.keys : [])
       return unless match && engines.include?(match[:name]) && Gem::Version.correct?(match[:version])
 
       match.values_at(:name, :operator, :version)
    end
 
-   # Intersects this package's source and imported interpreter requirements.
-   # @return [Hash<String, Gem::Requirement>] merged requirements for each interpreter
-   # Libraries and applications include source declarations, excluding the implicit
-   # unconstrained default. Explicit options take precedence over parsed RPM tags.
+   # Intersects this package's source and imported interpreter/RubyGems requirements.
+   # @return [Hash<String, Gem::Requirement>] merged interpreter and RubyGems requirements
+   # Libraries and applications include interpreter and RubyGems source declarations,
+   # excluding implicit unconstrained defaults. Other packages use only imported
+   # constraints. Explicit options take precedence over parsed RPM tags.
    # Parsed conflicts are inverted into allowed bounds before the shared merger is
    # used; macros and unrelated dependencies are preserved by the caller.
    def ruby_requirements
       @ruby_requirements ||= begin
-         declarations = %i(lib app).include?(kind) ? source.dsl.required_rubies : {}
+         declarations = if %i(lib app).include?(kind)
+            source.dsl.required_rubies.merge('rubygems' => source.dsl.required_rubygems)
+         else
+            {}
+         end
          requirements = declarations.reject { |_name, requirement| requirement == Gem::Requirement.default }
          %i(requires conflicts).each do |tag|
             value = of_options(tag)
@@ -536,15 +541,6 @@ module Baltix::Spec::Rpm::SpecCore
          end
          requirements
       end
-   end
-
-   def _requires_rubygems value_in
-      req_rgems =
-         if %i(lib app).include?(kind) && source.dsl.required_rubygems.requirements.last.last.version.to_i > 0
-            ["rubygems #{source.dsl.required_rubygems}"]
-         end || []
-
-      value_in | req_rgems
    end
 
    def _host_require value_in
