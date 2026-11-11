@@ -20,7 +20,6 @@ lost runtime deps
  - gapic-generator-ruby
   - filterout README.erb, alow pure, or .md/rdoc/.../
   - add README with offset paths to the root source
-chef - Gemfile-only kitchen-tests subpackage changes version and summary on first refresh
 
 + generate relative symlinks instead of absolute for execs
 + filter out desc and summary char to other like "’" -> "'"

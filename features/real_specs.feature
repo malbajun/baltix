@@ -54,6 +54,35 @@ Feature: Spec actor
       And the generated spec is refreshed 2 times
       Then the generated spec is unchanged
 
+   # chef/chef v19.4.12 kitchen-tests/Gemfile; reuse the existing minimal Chef metadata.
+   @scratch @main_is_gem @temporary_project
+   Scenario: Fill missing Gemfile subpackage summaries without replacing date versions
+      - retain the repository root while importing the nested upstream Gemfile
+      - inherit the main summary while a subproject without a version uses YYYYMMDD
+      - retain an already packaged date version when refreshing on a later day
+      - keep every release and the whole generated spec unchanged through updates
+      Given blank space
+      When developer locks the time to "11.11.2026"
+      And he imports fixture "chef" with the "chef-kitchen-tests" Gemfile at "kitchen-tests/Gemfile"
+      And he sets the space options as:
+         | options            | value                 |
+         | maintainer.name    | Pavel Skrylev         |
+         | maintainer.email   | majioa@altlinux.org   |
+      And he applies "spec" actor to the baltix setup
+      Then package "kitchen-tests" inherits the main summary
+      And package "gem-chef" contains dependency lines:
+         | Version:       19.4.12   |
+      And package "kitchen-tests" contains dependency lines:
+         | Version:       20261111  |
+      And he acquires an "chef-kitchen-tests" fixture spec for the baltix setup
+      When he keeps the generated spec for comparison
+      And developer locks the time to "12.11.2026"
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+      And package "kitchen-tests" inherits the main summary
+      And package "kitchen-tests" contains dependency lines:
+         | Version:       20261111  |
+
    # chef/chef v19.4.12; ALT gem-chef 19.4.12-alt1.1, altlinux/specs 4d2273b2.
    @policy2_1 @main_is_gem
    Scenario: Update Chef together with its component gems and service package

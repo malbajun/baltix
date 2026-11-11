@@ -16,6 +16,9 @@ class Baltix::Spec::Rpm::Secondary
       },
       version: {
          seq: %w(of_options of_source of_state of_default >_reversion >_version),
+         # Use the current date only when options, source and parsed state have no version.
+         # @param _ [Secondary] unused current subpackage
+         # @return [String] fallback version in YYYYMMDD format
          default: ->(_) { Time.now.strftime("%Y%m%d") },
       },
       release: {
@@ -28,7 +31,10 @@ class Baltix::Spec::Rpm::Secondary
       },
       summaries: {
          seq: %w(of_options of_state of_source of_default >_summaries),
-         default: ""
+         # Match RPM inheritance when a source and its parsed state have no summary.
+         # @param this [Secondary] current subpackage
+         # @return [OpenStruct] host summaries indexed by locale
+         default: ->(this) { this.host.summaries }
       },
       group: {
          seq: %w(of_options >_group),
