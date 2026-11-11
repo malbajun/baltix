@@ -479,6 +479,18 @@ class Baltix::Spec::Rpm
          end))
    end
 
+   # Checks whether the main manifest needs its generated extension directory.
+   # Takes no parameters.
+   # @return [Boolean] true when native extensions exist and no retained entry owns the directory
+   # If an existing file entry already names the same Ruby extension directory,
+   # including braced macros or ownership attributes, it supplies the entry.
+   # Packages without compilables need no generated directory declaration.
+   def needs_extension_directory?
+      has_compilables? && preserved_files(self).none? do |line|
+         line.match?(/(?:\A|\s)%(?:ruby_gemextdir|\{ruby_gemextdir\})\s*(?:#.*)?\z/)
+      end
+   end
+
    def pure_build_requires
       build_requires.select {|r| r !~ /^gem\(.*\)/ }
    end
