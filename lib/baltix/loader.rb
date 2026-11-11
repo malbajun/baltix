@@ -15,6 +15,14 @@ module Baltix::Loader
 
       alias_method :require_orig, :require
 
+      # Loads a metadata dependency while preserving its original source location.
+      # @param path [String] feature requested by the imported project
+      # @param args [Array] additional arguments forwarded to the original loader
+      # @return [Object, false] the evaluated result, or false for an absent/cyclic feature
+      # Embedded adapters take priority. Project files retain their full filename
+      # so __dir__ and require_relative resolve sibling helpers correctly. Other
+      # features use Ruby's loader; a missing requested feature returns false,
+      # while errors in its own dependencies propagate. Cycles are not reloaded.
       def require path, *args
          return true if require_embedded(path)
 
@@ -32,14 +40,13 @@ module Baltix::Loader
             end
          else
             file = files.first
-            _file = File.basename(file)
             code = File.read(file, mode: 'r:UTF-8:-')
             if @stack.include?(file)
                return false
             else
                begin
                   @stack.push(file)
-                  instance_eval(code, _file)
+                  instance_eval(code, file)
                ensure
                   @stack.pop
                end

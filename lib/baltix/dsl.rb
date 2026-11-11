@@ -325,23 +325,37 @@ class Baltix::DSL
       deps_but(original_deps_for(kinds_in)) | gemspec_deps
    end
 
+   # Reads every declared version bound for a Gemfile's interpreter engine.
+   # @param dsl_ruby [Bundler::RubyVersion, Object] the Gemfile Ruby declaration
+   # @return [Gem::Requirement] the complete interpreter version requirement
+   # Bundler declarations may contain several bounds; legacy declarations already
+   # expose a requirement object and are returned unchanged.
    def engine_version dsl_ruby
       if dsl_ruby.is_a?(Bundler::RubyVersion)
-         Gem::Requirement.new(dsl_ruby.engine_versions.first)
+         Gem::Requirement.new(dsl_ruby.engine_versions)
       else
          dsl_ruby.engine_version
       end
    end
 
+   # Intersects Ruby language and engine constraints from the gemspec and Gemfile.
+   # @return [Hash<String, Gem::Requirement>] requirements keyed by interpreter name
+   # If both sources constrain Ruby, all bounds are retained by the shared merger.
+   # An alternate engine keeps its own bounds alongside the Ruby language bounds.
+   # Missing declarations contribute no additional constraints.
    def required_rubies
       return @required_rubies if @required_rubies
 
       rubies = {}
       rubies["ruby"] = spec.required_ruby_version if spec
       dsl_ruby = dsl.instance_variable_get(:@ruby_version)
-      rubies = rubies.to_os.deep_merge(dsl_ruby.engine => engine_version(dsl_ruby)) if dsl_ruby
+      if dsl_ruby
+         declared = {dsl_ruby.engine.to_s => engine_version(dsl_ruby)}
+         declared['ruby'] = Gem::Requirement.new(dsl_ruby.versions) if dsl_ruby.is_a?(Bundler::RubyVersion)
+         rubies = rubies.merge(declared) { |_name, existing, incoming| existing.merge(incoming) }
+      end
 
-      @required_rubies = rubies.to_h
+      @required_rubies = rubies
    end
 
    def required_rubygems

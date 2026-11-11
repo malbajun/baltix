@@ -58,7 +58,7 @@ BuildConflicts: gem(webrick) >= 1.9
 %add_findreq_skiplist %ruby_gemslibdir/**/*
 %add_findprov_skiplist %ruby_gemslibdir/**/*
 %ruby_ignore_path_tokens dev,build,agent,cxx_supportlib,schema_printer
-Requires:      ruby >= 2.5
+Requires:      ruby >= 2.5.9
 Requires:      gem(logger) >= 1.7.0
 Requires:      gem(rack) >= 1.6.13
 Requires:      gem(rackup) >= 1.0.1

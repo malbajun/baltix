@@ -20,7 +20,7 @@ BuildRequires(pre): rpm-macros-ruby setup-rb rake
 %if_enabled check
 BuildRequires: gem(loofah) >= 2.25.3
 BuildRequires: gem(minitest) >= 0
-BuildRequires: gem(nokogiri) >= 1.15.7
+BuildRequires: gem(nokogiri) > 1.16.7
 BuildRequires: gem(rake) >= 0
 BuildRequires: gem(rubocop) >= 1.25.1
 BuildRequires: gem(rubocop-minitest) >= 0
@@ -29,17 +29,15 @@ BuildRequires: gem(rubocop-performance) >= 0
 BuildRequires: gem(rubocop-rails) >= 0
 BuildConflicts: gem(loofah) >= 3
 BuildConflicts: gem(minitest) >= 6
-BuildConflicts: gem(nokogiri) >= 1.16.0
 %endif
 
 %add_findreq_skiplist %ruby_gemslibdir/**/*
 %add_findprov_skiplist %ruby_gemslibdir/**/*
-%ruby_use_gem_dependency nokogiri >= 1.15.7,nokogiri < 1.16.0
+%ruby_use_gem_dependency nokogiri > 1.16.7
 Requires:      ruby >= 3.2.0
 Requires:      gem(loofah) >= 2.25.3
-Requires:      gem(nokogiri) >= 1.15.7
+Requires:      gem(nokogiri) > 1.16.7
 Conflicts:     gem(loofah) >= 3
-Conflicts:     gem(nokogiri) >= 1.16.0
 Provides:      gem(rails-html-sanitizer) = 1.7.2
 
 %description

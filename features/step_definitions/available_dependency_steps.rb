@@ -139,3 +139,34 @@ end
 Then('the generated spec excludes the lines:') do |table|
    expect(@spec.lines.map(&:strip) & table.raw.flatten).to be_empty
 end
+
+Then('internal gem requirements equal their provided versions without conflicts') do
+   provided = @spec.scan(/^Provides:\s+gem\(([^)]+)\)\s+=\s+(\S+)/).to_h
+   tags = @spec.scan(/^(Requires|BuildRequires|Conflicts|BuildConflicts):\s+gem\(([^)]+)\)\s+(\S+)\s+(\S+)/)
+   tags.each do |tag, name, operator, version|
+      next unless provided.key?(name)
+
+      expect(tag).to_not end_with('Conflicts')
+      expect([operator, version]).to eql(['=', provided[name]])
+   end
+   space.spec.secondaries.each do |package|
+      next unless %i(exec doc devel).include?(package.kind) && package.host.source.is_a?(Baltix::Source::Gem)
+
+      capability = package.host.send(:provide_dep)
+      loose = Gem::Dependency.new(capability.name, '>= 0')
+      expect(package.send(:render_deps, [loose])).to eql(["gem(#{capability.name}) = #{package.host.version}"])
+   end
+end
+
+Then('external gem bounds render as:') do |table|
+   table.hashes.each do |row|
+      dependency = Gem::Dependency.new('external-policy-probe', row['requirement'])
+      expect(space.spec.send(:render_deps, [dependency])).to eql(["gem(external-policy-probe) #{row['requires']}"])
+      expected = row['conflicts'].empty? ? [] : ["gem(external-policy-probe) #{row['conflicts']}"]
+      expect(space.spec.send(:render_deps, [dependency], :negate)).to eql(expected)
+   end
+end
+
+Then('the generated spec has no gem conflicts for {string}') do |name|
+   expect(@spec).to_not match(/^(?:BuildConflicts|Conflicts):\s+gem\(#{Regexp.escape(name)}\)/)
+end

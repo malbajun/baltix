@@ -135,13 +135,13 @@ A library implementing patterns that behave like regular expressions.
 %ruby_gemlibdir
 
 %files         -n gem-mustermann-contrib
-%doc mustermann-contrib.gemspec
+%doc mustermann-contrib/mustermann-contrib.gemspec
 %ruby_gemspecdir/mustermann-contrib-2.0.2.gemspec
 %ruby_gemslibdir/mustermann-contrib-2.0.2
 
 %if_enabled    devel
 %files         -n gem-mustermann-contrib-devel
-%doc mustermann-contrib.gemspec
+%doc mustermann-contrib/mustermann-contrib.gemspec
 %endif
 
 %if_enabled    doc

@@ -1,0 +1,16 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+gemspec
+
+group :development do
+  gem "rake-compiler"
+  gem "rake"
+end
+
+group :test do
+  gem "async"
+  gem "io-endpoint"
+  gem "rspec"
+end

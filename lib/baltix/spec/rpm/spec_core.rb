@@ -1,6 +1,13 @@
 require "json"
+require "pathname"
 
 module Baltix::Spec::Rpm::SpecCore
+   README_FILE_RE = /\Areadme(?:\.(?:md|markdown|rdoc|txt|rst|adoc|asciidoc|textile))?\z/i
+
+   RUBY_CONFLICT_OPERATORS = {
+      '>=' => '<', '>' => '<=', '<=' => '>', '<' => '>=', '=' => '!=', '!=' => '='
+   }.freeze
+
    URL_MATCHER = {
       /(?<proto>https?:\/\/)?(?<user>[^\.]+).github.io\/(?<page>[^\/#]+)/ => ->(m) do
          "https://github.com/#{m["user"]}/#{m["page"]}.git"
@@ -402,11 +409,35 @@ module Baltix::Spec::Rpm::SpecCore
       %i(devel doc exec).include?(self.kind)
    end
 
+   # Selects documentation entries and resolves existing files from their source root.
+   # @param _in [Object] unused value from the property pipeline
+   # @return [String] space-separated documentation paths relative to the repository root
+   # If an entry exists under its source directory, its emitted path includes
+   # that directory relative to the repository. Root-level paths remain unchanged.
+   # Otherwise the declaration is retained for shared root files and metadata-only
+   # inputs. If the main gem is nested and declares no README, repository README
+   # documents supplement its entries, including its auxiliary packages. Sibling
+   # gems retain their own documentation. Entries with the same basename retain
+   # the first declaration.
    def _readme _in
-      files.grep(/^[^\/]*(#{Baltix::Source::Base::DEFAULT_FILES.join("|")})/i).group_by do |x|
+      candidates = files
+      source_root = source && File.expand_path(source.rootdir)
+      repository_root = File.expand_path(doc.space.rootdir)
+      if source.is_a?(Baltix::Source::Gem) && source.equal?(doc.source) &&
+         source_root.start_with?(File.join(repository_root, '')) && candidates.grep(README_FILE_RE).empty?
+         readmes = doc.space.default_fake_source.default_files.grep(README_FILE_RE).select do |file|
+            File.file?(File.join(repository_root, file))
+         end
+         candidates |= readmes
+      end
+
+      candidates.grep(/^[^\/]*(#{Baltix::Source::Base::DEFAULT_FILES.join("|")})/i).group_by do |x|
          File.basename(x)
       end.map do |(name, a)|
-         a.first
+         file = a.first
+         source_path = source && File.join(source.rootdir, file)
+         source_path && File.exist?(source_path) ?
+            Pathname.new(source_path).relative_path_from(Pathname.new(doc.space.rootdir)).to_s : file
       end.join(" ")
    end
 
@@ -443,35 +474,64 @@ module Baltix::Spec::Rpm::SpecCore
       end
    end
 
+   # Replaces parsed numeric interpreter minimums with the merged requirements.
+   # @param value_in [Array<String>] retained non-gem RPM requirements
+   # @return [Array<String, Hash>] opaque requirements and combined interpreter bounds
+   # Numeric Ruby constraints are merged; unrelated packages and RPM macros remain
+   # unchanged. Rendering selects the strictest lower boundary for each interpreter.
    def _requires_ruby value_in
-      value_in |
-         case self.kind
-         when :lib, :app
-            reqs = source.dsl.required_rubies
-
-            if !reqs.blank? && reqs.values.last.requirements.first.last.to_s != "0"
-               [reqs]
-            else
-               []
-            end
-         else
-            []
-         end
+      Array(value_in).reject { |dependency| ruby_dependency(dependency) } | [ruby_requirements]
    end
 
+   # Replaces parsed numeric interpreter conflicts with the merged requirements.
+   # @param value_in [Array<String>] retained non-gem RPM conflicts
+   # @return [Array<String, Hash>] opaque conflicts and combined interpreter bounds
+   # Numeric Ruby conflicts are merged; unrelated packages and RPM macros remain
+   # unchanged. Rendering selects the strictest upper boundary for each interpreter.
    def _conflicts_ruby value_in
-         case self.kind
-         when :lib, :app
-            reqs = source.dsl.required_rubies
+      Array(value_in).reject { |dependency| ruby_dependency(dependency) } | [ruby_requirements]
+   end
 
-            if !reqs.blank? && reqs.values.last.requirements.first.last.to_s != "0"
-               [reqs]
-            else
-               []
+   # Parses one numeric interpreter constraint without expanding RPM expressions.
+   # @param dependency [Object] an imported RPM dependency
+   # @return [Array<String>, nil] interpreter, operator and version, or no match
+   # Only Ruby and engines declared by this library/application are recognized.
+   # Other packages, non-string inputs and opaque versions are left untouched.
+   def ruby_dependency dependency
+      return unless dependency.is_a?(String)
+
+      match = /\A(?<name>\S+)\s+(?<operator>!=|>=|<=|=|>|<)\s+(?<version>\S+)\z/.match(dependency)
+      engines = ['ruby'] | (%i(lib app).include?(kind) ? source.dsl.required_rubies.keys : [])
+      return unless match && engines.include?(match[:name]) && Gem::Version.correct?(match[:version])
+
+      match.values_at(:name, :operator, :version)
+   end
+
+   # Intersects this package's source and imported interpreter requirements.
+   # @return [Hash<String, Gem::Requirement>] merged requirements for each interpreter
+   # Libraries and applications include source declarations, excluding the implicit
+   # unconstrained default. Explicit options take precedence over parsed RPM tags.
+   # Parsed conflicts are inverted into allowed bounds before the shared merger is
+   # used; macros and unrelated dependencies are preserved by the caller.
+   def ruby_requirements
+      @ruby_requirements ||= begin
+         declarations = %i(lib app).include?(kind) ? source.dsl.required_rubies : {}
+         requirements = declarations.reject { |_name, requirement| requirement == Gem::Requirement.default }
+         %i(requires conflicts).each do |tag|
+            value = of_options(tag)
+            value = of_state(tag) unless value.present?
+            Array(value).each do |dependency|
+               parsed = ruby_dependency(dependency)
+               next unless parsed
+
+               name, operator, version = parsed
+               operator = RUBY_CONFLICT_OPERATORS.fetch(operator) if tag == :conflicts
+               incoming = Gem::Requirement.new("#{operator} #{version}")
+               requirements[name] = requirements[name] ? requirements[name].merge(incoming) : incoming
             end
-         else
-            []
          end
+         requirements
+      end
    end
 
    def _requires_rubygems value_in
@@ -643,13 +703,57 @@ module Baltix::Spec::Rpm::SpecCore
       @variables ||= context.__macros || {}.to_os
    end
 
+   # Renders gem capabilities without resolving them as requirements.
+   # @param value_in [Array<Gem::Dependency, String>] provided capabilities
+   # @return [Array<String>] RPM Provides declarations with their selected versions
+   # Capability rendering bypasses the internal-requirement map to avoid recursive
+   # collection of Provides while dependencies are being rendered.
+   def _render_provided_deps value_in
+      render_deps(value_in, :provide)
+   end
+
+   # Collects exact gem capabilities supplied by packages in this generated spec.
+   # Takes no parameters.
+   # @return [Hash<String, String>] gem names mapped to their actual Provides versions
+   # Only exact rendered gem capabilities participate; non-gem aliases and
+   # unversioned or ranged capabilities are ignored. The current package and its
+   # host, when present, also participate so custom templates rendering saved
+   # metadata retain their own exact host requirements. Results are cached per package.
+   def provided_gem_versions
+      return @provided_gem_versions if @provided_gem_versions
+
+      packages = ([doc] + doc.valid_secondaries) | [self]
+      packages |= [host].compact if respond_to?(:host)
+      @provided_gem_versions = packages.each_with_object({}) do |package, result|
+         package.provides.each do |capability|
+            match = capability.match(/\Agem\(([^)]+)\)\s+=\s+(\S+)\z/)
+            result[match[1]] = match[2] if match
+         end
+      end
+   end
+
+   # Renders requirements, conflicts or provided gem capabilities as RPM strings.
+   # @param deps_in [Array<Gem::Dependency, Hash, String>] constraints to render
+   # @param mode [Symbol] :debound for minimums, :negate for conflicts, :provide for capabilities
+   # @return [Array<String>] rendered dependency tags without duplicates
+   # Internal requirements use the exact version actually provided by this spec;
+   # internal conflicts are omitted. Capability rendering preserves its own bounds.
+   # External equality requirements become inclusive minimums. Strict external
+   # minimums and conflict boundaries retain >; provided capabilities and non-gem
+   # constraints retain their normal bound conversion.
    def render_deps deps_in, mode = :debound
-      func = mode == :debound ? :lower_to_rpm : :upper_negate_to_rpm
+      func = mode == :negate ? :upper_negate_to_rpm : :lower_to_rpm
 
       deps_in.reduce([]) do |deps, dep|
          deps |
             if dep.is_a?(Gem::Dependency)
-               deph = Baltix::Deps.send(func, dep.requirement)
+               supplied_version = provided_gem_versions[dep.name] unless mode == :provide
+               deph = if supplied_version
+                  mode == :negate ? [] : ['=', supplied_version]
+               else
+                  boundary = Baltix::Deps.send(func, dep.requirement)
+                  mode == :debound && boundary.first == '=' ? ['>=', boundary.last] : boundary
+               end
 
                deph.blank? ? [] : ["#{prefix}(#{dep.name}) #{deph.first} #{deph.last}"]
             elsif dep.is_a?(Hash)
@@ -705,7 +809,7 @@ module Baltix::Spec::Rpm::SpecCore
    end
 
    def _lib_provide
-      render_deps([provide_dep].compact) if self.kind == :lib
+      render_deps([provide_dep].compact, :provide) if self.kind == :lib
    end
 
    def _find_provides

@@ -9,12 +9,89 @@ Feature: Spec actor
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
 
+   # chef/chef v19.4.12; ALT gem-chef 19.4.12-alt1.1, altlinux/specs 4d2273b2.
+   @policy2_1 @main_is_gem
+   Scenario: Update Chef together with its component gems and service package
+      - retain exact internal requirements for chef-config, chef-utils and chef-bin
+      - preserve service installation commands, configuration ownership and scriptlets
+      - exclude the Windows-only gemspec and keep the repository root unchanged
+      Given blank space
+      And a spec from fixture "chef"
+      When developer locks the time to "10.11.2026"
+      And he sets the space options as:
+         | options            | value                    |
+         | rootdir            | features/fixtures/chef   |
+         | maintainer.name    | Pavel Skrylev            |
+         | maintainer.email   | majioa@altlinux.org      |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the main source is the "chef" gem
+      And the main source metadata file is "chef.gemspec"
+      And the project root remains the "chef" fixture
+      And the generated package names are unique
+      And the generated spec preserves the input packaging sections for package "chef"
+      And internal gem requirements equal their provided versions without conflicts
+      And package "gem-chef" contains dependency lines:
+         | Release:       alt1.2                      |
+         | Provides:      gem(chef) = 19.4.12         |
+         | Requires:      gem(chef-config) = 19.4.12  |
+         | Requires:      gem(chef-utils) = 19.4.12   |
+         | Requires:      gem(ffi-yajl) > 3.0.0       |
+         | Conflicts:     gem(ffi-yajl) >= 4.0        |
+      And the project dependencies exclude:
+         | name         |
+         | win32-api    |
+         | win32-event  |
+         | wmi-lite     |
+      And he acquires an "chef" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "chef"
+      And the generated spec preserves the input packaging sections for package "chef"
+      And internal gem requirements equal their provided versions without conflicts
+
+   # rmosolgo/graphql-ruby dca54e3cf68b; the C parser declares graphql >= 2.2.10.
+   @policy2_1 @main_is_gem
+   Scenario: Bind GraphQL C parser requirements to the gem provided by this spec
+      - replace the loose internal minimum with the exact generated GraphQL capability
+      - ignore availability overrides for gems provided by the same spec
+      - omit conflicts on gems supplied by this spec through repeated updates
+      - merge the historical Ruby minimum into the stricter gemspec requirement
+      Given blank space
+      And a spec from fixture "graphql"
+      When developer locks the time to "13.12.2022"
+      And he sets the space options as:
+         | options            | value                       |
+         | rootdir            | features/fixtures/graphql   |
+         | available_gem_list | {graphql: '99.0.0'}         |
+         | maintainer.name    | Pavel Skrylev               |
+         | maintainer.email   | majioa@altlinux.org         |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then package "gem-graphql" contains dependency lines:
+         | Provides:      gem(graphql) = 2.4.8  |
+         | Requires:      ruby >= 2.7.0         |
+      And the generated spec excludes the lines:
+         | Requires:      ruby >= 2.4.0   |
+      And the unconditional build requirements include:
+         | BuildRequires: gem(capybara) >= 3.34.0  |
+      And package "gem-graphql-c-parser" contains dependency lines:
+         | Requires:      gem(graphql) = 2.4.8  |
+      And the generated spec contains no override for "graphql"
+      And internal gem requirements equal their provided versions without conflicts
+      And he acquires an "graphql" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then the generated dependency sections match "gem.spec" from fixture "graphql"
+      And internal gem requirements equal their provided versions without conflicts
+      And package "gem-graphql-c-parser" contains dependency lines:
+         | Requires:      gem(graphql) = 2.4.8  |
+
    # Passenger 3a958d427e6a, ALT gem-passenger spec from altlinux/specs 4d2273b2.
    @policy2_1 @main_is_gem
    Scenario: Preserve Passenger shell-expanded RPM dependency declarations
       - retain the Apache build requirement as one expression without evaluating it
       - keep the expression intact in generated build and devel dependency tags
       - retain the declaration after repeated spec updates
+      - retain the stricter gemspec Ruby minimum even when Gemfile is weaker
       Given blank space
       And a spec from fixture "passenger"
       When developer locks the time to "13.12.2022"
@@ -28,6 +105,7 @@ Feature: Spec actor
       Then the generated spec contains the lines:
          | BuildRequires: %(eval echo %apache2_apr_buildreq)                        |
          | BuildRequires: apache2-devel >= 2.2.5                                    |
+         | Requires:      ruby >= 2.5.9                                             |
          | %ruby_ignore_path_tokens dev,build,agent,cxx_supportlib,schema_printer   |
       And the generated spec excludes the lines:
          | %ruby_ignore_names _path_tokens   |
@@ -545,6 +623,89 @@ Feature: Spec actor
       When he applies "spec" actor to the baltix setup
       Then he acquires an "mustermann" fixture spec for the baltix setup
 
+   # bryanp/llhttp, ALT 60d6f26; preserve its existing gem-llhttp-ffi ignore entry.
+   @scratch
+   Scenario Outline: Preserve ignored names when updating modern and legacy specs
+      - parse the full ignore macro name rather than treating its suffix as an entry
+      - migrate old macro and build option forms to ruby_ignore_names
+      - preserve the list through repeated updates of a nested native project
+      - retain rake >= 13.0 from the FFI gemspec when other Gemfiles allow any version
+      Given blank space
+      And a spec from fixture "llhttp-ffi"
+      When developer locks the time to "09.11.2026"
+      And the input spec uses "<form>" for its ignore list
+      And he sets the space options as:
+         | options            | value                          |
+         | rootdir            | features/fixtures/llhttp-ffi   |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then he acquires an "llhttp-ffi" fixture spec for the baltix setup
+      And the parsed ignored names are:
+         | gem-llhttp-ffi  |
+      And the generated spec contains each line once:
+         | %ruby_ignore_names gem-llhttp-ffi          |
+         | %ruby_use_gem_version llhttp:0.6.1.16      |
+         | %ruby_use_gem_version llhttp-ffi:0.5.1.16  |
+         | BuildRequires: gem(rake) >= 13.0           |
+         | BuildConflicts: gem(rake) >= 14            |
+      When the generated spec is refreshed 2 times
+      Then the parsed ignored names are:
+         | gem-llhttp-ffi  |
+      And the generated spec contains each line once:
+         | %ruby_ignore_names gem-llhttp-ffi          |
+         | %ruby_use_gem_version llhttp:0.6.1.16      |
+         | %ruby_use_gem_version llhttp-ffi:0.5.1.16  |
+         | BuildRequires: gem(rake) >= 13.0           |
+         | BuildConflicts: gem(rake) >= 14            |
+
+      Examples:
+         | form         |
+         | macro        |
+         | legacy macro |
+         | build option |
+
+   # Compass 07ad85d with ALT 584eab7 version patch; recreate document paths in a temporary tree.
+   @scratch @blank_setup @documentation_source
+   Scenario: Keep nested Compass documentation paths relative to the repository root
+      - preserve the repository root while importing the cli, core and import-once gems
+      - qualify nested README and license entries with their source directories
+      - retain the root-level shared license and valid paths through repeated updates
+      - reuse the repository README.markdown when the main CLI gem has no README
+      Given blank space
+      When developer locks the time to "13.12.2022"
+      And he imports fixture "compass" with documentation paths:
+         | README.markdown          |
+         | LICENSE.markdown         |
+         | core/README.md           |
+         | core/LICENSE.txt         |
+         | import-once/README.md    |
+         | import-once/LICENSE.txt  |
+      And he sets the space options as:
+         | options            | value                 |
+         | spec_type          | rpm                   |
+         | maintainer.name    | Pavel Skrylev         |
+         | maintainer.email   | majioa@altlinux.org   |
+      Then the main source is the "compass" gem
+      When he applies "spec" actor to the baltix setup
+      Then every generated documentation path exists in the repository root
+      And the generated spec contains the lines:
+         | %doc LICENSE.markdown README.markdown               |
+         | %doc core/LICENSE.txt core/README.md                |
+         | %doc import-once/LICENSE.txt import-once/README.md  |
+      And he acquires an "compass" fixture spec for the baltix setup
+      When the generated spec is refreshed 2 times
+      Then every generated documentation path exists in the repository root
+      And the generated documentation lines match "gem.spec" from fixture "compass"
+      When the main source receives its own README
+      And the generated spec is refreshed 1 times
+      Then the generated spec contains the lines:
+         | %doc LICENSE.markdown cli/README.md  |
+      And the generated spec excludes the lines:
+         | %doc LICENSE.markdown README.markdown   |
+      And every generated documentation path exists in the repository root
+
    @scratch @blank_setup @main_is_gem
    Scenario: Generate a mixlib-shellout spec without inferred Windows dependencies
       Given blank space
@@ -797,37 +958,43 @@ Feature: Spec actor
          | %ruby_test      |
 
    @scratch @blank_setup @main_is_gem
-   Scenario Outline: Preserve a common source interval for rails-html-sanitizer security exclusions
-      - use the upstream 1.7.2 gemspec and Gemfile
-      - keep the source minimum and narrow the maximum at the first excluded version
-      - use identical bounds in the dependency macro, Requires and Conflicts
-      - work without an available list and widen the maximum only when one is supplied
-      - preserve the selected interval through repeated spec updates
+   Scenario Outline: Raise RPM minimums past rails-html-sanitizer security exclusions
+      - retain the original upstream exclusions in gem metadata
+      - use the greatest excluded version as a strict RPM minimum
+      - keep the macro, Requires and BuildRequires on the same > boundary
+      - do not create a conflict from an excluded version
+      - preserve the boundary with absent, old and newer available versions
       Given blank space
       When developer locks the time to "09.11.2026"
       And he sets the space options as:
-         | options            | value                                      |
-         | rootdir            | features/fixtures/rails-html-sanitizer-1.7 |
-         | available_gem_list | <available>                                |
-         | maintainer.name    | Pavel Skrylev                              |
-         | maintainer.email   | majioa@altlinux.org                        |
+         | options               | value                                      |
+         | rootdir               | features/fixtures/rails-html-sanitizer-1.7 |
+         | available_gem_list    | <available>                                |
+         | gem_dependency_mode   | <mode>                                     |
+         | maintainer.name       | Pavel Skrylev                              |
+         | maintainer.email      | majioa@altlinux.org                        |
       And he applies "spec" actor to the baltix setup
       Then package "gem-rails-html-sanitizer" contains dependency lines:
-         | Requires:      gem(nokogiri) >= 1.15.7     |
-         | Conflicts:     gem(nokogiri) >= <maximum>  |
+         | Requires:      gem(nokogiri) > 1.16.7   |
       And the generated spec contains each line once:
-         | %ruby_use_gem_dependency nokogiri >= 1.15.7,nokogiri < <maximum>   |
-         | BuildRequires: gem(nokogiri) >= 1.15.7                             |
-         | BuildConflicts: gem(nokogiri) >= <maximum>                         |
-      And the generated spec matches "<expected>" from fixture "rails-html-sanitizer-1.7"
+         | %ruby_use_gem_dependency nokogiri > 1.16.7 |
+         | BuildRequires: gem(nokogiri) > 1.16.7      |
+      And the generated spec has no gem conflicts for "nokogiri"
+      And the source "rails-html-sanitizer" dependency "nokogiri" has version compatibility:
+         | version   | allowed   |
+         | 1.15.7    | yes       |
+         | 1.16.7    | no        |
+         | 1.16.8    | yes       |
+      And the generated spec matches "gem.spec" from fixture "rails-html-sanitizer-1.7"
       When the generated spec is refreshed 2 times
-      Then the generated dependency sections match "<expected>" from fixture "rails-html-sanitizer-1.7"
+      Then the generated dependency sections match "gem.spec" from fixture "rails-html-sanitizer-1.7"
+      And the generated spec has no gem conflicts for "nokogiri"
 
       Examples:
-         | available             | maximum   | expected        |
-         | {}                    | 1.16.0    | gem.spec        |
-         | {nokogiri: '1.14.0'}  | 1.16.0    | gem.spec        |
-         | {nokogiri: '1.16.8'}  | 2         | available.spec  |
+         | available             | mode      |
+         | {}                    | regular   |
+         | {nokogiri: '1.14.0'}  | redep     |
+         | {nokogiri: '1.16.8'}  | regular   |
 
    @policy2_0 @gem_change @main_is_gem
    Scenario: Migrate rbvmomi from obsolete Ruby Policy 2.0 to 2.1 using available gem versions

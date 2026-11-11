@@ -75,11 +75,11 @@ class Baltix::Spec::Rpm
          default: [],
       },
       conflicts: {
-         seq: %w(of_options of_state of_default >_conflicts_plain_only |_conflicts_ruby |_kind_deps >_render_top_dep),
+         seq: %w(of_options of_state of_default >_conflicts_plain_only >_conflicts_ruby |_kind_deps >_render_top_dep),
          default: [],
       },
       provides: {
-         seq: %w(of_options of_state of_default >_provides |_find_provides |_lib_provide -_post_provides >_render_bottom_dep),
+         seq: %w(of_options of_state of_default >_provides |_find_provides |_lib_provide -_post_provides >_render_provided_deps),
          default: [],
       },
       obsoletes: {
@@ -802,27 +802,17 @@ class Baltix::Spec::Rpm
    # The lower bound is the greatest source minimum, independent of availability.
    # The source upper bound is the least source maximum; availability may raise
    # it, but cannot narrow it. If sources have no maximum, it stays unbounded.
-   # Excluded versions narrow the source maximum so RPM conflicts use >=.
-   # Without an available list, the resulting source interval is still returned.
-   # An exclusion at the minimum makes that minimum exclusive; exclusions below
-   # the minimum do not constrain the selected interval.
+   # Exclusions contribute strict lower boundaries through the shared RPM bound
+   # converter, after the common requirement merger preserves all source constraints.
+   # Exclusions do not add maximums. Without an available list, the source interval
+   # is still returned.
    # If a source uses >, its exclusive minimum is preserved; = and ~> supply
    # inclusive minimums. If no available version reaches the source minimum,
    # no override is produced. Historical spec macros do not participate.
    def _available_dependency_override available, dependencies
-      minimums = dependencies.flat_map do |dependency|
-         dependency.requirement.requirements.filter_map do |operator, version|
-            case operator
-            when '>=', '>' then [operator, version]
-            when '=', '~>' then ['>=', version]
-            end
-         end
-      end
-      minimum = minimums.max_by { |operator, version| [version, operator == '>' ? 1 : 0] } || ['>=', Gem::Version.new(0)]
-      excluded_minimum = dependencies.any? do |dependency|
-         dependency.requirement.requirements.any? { |operator, version| operator == '!=' && version.release == minimum[1] }
-      end
-      minimum = ['>', minimum[1]] if excluded_minimum
+      requirements_in = dependencies.map(&:requirement).reduce { |left, right| left.merge(right) }
+      minimum = Baltix::Deps.lower_to_rpm(requirements_in)
+      minimum = ['>=', minimum.last] if minimum.first == '='
       if available
       versions = Array(available_gem_list[available.name]).map { |version| Gem::Version.new(version.to_s) }
       return nil unless versions.any? { |version| minimum[0] == '>' ? version > minimum[1] : version >= minimum[1] }
@@ -834,7 +824,6 @@ class Baltix::Spec::Rpm
             when '<', '<=' then [operator, version]
             when '=' then ['<=', version]
             when '~>' then ['<', version.bump]
-            when '!=' then ['<', version.release] if version.release > minimum[1]
             end
          end
       end
@@ -1067,7 +1056,8 @@ class Baltix::Spec::Rpm
    # Other gems retain their explicit bounds as RPM declarations unless the
    # selected override mode replaces them with a source minimum. Ruby-prefixed
    # package strings are removed except for separate -headers-devel packages;
-   # unrelated package strings are retained.
+   # unrelated package strings are retained. An external exact gem requirement
+   # becomes an inclusive minimum, != becomes >, and other explicit bounds remain.
    def _filter_out_build_auto_requires value_in
       known_names = space.dependencies.map(&:name) | space.valid_sources.flat_map do |source|
          [source.name] | source.dsl.dsl.dependencies.map(&:name)
@@ -1079,7 +1069,9 @@ class Baltix::Spec::Rpm
                []
             else
                effective = replace_versioning([value]).first
-               effective.requirement.requirements.map { |relation, version| "#{prefix}(#{value.name}) #{relation} #{version}" }
+               effective.requirement.requirements.map do |relation, version|
+                  "#{prefix}(#{value.name}) #{relation == '=' ? '>=' : relation == '!=' ? '>' : relation} #{version}"
+               end
             end
          elsif value.is_a?(String) && /^(#{Baltix::Spec::Rpm::Name::PREFICES.join('|')})[\-(]/ =~ value &&
             !value.match?(/\A\S+-headers-devel(?:\s|\z)/)

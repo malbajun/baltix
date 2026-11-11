@@ -35,7 +35,6 @@ lost runtime deps
 
 
 gem-lemon update stable ver to unstable
-gem-compass - multi gem deps in build requiers (sass), embedded gem = instead of >=, markdown extension for readme, false absent README.md generated in spec
 license-scout - README lost
 
 gettext-setup - invalid ruby_alias_names when genspec
@@ -97,7 +96,6 @@ oauth-tty - deferred: fix deps for devel/bin/runtime
 opennebula - deferred: complex project; analyze after smaller projects
 foreman - deferred: complex project; analyze after smaller projects
 
-source status - obsolete - (chef) and duplicate (progressbar)
 
 azure-for.ruby - compare old spec and newly generated, to ensure no avoid manual fixes
 

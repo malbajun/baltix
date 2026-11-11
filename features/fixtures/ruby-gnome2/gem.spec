@@ -68,7 +68,7 @@ BuildRequires: gem(pkg-config) >= 1.3.5
 BuildRequires: gem(cairo) >= 0
 BuildRequires: gem(rake) >= 0
 BuildRequires: gem(test-unit) >= 2
-BuildRequires: gem(vte) = 3.5.1
+BuildRequires: gem(vte) >= 3.5.1
 BuildRequires: gem(webrick) >= 0
 %endif
 
@@ -95,7 +95,7 @@ Release:       alt1
 Summary:       Ruby/VTE3 is a Ruby binding of VTE for use with GTK3
 Group:         Development/Ruby
 
-Requires:      gem(vte) = 3.5.1
+Requires:      gem(vte) >= 3.5.1
 Provides:      gem(vte3) = 3.5.1
 
 %description   -n gem-vte3
@@ -225,7 +225,7 @@ Requires:      gem(native-package-installer) >= 1.0.3
 Requires:      gem(pkg-config) >= 1.3.5
 Requires:      gem(rake) >= 0
 Requires:      gem(test-unit) >= 2
-Requires:      gem(vte) = 3.5.1
+Requires:      gem(vte) >= 3.5.1
 Requires:      gem(webrick) >= 0
 
 %description   -n ruby-gnome2-devel

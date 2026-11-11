@@ -1809,12 +1809,12 @@ Feature: Spec actor
 
          Source:        %name-%version.tar
          BuildRequires(pre): rpm-macros-ruby setup-rb rake
-         BuildRequires: gem(b_oofoo) = 5.2.4.4
+         BuildRequires: gem(b_oofoo) >= 5.2.4.4
 
          %add_findreq_skiplist %ruby_gemslibdir/**/*
          %add_findprov_skiplist %ruby_gemslibdir/**/*
          Requires:      ruby >= 2.2.2
-         Requires:      gem(b_oofoo) = 5.2.4.4
+         Requires:      gem(b_oofoo) >= 5.2.4.4
          Provides:      gem(foo_boo) = 5.2
 
          %description
@@ -2232,13 +2232,13 @@ Feature: Spec actor
 
          Source:        %name-%version.tar
          BuildRequires(pre): rpm-macros-ruby setup-rb rake
-         BuildRequires: gem(b_oofoo) = 5.2.4.4
+         BuildRequires: gem(b_oofoo) >= 5.2.4.4
          BuildRequires: gem(b_oofoo_dev) >= 5.2.4
 
          %add_findreq_skiplist %ruby_gemslibdir/**/*
          %add_findprov_skiplist %ruby_gemslibdir/**/*
          Requires:      ruby >= 2.2.2
-         Requires:      gem(b_oofoo) = 5.2.4.4
+         Requires:      gem(b_oofoo) >= 5.2.4.4
          Provides:      gem(foo_boo) = 5.2
 
          %description
@@ -2412,6 +2412,7 @@ Feature: Spec actor
          - + packaged gem with Ruby Policy 2.1
          - * define explicit dependencies
          """
+      And internal gem requirements equal their provided versions without conflicts
 
    Scenario: Space gem pure source render validation with predefined spec to
          a few gems with renaming

@@ -27,13 +27,13 @@ Then('the generated dependency requirement for {string} is {string}') do |name, 
    generated.eval_gemfile(@dependency_gemfile, @dependency_dsl.to_gemfile)
    dependency = generated.dependencies.find { |dep| dep.name == name }
    expect(dependency).to_not be_nil
-   expect(dependency.requirement.to_s).to eql(Gem::Requirement.new(requirement.split(/,\s*/)).to_s)
+   expect(dependency.requirement).to eq(Gem::Requirement.new(requirement.split(/,\s*/)))
 end
 
 Then('the definition dependency requirement for {string} is {string}') do |name, requirement|
    dependency = @dependency_dsl.definition.dependencies.find { |dep| dep.name == name }
    expect(dependency).to_not be_nil
-   expect(dependency.requirement.to_s).to eql(Gem::Requirement.new(requirement.split(/,\s*/)).to_s)
+   expect(dependency.requirement).to eq(Gem::Requirement.new(requirement.split(/,\s*/)))
 end
 
 Then('the project dependencies exclude:') do |table|
@@ -74,7 +74,7 @@ end
 Then('the development dependencies include {string} with requirement {string}') do |name, requirement|
    dependency = @dependency_dsl.all_dependencies_for(kinds_in: :devel).find { |dep| dep.name == name }
    expect(dependency).to_not be_nil
-   expect(dependency.requirement.to_s).to eql(Gem::Requirement.new(requirement.split(/,\s*/)).to_s)
+   expect(dependency.requirement).to eq(Gem::Requirement.new(requirement.split(/,\s*/)))
 end
 
 Then('the generated Gemfile declares {string} in group {string} with requirement {string}') do |name, group, requirement|
@@ -111,4 +111,77 @@ Then('source {string} declares native extensions:') do |name, table|
    source = space.valid_sources.find { |item| item.is_a?(Baltix::Source::Gem) && item.name == name }
    expect(source).to_not be_nil
    expect(source.spec.extensions.sort).to eql(table.raw.flatten.sort)
+end
+
+Then('requirement intersections preserve these version checks:') do |table|
+   table.hashes.each do |row|
+      left = Gem::Requirement.new(row['left'].split(',').map(&:strip))
+      right = Gem::Requirement.new(row['right'].split(',').map(&:strip))
+      originals = [left.requirements.dup, right.requirements.dup]
+      merged = [left.merge(right), right.merge(left)]
+      %w(allowed rejected).each do |kind|
+         row[kind].split(',').reject(&:empty?).each do |version|
+            merged.each do |requirement|
+               expect(requirement.satisfied_by?(Gem::Version.new(version))).to eql(kind == 'allowed'), "#{row['left']} & #{row['right']} at #{version}"
+            end
+         end
+      end
+      unless row['lower'].empty?
+         merged.each do |requirement|
+            boundary = Baltix::Deps.lower_to_rpm(requirement).map(&:to_s).join(' ')
+            expect(boundary).to eql(row['lower'])
+         end
+      end
+      expect([left.requirements, right.requirements]).to eql(originals)
+   end
+end
+
+Then('Ruby interpreter constraints produce these RPM bounds:') do |table|
+   table.hashes.each do |row|
+      Dir.mktmpdir('baltix-ruby-bounds') do |root|
+         File.write(File.join(root, 'Gemfile'), "source 'https://rubygems.org'\ngemspec\nruby #{row['gemfile'].split(',').map(&:strip).map(&:inspect).join(', ')}\n")
+         File.write(File.join(root, 'example.gemspec'), <<~GEMSPEC)
+            Gem::Specification.new do |s|
+               s.name = 'example'
+               s.version = '1.0'
+               s.summary = 'Ruby bounds regression'
+               s.authors = ['Baltix']
+               s.required_ruby_version = #{row['gemspec'].split(',').map(&:strip).inspect}
+            end
+         GEMSPEC
+         input = "Name: gem-example\nVersion: 1.0\nRelease: alt1\nSummary: Ruby bounds regression\nLicense: MIT\nGroup: Development/Ruby\n"
+         row['original_requires'].split(';').each { |bound| input << "Requires: ruby #{bound.strip}\n" }
+         row['original_conflicts'].split(';').each { |bound| input << "Conflicts: ruby #{bound.strip}\n" }
+         input << "Requires: ruby-libs >= 2.0\nConflicts: ruby1.8-example\n%description\nRuby bounds regression.\n"
+         options = {rootdir: root, spec_type: 'rpm'}
+         3.times do
+            project = Baltix::Space.new(options: options)
+            project.spec = Baltix::Spec.load_from(source: input, options: options, space: project)
+            input = Baltix::Actor.for('spec', project).apply_to(project)
+            header = input.split(/^%description/, 2).first
+            expected = ['Requires: ruby-libs >= 2.0', 'Conflicts: ruby1.8-example']
+            expected << "Requires: ruby #{row['requires']}" unless row['requires'].empty?
+            expected << "Conflicts: ruby #{row['conflicts']}" unless row['conflicts'].empty?
+            if row['original_requires'].include?('%')
+               expected << "Requires: ruby #{row['original_requires']}"
+            end
+            actual = header.lines.grep(/^(?:Requires|Conflicts):\s+ruby(?:\s|[-0-9])/).map { |line| line.strip.gsub(/:\s+/, ': ') }
+            expect(actual.sort).to eql(expected.sort), row.inspect
+         end
+      end
+   end
+end
+
+Then('a JRuby Gemfile and gemspec retain their interpreter requirements') do
+   spec = Gem::Specification.new { |s| s.required_ruby_version = '>= 2.7', '< 3.4' }
+   bundler = Bundler::Dsl.new
+   bundler.ruby('>= 2.5', '< 3.5', engine: 'jruby', engine_version: ['>= 9.3', '< 10'])
+   dsl = Baltix::DSL.new(nil, spec: spec)
+   dsl.instance_variable_set(:@dsl, bundler)
+   requirements = dsl.required_rubies
+   expect(requirements.keys.sort).to eql(%w(jruby ruby))
+   expect(Baltix::Deps.lower_to_rpm(requirements['ruby']).map(&:to_s)).to eql(['>=', '2.7'])
+   expect(Baltix::Deps.upper_negate_to_rpm(requirements['ruby']).map(&:to_s)).to eql(['>=', '3.4'])
+   expect(Baltix::Deps.lower_to_rpm(requirements['jruby']).map(&:to_s)).to eql(['>=', '9.3'])
+   expect(Baltix::Deps.upper_negate_to_rpm(requirements['jruby']).map(&:to_s)).to eql(['>=', '10'])
 end
