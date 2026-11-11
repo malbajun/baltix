@@ -479,8 +479,12 @@ module Baltix::Spec::Rpm::SpecCore
    # @return [Array<String, Hash>] opaque requirements and combined interpreter bounds
    # Numeric Ruby constraints are merged; unrelated packages and RPM macros remain
    # unchanged. Rendering selects the strictest lower boundary for each interpreter.
+   # Merged bounds occupy the first numeric interpreter entry's position. If none
+   # exists, they are appended so source-only generation and updates keep the same order.
    def _requires_ruby value_in
-      Array(value_in).reject { |dependency| ruby_dependency(dependency) } | [ruby_requirements]
+      dependencies = Array(value_in)
+      position = dependencies.index { |dependency| ruby_dependency(dependency) } || dependencies.length
+      dependencies.reject { |dependency| ruby_dependency(dependency) }.insert(position, ruby_requirements).uniq
    end
 
    # Replaces parsed numeric interpreter conflicts with the merged requirements.

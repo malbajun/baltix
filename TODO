@@ -6,17 +6,12 @@ lost runtime deps
 - add return to common space on load (for ruby-rails)
 - add doc compilation only over included lib files
 - validate provides/requires detection speed on gem-google-api-client , azure-sdk
-- validate spec for gem rdoc (rdoc/ri) - muliple executables
 
 + generate spec for:
- - gem:multi_test,parser 2x -> 3x
+ - gem:multi_test
  - app:cucumber_common - blank root (Fake Source) / Url, Vsc, summary, description, filters for blank packages, dedup packages by name
- - smart-proxy - validate sources, dependencies, spec generation and updates
- - dynflow - validate sources, dependencies, spec generation and updates
-
 
  - rubyzip  old -> new
- - check rubocop *.h adding in devel pkg, bo they are absent
  - coveralls with %ruby_use_gem_dependency, 0.8.23-alt2 -> 0.8.23.1-alt0.1 (увеличение версии с помоїью командной строки или анализа git),and Epoch =1
  - google-cloud-ruby - deduplication of build req list for gems: simplecov
  - protobuf - noarch with so packages
@@ -26,33 +21,19 @@ lost runtime deps
  - gapic-generator-ruby
   - filterout README.erb, alow pure, or .md/rdoc/.../
   - add README with offset paths to the root source
- - chef 15->17
+chef - Gemfile-only kitchen-tests subpackage changes version and summary on first refresh
+
 + generate relative symlinks instead of absolute for execs
 + filter out desc and summary char to other like "’" -> "'"
-+ filter out names with path "test/spec/feature/fixture/sandbox": example "turn" gem
 + ignore by part: example: update-rubygems[doc,lib] to ignore when detecting and processing
 
-
-
 gem-lemon update stable ver to unstable
-license-scout - README lost
 
-gettext-setup - invalid ruby_alias_names when genspec
-async-rspec - blank description
-gem-treetop - break epoch
 gem-nokogiri - crop changelog, fix gem deps on the file  (example for mini_portile2, see patch)
-ruby-rc4 - ruby isnt prefix, leads to ruby-ruby-rc4
 ffi - 1. git describe --tags command to fix in gemspec; 2. update to 1.15.5 add the wrnog tag
-passenger - minon require list check, because when rebuild spec it losts some things
 io-event - erroneous update form event
-idn-ruby - can't detect extension
-net-http-persistent - invalid update to 4.0.1
 hoe-bunder - crop long patch number for v.5.0
-oj - expand and crop summary when update to 3.13.11
-hoe-travis - lost description on update
-ruby-shadow - lost license on update unlicense replace with specified default + license replace list args
-
-
+add default-license and license-replacement-list options
 
 ?raindrops
 ?capybara ^ -> 3.37.1
@@ -63,54 +44,28 @@ vcs_url for snaky_hash gem
 [setup.rb][INFO]> X *RubyGems:3.3.7 [./Rakefile]
 [setup.rb][INFO]> X *Ruby:3.1.1.18 [./Rakefile]
 
-
-структура дерева mustermann и обьединение жемов из подпроектов, если они одноимённые:), а также определение группы в Gemfile
-
-
 uwsgi, aws-s3 проверить гегерацию нового спека
-
 
 rubocop-shopify должен генерить без doc пакета
 
 gem-turbolinks-source from oold name ruby-turbolinks-source-gem
 
-
 syntax-tree - multiple versions of the same gem
    
 loofah - gems in Gemfile under condition/unknown group
 
-
-rails - requires for gem-rails
-
-
-gitlab-sidekiq-fetcher - erroneouse require list for gem
-packethost - erroneous alias
-
-
 detect release in git - gem-rubocop-github
 detect release by rubygems - gem-minitest-spec-context
-
-
 
 oauth-tty - deferred: fix deps for devel/bin/runtime
 opennebula - deferred: complex project; analyze after smaller projects
 foreman - deferred: complex project; analyze after smaller projects
 
-
 azure-for.ruby - compare old spec and newly generated, to ensure no avoid manual fixes
-
-
-update,structure,version - llhttp-ffi
 
 detect tag - rubocop-lts 24.0.2
 
-windows/mingw paltform filter - mixlib-shellout
-
-duplicated gem-gem- in names for gem-chef-licensing gem
-
 man file - rake
-
-
 
 analyze.
 fake-version-increase (like turn gem to 1.0.0): cond: no-bump(in git), no-tag, no-pushlish-rubygems
@@ -122,20 +77,17 @@ flow: context: repo, values:
 - srpm: spec in root, code in <name>
 - plain: spec in root, code in tag
 
-
 tag:
 - generate:
  - on release:
  - after bump: like gem-gettext
 - prefix: ()\v\(etc)
 
-
 HROUPS:
 check: only test+runtime group deps 
 devel: all the group deps including test,devel,runtime + dep to -headers
 doc: only docs
 headers: headers only package
-
 
 GEMFILE group definitions
 group - kinds(tags)
@@ -146,8 +98,6 @@ dev/ - +dev
 
 EXTFILE
 (call to gem from within) - +build
-
-
 
 ---
 devel.

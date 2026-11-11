@@ -9,6 +9,25 @@ Feature: Spec actor
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
 
+   # ruby-rc4 upstream 0.1.5: requires Ruby >= 1.9.3 and RubyGems >= 1.8.11.
+   @scratch @main_is_gem
+   Scenario: Keep generated Ruby and RubyGems requirements stable on the first update
+      - retain the position of merged interpreter requirements among other RPM requirements
+      - keep the complete generated spec, every release and changelog unchanged
+      - also cover the first-update revision churn found in Rails, RDoc and multi_test
+      Given blank space
+      When developer locks the time to "11.11.2026"
+      And he sets the space options as:
+         | options            | value                       |
+         | rootdir            | features/fixtures/ruby-rc4  |
+         | maintainer.name    | Pavel Skrylev               |
+         | maintainer.email   | majioa@altlinux.org         |
+      And he applies "spec" actor to the baltix setup
+      Then he acquires an "ruby-rc4" fixture spec for the baltix setup
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
    # chef/chef v19.4.12; ALT gem-chef 19.4.12-alt1.1, altlinux/specs 4d2273b2.
    @policy2_1 @main_is_gem
    Scenario: Update Chef together with its component gems and service package
