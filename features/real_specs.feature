@@ -509,6 +509,33 @@ Feature: Spec actor
          | redis-client | features/fixtures/redis-client | rubocop      | 0         |              | false              |
          | megatest     | features/fixtures/megatest     | rubocop      | 1.21      | noarch       | false              |
 
+   # flavorjones/hoe-bundler 5bc5b14; ALT gem-hoe-bundler 1.5.0.4-alt1.1.
+   @policy2_1 @main_is_gem @packaged_version_floor
+   Scenario: Preserve a packaged version above the current Hoe source version
+      - keep 1.5.0.4 when the source reports the older 1.5.0 release
+      - generate a version override so gem metadata agrees with RPM Provides
+      - retain the same versions and complete spec through repeated updates
+      Given blank space
+      And a spec from fixture "hoe-bundler"
+      When developer locks the time to "11.11.2026"
+      And he sets the space options as:
+         | options            | value                          |
+         | rootdir            | features/fixtures/hoe-bundler  |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains each line once:
+         | %ruby_use_gem_version hoe-bundler:1.5.0.4  |
+         | Provides:      gem(hoe-bundler) = 1.5.0.4  |
+      And package "gem-hoe-bundler" contains dependency lines:
+         | Version:       1.5.0.4   |
+         | Release:       alt1.2    |
+      And he acquires an "hoe-bundler" fixture spec for the baltix setup
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
    # redis/hiredis-rb: eb27295facd5473a54585e06a043bebf5c80bb5b.
    @scratch @blank_setup @main_is_gem
    Scenario: Keep hiredis development overrides aligned with build requirements and conflicts

@@ -883,13 +883,43 @@ class Baltix::Spec::Rpm
 
    # Resolves explicitly packaged versions from the input spec and configuration.
    # @param value_in [OpenStruct, nil] configured or parsed gem version strings
-   # @return [OpenStruct] gem names mapped to exact Gem::Dependency versions
+   # @return [Array<Gem::Dependency>] selected exact versions for packaged gems
    # Configured entries replace matching parsed entries; other input macros survive.
+   # If a current gem source is older than its input package, add an exact override
+   # for the packaged version. An existing explicit override remains authoritative;
+   # absent source names and newer upstream versions do not gain an override.
    def _use_gem_version_list value_in
       versions = (of_state(:use_gem_version_list) || {}.to_os).merge(value_in || {}.to_os)
+      valid_sources.grep(Baltix::Source::Gem).group_by(&:name).each do |name, candidates|
+         next if versions[name]
+
+         previous = input_gem_version(name)
+         current = candidates.map { |candidate| Gem::Version.new(candidate.version.to_s) }.max
+         versions[name] = previous.to_s if previous && previous > current
+      end
       versions.map do |name, v|
          Gem::Dependency.new(name.to_s, Gem::Requirement.new(v))
       end
+   end
+
+   # Finds the highest version already packaged for a current gem.
+   # @param gem_name [String] literal current gem name, including its own prefix
+   # @return [Gem::Version, nil] highest matching input version, or nil when absent
+   # Exact typed Provides contribute their own versions, independently of the RPM
+   # header. A matching header also contributes unless its typed capabilities name
+   # a different gem. Nonmatching and auxiliary package headers do not contribute.
+   def input_gem_version gem_name
+      ([state] + Array(state.secondaries)).flat_map do |package|
+         capabilities = Array(package.provides).grep(Gem::Dependency)
+         matching = capabilities.select { |capability| capability.name == gem_name }
+         versions = matching.flat_map do |capability|
+            capability.requirement.requirements.filter_map { |operator, version| version if operator == '=' }
+         end
+         if package.version && package.name && package.name === Name.for_gem(gem_name) && (capabilities.empty? || matching.any?)
+            versions << Gem::Version.new(package.version.to_s)
+         end
+         versions
+      end.max
    end
 
    def _secondaries value_in
