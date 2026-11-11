@@ -11,6 +11,92 @@ Feature: RPM Spec
       And developer sets the space option "rootdir" to "features/fixtures/blank"
       Then stringified property "name" of space is "rpm"
 
+   @package_headers
+   Scenario: Keep package versions separate from global header macros
+      - retain independently versioned package metadata from a generated Chef spec
+      - update lowercase version, epoch and release macros when a header overrides them
+      - keep uppercase macros bound to the main package metadata
+      - inherit main fields only when a subpackage does not override them
+      Given blank space with empty sources
+      And RPM spec file:
+         """
+         Name: gem-chef
+         Version: 19.4.12
+         Epoch: 1
+         Release: alt1
+         Summary: Chef
+         %package -n kitchen-tests
+         Version: 20261111
+         Epoch: 2
+         Release: alt3
+         Summary: Kitchen tests
+         %package -n chef-tools
+         Version: %version
+         Epoch: %epoch
+         Release: %release
+         Summary: Tools
+         %package -n chef-main-fields
+         Version: %{VERSION}
+         Epoch: %{EPOCH}
+         Release: %{RELEASE}
+         %package -n chef-inherited
+         """
+      When developer loads the spec into the space
+      And developer sets the space option "rootdir" to "features/fixtures/blank"
+      Then stringified property "version" of space is "19.4.12"
+      And property "epoch" of space is "1"
+      And property "release" of space is "alt1"
+      And secondary spec with full name "kitchen-tests" has fields:
+         | version   | 20261111  |
+         | epoch     | 2         |
+         | release   | alt3      |
+      And secondary spec with full name "chef-tools" has fields:
+         | version   | 20261111  |
+         | epoch     | 2         |
+         | release   | alt3      |
+      And secondary spec with full name "chef-main-fields" has fields:
+         | version   | 19.4.12   |
+         | epoch     | 1         |
+         | release   | alt1      |
+      And secondary spec with full name "chef-inherited" has fields:
+         | version   | 19.4.12   |
+         | epoch     | 1         |
+         | release   | alt1      |
+
+   # ALT r/ruby/ruby.spec: ruby 3.3.12-alt5.2, rpm-macros-ruby has its own Epoch.
+   @package_headers
+   Scenario: Keep the Ruby macro package epoch out of the interpreter metadata
+      - expand the Ruby version macros from the original header
+      - retain rpm-macros-ruby Epoch 1 while the main Ruby package has no epoch
+      - keep a global epoch macro available after the subpackage header
+      Given blank space with empty sources
+      And RPM spec file:
+         """
+         %define ruby_api_version 3.3
+         %define ruby_version %{ruby_api_version}.12
+         Name: ruby
+         Version: %ruby_version
+         Release: alt5.2
+         Summary: An Interpreted Object-Oriented Scripting Language
+         %package -n rpm-macros-ruby
+         Epoch: 1
+         Summary: rpm macros for Ruby packages
+         %package -n ruby-epoch-consumer
+         Epoch: %epoch
+         """
+      When developer loads the spec into the space
+      And developer sets the space option "rootdir" to "features/fixtures/blank"
+      Then stringified property "version" of space is "3.3.12"
+      And stringified property "epoch" of space's spec is ""
+      And secondary spec with full name "rpm-macros-ruby" has fields:
+         | version   | 3.3.12 |
+         | epoch     | 1      |
+         | release   | alt5.2 |
+      And secondary spec with full name "ruby-epoch-consumer" has fields:
+         | version   | 3.3.12 |
+         | epoch     | 1      |
+         | release   | alt5.2 |
+
    Scenario: Parse RPM Spec for Version
       Given blank space with empty sources
       And RPM spec file:
