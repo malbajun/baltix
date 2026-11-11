@@ -316,8 +316,8 @@ class Baltix::Spec::Rpm::Parser
       state
    end
 
-   # Removes enclosing generated package conditionals from a captured file section.
-   # @param lines [Array<String>] lines following a files header
+   # Removes enclosing generated package conditionals from a captured section.
+   # @param lines [Array<String>] lines following a files or description header
    # @return [Array<String>] file entries with internal conditionals retained
    # Closing conditionals opened outside the section are omitted. Trailing
    # doc/devel guards belong to the next package and are omitted as well.
@@ -564,9 +564,19 @@ class Baltix::Spec::Rpm::Parser
       [{ "name" => name, "version" => opts.version, "epoch" => opts.epoch, "release" => opts.release, "summaries" => opts.summaries.dup }.to_os ]
    end
 
+   # Reads localized description text without enclosing package guard directives.
+   # @param match [Array<String>] description-header captures and package selector
+   # @param flow [String] complete description block
+   # @param opts [OpenStruct] parsed state used to resolve the selected package
+   # @param context [OpenStruct] current package/locale selector, replaced in place
+   # @return [OpenStruct] cleaned description body indexed by locale
+   # Closing conditionals opened outside the body are omitted using the same
+   # cleanup as file sections. The selected locale defaults to the primary one.
+   # No conditional expression is executed or evaluated.
    def parse_description match, flow, opts, context
       context.replace(parse_context_line(match[1], opts))
-      { context.cp || Baltix::I18n.default_locale => splitten_flow(flow) }.to_os
+      body = clean_file_section(flow.lines.drop(1).map(&:chomp)).join("\n")
+      { context.cp || Baltix::I18n.default_locale => body }.to_os
    end
 
    def parse_license match, *_

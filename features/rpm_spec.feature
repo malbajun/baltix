@@ -398,12 +398,16 @@ Feature: RPM Spec
          - текст2
          """
 
-   Scenario: Parse RPM Spec for an additional package with a code page
+   @description_guards
+   Scenario: Keep enclosing package conditionals out of localized descriptions
+      - retain the description in each locale inside an optional doc package
+      - exclude the surrounding closing directive from description text
       Given RPM spec file:
          """
          Name:                rpm
          Summary:             RPM Summary
 
+         %if_enabled doc
          %package             doc
          Summary:             Doc Summary
          Summary(ru_RU.UTF-8): Итого Доки
@@ -415,6 +419,7 @@ Feature: RPM Spec
 
          %description         doc -l ru_RU.UTF-8
          Описание Доков
+         %endif
          """
       When developer loads the spec
       And developer sets the space option "rootdir" to "features/fixtures/blank"
