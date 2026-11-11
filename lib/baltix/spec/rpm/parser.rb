@@ -6,6 +6,10 @@ class Baltix::Spec::Rpm::Parser
       filetriggerpostun transfiletriggerin transfiletriggerun transfiletriggerpostun).freeze
    SECTION_HEADER = /^%(#{(SCRIPT_SECTIONS + %w(package description files changelog)).join('|')})(?:\s|$)/
 
+   # File-list directives remain manifest text, even when their arguments contain spaces.
+   FILE_DIRECTIVES = %w(attr defattr verify defverify config doc docdir dir ghost
+      license exclude lang caps artifact pubkey).freeze
+
    DEPENDENCY_TOKEN_GROUPS = { '(' => ')', '{' => '}' }.freeze
 
    # The first matching rule handles a character without evaluating its contents.
@@ -203,7 +207,7 @@ class Baltix::Spec::Rpm::Parser
       },
       context: {
          non_contexted: true,
-         regexp: /^%(?:(?:global|define)|((?!description|package|files)[^\s]+))\s+(?:([^\s]+)\s+([^\s].*)|(.*))/i,
+         regexp: /^%(?:(?:global|define)|((?!description|package|files|(?:#{FILE_DIRECTIVES.join('|')})\b)[^\s]+))\s+(?:([^\s]+)\s+([^\s].*)|(.*))/i,
          parse_func: :parse_context
       },
       comment: {
