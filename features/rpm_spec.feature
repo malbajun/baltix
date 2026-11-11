@@ -480,24 +480,43 @@ Feature: RPM Spec
          check
          """
 
-   Scenario: Parse RPM Spec for files sections
+   @file_directives
+   Scenario: Parse RPM file directives as manifest entries
+      - keep file attributes, configuration flags and documentation in their section
+      - avoid treating file directives as new macro definitions
       Given RPM spec file:
          """
          Name:                rpm
          %package             doc
          %files
+         %defattr(-,root,root)
+         %attr(0644, root, root) %_mandir/rpm.1*
+         %config(noreplace) %_sysconfdir/rpm.conf
+         %dir %_sysconfdir/rpm
+         %ghost %_localstatedir/rpm.state
+         %exclude %_bindir/rpm-private
          file1
          %files               doc
+         %doc README.md
+         %license LICENSE
          file2
          """
       When developer loads the spec
       And developer sets the space option "rootdir" to "features/fixtures/blank"
       Then property "file_list" of space has text:
          """
+         %defattr(-,root,root)
+         %attr(0644, root, root) %_mandir/rpm.1*
+         %config(noreplace) %_sysconfdir/rpm.conf
+         %dir %_sysconfdir/rpm
+         %ghost %_localstatedir/rpm.state
+         %exclude %_bindir/rpm-private
          file1
          """
       And the subfield "file_list" of secondary spec with full name "rpm-doc" has data:
          """
+         %doc README.md
+         %license LICENSE
          file2
          """
 
