@@ -242,8 +242,16 @@ module Baltix::Spec::Rpm::SpecCore
       of_source(:docs) || of_default(:docs)
    end
 
+   # Formats package summaries without reapplying labels to stored auxiliary text.
+   # @param value_in [OpenStruct] selected summaries indexed by locale
+   # @return [OpenStruct] localized summaries without surrounding label whitespace
+   # Parsed fake-source summaries are retained. If an auxiliary package has no
+   # host summary, its parsed summary is already complete and is retained as well.
+   # Otherwise gem and Gemfile sources use the translated package-kind labels;
+   # other source kinds retain the selected plain summaries.
    def _summaries value_in
       return value_in if source.is_a?(Baltix::Source::Fake) && of_state(:summaries).present?
+      return value_in if is_aux? && @host && @host.summaries.blank? && of_state(:summaries).present?
 
       source_name = source&.name
       summaries_in = @host && host.summaries || of_source(:summaries) || {}.to_os
@@ -256,7 +264,7 @@ module Baltix::Spec::Rpm::SpecCore
 
       #binding.pry
          if source.is_a?(Baltix::Source::Gem) or source.is_a?(Baltix::Source::Gemfile)
-            [ locale_in, default ]
+            [ locale_in, default&.strip ]
          else
             [ locale_in, summary ]
          end
