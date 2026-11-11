@@ -9,6 +9,32 @@ Feature: Spec actor
    source minimums are preserved, packaged gems receive no self-overrides,
    and RPM dependency tags remain consistent across repeated spec updates.
 
+   # cucumber/multi_test 2.0.0; ALT 1.1.0 requires RubyGems >= 1.6.1.
+   @policy2_1 @main_is_gem
+   Scenario: Merge RubyGems requirements from current metadata and the previous spec
+      - retain one strictest RubyGems minimum when upgrading multi_test
+      - merge native package requirements through the same module as Ruby requirements
+      - preserve the complete result through repeated updates
+      Given blank space
+      And a spec from fixture "multi-test"
+      When developer locks the time to "11.11.2026"
+      And he sets the space options as:
+         | options            | value                          |
+         | rootdir            | features/fixtures/multi-test   |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains each line once:
+         | Requires:      ruby >= 3.2.0      |
+         | Requires:      rubygems >= 3.2.8  |
+      And the generated spec excludes the lines:
+         | Requires:      rubygems >= 1.6.1  |
+      And he acquires an "multi-test" fixture spec for the baltix setup
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
    # ruby-rc4 upstream 0.1.5: requires Ruby >= 1.9.3 and RubyGems >= 1.8.11.
    @scratch @main_is_gem
    Scenario: Keep generated Ruby and RubyGems requirements stable on the first update

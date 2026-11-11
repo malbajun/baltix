@@ -71,7 +71,7 @@ class Baltix::Spec::Rpm
          default: ->(this) { Baltix::I18n.t("spec.rpm.#{this.kind}.group") },
       },
       requires: {
-         seq: %w(of_options of_state of_default >_filter_out_obsolete >_requires_plain_only >_requires_ruby >_requires_rubygems |_host_require |_kind_deps >_render_bottom_dep),
+         seq: %w(of_options of_state of_default >_filter_out_obsolete >_requires_plain_only >_requires_ruby |_host_require |_kind_deps >_render_bottom_dep),
          default: [],
       },
       conflicts: {

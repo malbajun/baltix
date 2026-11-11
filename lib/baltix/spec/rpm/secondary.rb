@@ -47,7 +47,7 @@ class Baltix::Spec::Rpm::Secondary
          default: [],
       },
       requires: {
-         seq: %w(of_options of_state of_default >_requires_plain_only >_requires_ruby >_requires_rubygems |_host_require |_kind_deps >_render_bottom_dep),
+         seq: %w(of_options of_state of_default >_requires_plain_only >_requires_ruby |_host_require |_kind_deps >_render_bottom_dep),
          default: [],
       },
       conflicts: {
