@@ -206,17 +206,24 @@ module Baltix::Spec::Rpm::SpecCore
       value_in
    end
 
+   # Applies the selected host relationship and package-type prefix to an RPM name.
+   # @param value_in [Name] selected package name before host normalization
+   # @return [Name] name retaining its host and a single generated packaging prefix
+   # Gem hosts supply the standard prefix for non-executable packages. Gemfile and
+   # Rakefile hosts keep the original full form unless its prefix would be added
+   # again by name rendering; in that case the base name is used. Other names remain.
    def _local_rename value_in
-#      if name.support_name.blank? # || name.support_name == name
-#         if is_spec?
- 
-      # setup support name if any host
       value_in.support_name = host.name if host
 
       if host&.source&.kind_of?(Baltix::Source::Gem) && !is_exec?
          value_in.class.parse(value_in, prefix: value_in.class.default_prefix, support_name: value_in.support_name)
       elsif host && (host.source.kind_of?(Baltix::Source::Gemfile) || host.source.kind_of?(Baltix::Source::Rakefile))
-         value_in.class.parse(value_in, support_name: value_in.support_name, name: value_in.original_fullname)
+         base_name = if value_in.prefix && value_in.prefix == value_in.autoprefix
+            value_in.name
+         else
+            value_in.original_fullname
+         end
+         value_in.class.parse(value_in, support_name: value_in.support_name, name: base_name)
       else
          value_in
       end

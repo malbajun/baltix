@@ -498,7 +498,7 @@ management to your entire infrastructure.
 
 
 %if_enabled    devel
-%package       -n gem-gem-kitchen-tests-devel
+%package       -n gem-kitchen-tests-devel
 Version:       20261111
 Release:       alt1
 Summary:       A systems integration framework, built to bring the benefits of configuration management to your entire infrastructure development package
@@ -508,11 +508,11 @@ BuildArch:     noarch
 
 Requires:      kitchen-tests = 20261111-alt1
 
-%description   -n gem-gem-kitchen-tests-devel
+%description   -n gem-kitchen-tests-devel
 A systems integration framework, built to bring the benefits of configuration
 management to your entire infrastructure development package.
 
-%description   -n gem-gem-kitchen-tests-devel -l ru_RU.UTF-8
+%description   -n gem-kitchen-tests-devel -l ru_RU.UTF-8
 Файлы для разработки самоцвета kitchen-tests.
 %endif
 
@@ -655,7 +655,7 @@ management to your entire infrastructure development package.
 %files         -n kitchen-tests
 
 %if_enabled    devel
-%files         -n gem-gem-kitchen-tests-devel
+%files         -n gem-kitchen-tests-devel
 %endif
 
 %if_enabled    doc

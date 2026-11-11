@@ -60,6 +60,7 @@ Feature: Spec actor
       - retain the repository root while importing the nested upstream Gemfile
       - inherit the main summary while a subproject without a version uses YYYYMMDD
       - retain an already packaged date version when refreshing on a later day
+      - use a single packaging prefix for the nested Gemfile development package
       - keep every release and the whole generated spec unchanged through updates
       Given blank space
       When developer locks the time to "11.11.2026"
@@ -74,6 +75,8 @@ Feature: Spec actor
          | Version:       19.4.12   |
       And package "kitchen-tests" contains dependency lines:
          | Version:       20261111  |
+      And package "gem-kitchen-tests-devel" contains dependency lines:
+         | Version:       20261111  |
       And he acquires an "chef-kitchen-tests" fixture spec for the baltix setup
       When he keeps the generated spec for comparison
       And developer locks the time to "12.11.2026"
@@ -81,6 +84,8 @@ Feature: Spec actor
       Then the generated spec is unchanged
       And package "kitchen-tests" inherits the main summary
       And package "kitchen-tests" contains dependency lines:
+         | Version:       20261111  |
+      And package "gem-kitchen-tests-devel" contains dependency lines:
          | Version:       20261111  |
 
    # chef/chef v19.4.12; ALT gem-chef 19.4.12-alt1.1, altlinux/specs 4d2273b2.
