@@ -55,6 +55,7 @@ Feature: Spec actor
       - replace the loose internal minimum with the exact generated GraphQL capability
       - ignore availability overrides for gems provided by the same spec
       - omit conflicts on gems supplied by this spec through repeated updates
+      - rebuild dependencies and their phases from current metadata rather than old RPM tags
       - merge the historical Ruby minimum into the stricter gemspec requirement
       Given blank space
       And a spec from fixture "graphql"
@@ -72,8 +73,18 @@ Feature: Spec actor
          | Requires:      ruby >= 2.7.0         |
       And the generated spec excludes the lines:
          | Requires:      ruby >= 2.4.0   |
-      And the unconditional build requirements include:
-         | BuildRequires: gem(capybara) >= 3.34.0  |
+      And the generated spec has no gem dependencies named:
+         | capybara           |
+         | puma               |
+         | rails              |
+         | selenium-webdriver |
+         | webdrivers         |
+         | listen             |
+         | parser             |
+      And the check build requirements include:
+         | BuildRequires: gem(rake) >= 0     |
+         | BuildRequires: gem(rubocop) >= 0  |
+         | BuildRequires: gem(minitest) >= 0 |
       And package "gem-graphql-c-parser" contains dependency lines:
          | Requires:      gem(graphql) = 2.4.8  |
       And the generated spec contains no override for "graphql"

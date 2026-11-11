@@ -132,7 +132,7 @@ class Baltix::CLI
                options.use_gem_obsolete_list = options.use_gem_obsolete_list.merge(hash)
             end
 
-            opts.on("-D", "--[no-]use-high-default-dependencies-priority", "Use high priority dependency parsing before state") do |d|
+            opts.on("-D", "--[no-]use-high-default-dependencies-priority", "Deprecated: gem dependencies always use current source metadata") do |d|
                options.high_default_dependencies_priority = d
             end
 

@@ -17,7 +17,6 @@ BuildArch:     noarch
 
 Source:        %name-%version.tar
 BuildRequires(pre): rpm-macros-ruby setup-rb rake
-BuildRequires: gem(ruby-prof) >= 1.6
 %if_enabled check
 BuildRequires: gem(fuubar) >= 2.3
 BuildRequires: gem(rspec) >= 3.7
