@@ -8,18 +8,11 @@ lost runtime deps
 - validate provides/requires detection speed on gem-google-api-client , azure-sdk
 
 + generate spec for:
- - app:cucumber_common - filters for blank Gemfile-only auxiliary packages
 
- - rubyzip  old -> new
  - coveralls with %ruby_use_gem_dependency, 0.8.23-alt2 -> 0.8.23.1-alt0.1 (увеличение версии с помоїью командной строки или анализа git),and Epoch =1
- - google-cloud-ruby - deduplication of build req list for gems: simplecov
  - protobuf - noarch with so packages
  - grpc - deferred: custom root - grpc, and not gem-grpc
- - googleauth - alias to google-auth
  - google-api-ruby-client: correct spec, filter by regexp to ignore-names, validate build
- - gapic-generator-ruby
-  - filterout README.erb, alow pure, or .md/rdoc/.../
-  - add README with offset paths to the root source
 
 + generate relative symlinks instead of absolute for execs
 + filter out desc and summary char to other like "’" -> "'"
@@ -29,7 +22,6 @@ gem-lemon update stable ver to unstable
 
 gem-nokogiri - crop changelog, fix gem deps on the file  (example for mini_portile2, see patch)
 ffi - 1. git describe --tags command to fix in gemspec; 2. update to 1.15.5 add the wrnog tag
-io-event - erroneous update form event
 add default-license and license-replacement-list options
 
 ?raindrops
@@ -42,13 +34,10 @@ vcs_url for snaky_hash gem
 [setup.rb][INFO]> X *Ruby:3.1.1.18 [./Rakefile]
 
 
-uwsgi проверить генерацию нового спека
+uwsgi - deferred: parse Python modules in Ruby, generate Python-subsystem subpackages and use main package name uwsgi (PR #65 WIP)
 
-rubocop-shopify должен генерить без doc пакета
 
-gem-turbolinks-source from oold name ruby-turbolinks-source-gem
 
-syntax-tree - multiple versions of the same gem
    
 loofah - gems in Gemfile under condition/unknown group
 
