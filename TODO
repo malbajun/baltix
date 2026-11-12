@@ -10,7 +10,6 @@ lost runtime deps
 + generate spec for:
 
  - coveralls with %ruby_use_gem_dependency, 0.8.23-alt2 -> 0.8.23.1-alt0.1 (увеличение версии с помоїью командной строки или анализа git),and Epoch =1
- - protobuf - noarch with so packages
  - grpc - deferred: custom root - grpc, and not gem-grpc
  - google-api-ruby-client: correct spec, filter by regexp to ignore-names, validate build
 
@@ -84,6 +83,7 @@ dev/ - +dev
 
 EXTFILE
 (call to gem from within) - +build
+- google-protobuf 4.38.0: Rakefile extension requires rake/extensiontask (rake-compiler), currently listed only under check; track with deferred GROUP_MAPPING/EXTFILE task #41
 
 ---
 devel.
