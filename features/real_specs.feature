@@ -879,6 +879,7 @@ Feature: Spec actor
       - ignore the ruby-testdata Gemfile and its unrelated cucumber dependency
       - retain all metadata and unique package names through repeated updates
       - retain the repository title when a root Gemfile supplies its dependency metadata
+      - skip the JRuby-only development dependency used by google-apis-core's Gemfile
       Given blank space
       When developer locks the time to "12.11.2026"
       And he imports fixture "cucumber-common" with documentation paths:
@@ -909,7 +910,8 @@ Feature: Spec actor
          | %package       -n ruby-testdata            |
          | %package       -n gem-ruby-testdata-devel  |
       And the generated spec has no gem dependencies named:
-         | cucumber  |
+         | cucumber        |
+         | jruby-openssl   |
       And the generated spec matches "<expected>" from fixture "cucumber-common"
       When he keeps the generated spec for comparison
       And the generated spec is refreshed 2 times

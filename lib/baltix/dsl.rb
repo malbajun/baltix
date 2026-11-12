@@ -163,8 +163,16 @@ class Baltix::DSL
       end
    end
 
+   # Merges dependencies after excluding unsupported platform declarations.
+   # Takes no parameters.
+   # @return [Array<Bundler::Dependency>] constraints from supported platforms
+   # Platform filtering precedes merging: a repeated JRuby-only declaration must
+   # not become an unrestricted dependency when its groups and bounds are merged.
    def all_dependencies
-      Baltix::DSL.merge_dependencies(additional_dependencies, external_dependencies, gemfile_dependencies, spec_dependencies)
+      lists = [additional_dependencies, external_dependencies, gemfile_dependencies, spec_dependencies].map do |dependencies|
+         Array(dependencies).select { |dependency| self.class.platform_allowed?(dependency) }
+      end
+      Baltix::DSL.merge_dependencies(*lists)
    end
 
    # Returns Gemfile dependencies with groups appropriate to the project type.
@@ -277,6 +285,17 @@ class Baltix::DSL
          else
             :development
          end
+      end
+
+      # Excludes declarations explicitly disabled by the platform policy before merging.
+      # @param dependency [Gem::Dependency, Bundler::Dependency] declaration to check
+      # @return [Boolean] whether an unrestricted or supported-platform declaration is usable
+      # Missing platform metadata is unrestricted. If platforms are declared, at
+      # least one must not be disabled in PLATFORMS. Other declarations, including
+      # MRI-specific platforms, remain available; no second platform list is created.
+      def platform_allowed? dependency
+         platforms = dependency.respond_to?(:platforms) ? Array(dependency.platforms) : []
+         platforms.empty? || platforms.any? { |platform| PLATFORMS.fetch(platform.to_sym, true) }
       end
 
       def merge_dependencies *depses

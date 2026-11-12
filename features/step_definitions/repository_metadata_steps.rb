@@ -8,6 +8,13 @@ end
 
 When('the repository root metadata is {string}') do |layout|
    if layout == 'Gemfile'
-      File.write(File.join(space.rootdir, 'Gemfile'), "source 'https://rubygems.org'\n")
+      File.write(File.join(space.rootdir, 'Gemfile'), <<~GEMFILE)
+         source 'https://rubygems.org'
+         platforms :jruby do
+            group :development do
+               gem 'jruby-openssl'
+            end
+         end
+      GEMFILE
    end
 end
