@@ -29,7 +29,44 @@ class Baltix::Source::Gemfile < Baltix::Source::Base
       dsl.valid?
    end
 
+   # Supplies the repository README title for a project rooted at a Gemfile.
+   # Takes no parameters.
+   # @return [OpenStruct] summaries indexed by locale, empty without a readable title
+   def summaries
+      repository_metadata_source.summaries
+   end
+
+   # Supplies the repository prose for a project whose root metadata is a Gemfile.
+   # Takes no parameters.
+   # @return [OpenStruct] descriptions indexed by locale, empty without readable prose
+   def descriptions
+      repository_metadata_source.descriptions
+   end
+
+   # Supplies the configured repository homepage for a Gemfile project.
+   # Takes no parameters.
+   # @return [String, nil] repository homepage, or nil without a supported Git origin
+   def uri
+      repository_metadata_source.uri
+   end
+
+   # Supplies the configured repository origin for a Gemfile project.
+   # Takes no parameters.
+   # @return [String, nil] repository URL, or nil without a supported Git origin
+   def vcs
+      repository_metadata_source.vcs
+   end
+
    def rake
       @rake ||= Baltix::Rake.new(source_file)
+   end
+
+   protected
+
+   # Reuses the synthetic-source reader for metadata at this repository root.
+   # Takes no parameters.
+   # @return [Baltix::Source::Fake] cached reader for the same directory
+   def repository_metadata_source
+      @repository_metadata_source ||= Baltix::Source::Fake.new(source_file: File.join(rootdir, '.fake'))
    end
 end
