@@ -5,16 +5,29 @@ on:
     branches: [master]
   pull_request:
 
+env:
+  BUNDLER_VERSION: '2.4.19'
+  BUNDLE_PATH: /tmp/baltix-bundle
+
 jobs:
   test:
-    runs-on: codeberg-small
+    runs-on: codeberg-medium
     container:
       image: ruby:3.2
     steps:
       - name: Install Node.js for checkout
         run: apt-get update && apt-get install -y --no-install-recommends nodejs
       - uses: https://code.forgejo.org/actions/checkout@v4
+      - name: Install Bundler
+        run: gem install bundler --version "$BUNDLER_VERSION" --no-document
+      - name: Cache installed gems
+        uses: https://code.forgejo.org/actions/cache@v4
+        with:
+          path: ${{ env.BUNDLE_PATH }}
+          key: ${{ runner.os }}-ruby-3.2-bundler-${{ env.BUNDLER_VERSION }}-${{ hashFiles('Gemfile', 'baltix.gemspec') }}
+          restore-keys: |
+            ${{ runner.os }}-ruby-3.2-bundler-${{ env.BUNDLER_VERSION }}-
       - name: Install dependencies
-        run: bundle install
+        run: bundle "_${BUNDLER_VERSION}_" install --jobs 4 --retry 3
       - name: Run tests
-        run: bundle exec cucumber --format progress
+        run: bundle "_${BUNDLER_VERSION}_" exec rake
