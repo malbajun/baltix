@@ -46,3 +46,13 @@ When('the main source receives its own README') do
    FileUtils.touch(File.join(space.main_source.rootdir, 'README.md'))
    system('git', '-C', space.rootdir, 'add', '--all', exception: true)
 end
+
+Then('the gem documentation inputs include:') do |table|
+   inputs = space.main_source.docsrctree.flat_map { |directory, files| files.map { |file| File.join(directory, file).delete_prefix('./') } }
+   expect(inputs).to include(*table.raw.flatten)
+end
+
+Then('the gem documentation inputs exclude:') do |table|
+   inputs = space.main_source.docsrctree.flat_map { |directory, files| files.map { |file| File.join(directory, file).delete_prefix('./') } }
+   expect(inputs & table.raw.flatten).to be_empty
+end
