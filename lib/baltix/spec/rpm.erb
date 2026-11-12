@@ -177,6 +177,9 @@ Provides:      <%= dep %>
 <% if needs_extension_directory? -%>
 %ruby_gemextdir
 <% end -%>
+<% manpage_entries(self).each do |line| -%>
+<%= line %>
+<% end -%>
 <% preserved_files(self).each do |line| -%>
 <%= line %>
 <% end -%>
@@ -217,6 +220,9 @@ Provides:      <%= dep %>
 <% if secondary.has_devel_sources? -%>
 %ruby_includedir/*
 <% end -%>
+<% end -%>
+<% manpage_entries(secondary).each do |line| -%>
+<%= line %>
 <% end -%>
 <% preserved_files(secondary).each do |line| -%>
 <%= line %>
