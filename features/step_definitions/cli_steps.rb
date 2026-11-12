@@ -25,6 +25,11 @@ Given('blank baltix CLI') do
    cli.option_parser.default_argv = []
 end
 
+Then('the CLI selects gem sources {string}') do |names|
+   actual = cli.space.spec.sources.grep(Baltix::Source::Gem).map(&:name).sort
+   expect(actual).to eql(names.split(',').sort)
+end
+
 Given('the default option for {string} is {string}') do |name, value|
    cli.options[name] = value
 end

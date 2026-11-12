@@ -1,6 +1,29 @@
 @cli
 Feature: Baltix CLI
 
+   Scenario Outline: Apply literal and regexp CLI name filters to real project sources
+      - parse closed regexp delimiters for both ignore and regard
+      - retain legacy leading-slash patterns, escaped slashes and literal names
+      - select the actual Mustermann components used to generate RPM packages
+      Given blank baltix CLI
+      And options for baltix CLI:
+         """
+         --rootdir=features/fixtures/mustermann --ignore-names=<ignore> --regard-names=<regard>
+         """
+      When developer loads baltix executable
+      Then the CLI selects gem sources "<selected>"
+
+      Examples:
+         | ignore                   | regard                | selected                       |
+         | mustermann-contrib       |                       | mustermann                     |
+         | /mustermann-contrib      |                       | mustermann                     |
+         | /mustermann-contrib/     |                       | mustermann                     |
+         | /\Amustermann-contrib\z/ |                       | mustermann                     |
+         | mustermann-contrib       | /mustermann-contrib/  | mustermann,mustermann-contrib  |
+         | /mustermann-contrib/     | /mustermann-contrib/  | mustermann,mustermann-contrib  |
+         | mustermann.*             |                       | mustermann,mustermann-contrib  |
+         | /mustermann-contrib\/    |                       | mustermann,mustermann-contrib  |
+
    Scenario: Reject an unknown gem dependency mode
       Then the CLI rejects gem dependency mode "unknown"
 
