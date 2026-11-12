@@ -1131,13 +1131,19 @@ class Baltix::Spec::Rpm
       render_deps(check_dependencies, :negate)
    end
 
+   # Normalizes a repository URL for the generated Vcs tag.
+   # @param value_in [String, nil] explicit or imported repository URL
+   # @return [String, nil] normalized repository URL ending in one .git, or nil
+   # Known hosting rules also derive a repository from the homepage when no
+   # Vcs value is supplied. Existing repeated .git suffixes are collapsed so
+   # rendering and reparsing the same spec do not change its revision.
    def _vcs value_in
       pre = URL_MATCHER.reduce(value_in) do |res, (rule, e)|
          vcs = res || uri
          vcs && (match = vcs.match(rule)) && e[match] || res
       end
 
-      pre && "#{pre}#{/\.git/ !~ pre && ".git" || ""}".downcase || nil
+      pre && "#{pre.sub(/(?:\.git)+\z/i, '')}.git".downcase
    end
 
    def _source_files value_in
