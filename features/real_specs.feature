@@ -794,6 +794,39 @@ Feature: Spec actor
       When he applies "spec" actor to the baltix setup
       Then he acquires an "mustermann" fixture spec for the baltix setup
 
+   # Reuse Mustermann's two real gemspecs; the repository root contains no gemspec.
+   @scratch
+   Scenario Outline: Preserve regexp name exclusions when updating a generated spec
+      - restore generated regexp option wrappers rather than treating them as literal names
+      - retain end anchors and case-insensitive matching without evaluating Ruby code
+      - avoid duplicate macro entries with CLI options and retain filtering without them
+      Given blank space
+      When developer locks the time to "12.11.2026"
+      And he sets the space options as:
+         | options            | value                          |
+         | rootdir            | features/fixtures/mustermann   |
+         | maintainer.name    | Pavel Skrylev                  |
+         | maintainer.email   | majioa@altlinux.org            |
+      And he configures ignored names through CLI "<pattern>"
+      And he applies "spec" actor to the baltix setup
+      Then the generated library package names are:
+         | gem-mustermann  |
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+      When the generated spec is refreshed without name options
+      Then the generated library package names are:
+         | gem-mustermann  |
+      And the generated spec is unchanged
+      When the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
+      Examples:
+         | pattern                     |
+         | /mustermann-contrib/        |
+         | /^mustermann-contrib$/      |
+         | /(?i:mustermann-CONTRIB)/   |
+
    # bryanp/llhttp, ALT 60d6f26; preserve its existing gem-llhttp-ffi ignore entry.
    @scratch
    Scenario Outline: Preserve ignored names when updating modern and legacy specs
