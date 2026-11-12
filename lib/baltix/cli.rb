@@ -58,15 +58,13 @@ class Baltix::CLI
 
             opts.on("-I", "--ignore-names=LIST", Array, "Source names comma-separated ignore list") do |list|
                options.ignored_names |= list.compact.map do |x|
-                  m = /^\/(?<re>.*)/.match(x)
-                  m && /#{m[:re]}/ || x
+                  name_pattern(x)
                end
             end
 
             opts.on("-R", "--regard-names=LIST", Array, "Source names comma-separated regard list") do |list|
                options.regarded_names |= list.compact.map do |x|
-                  m = /^\/(?<re>.*)/.match(x)
-                  m && /#{m[:re]}/ || x
+                  name_pattern(x)
                end
             end
 
@@ -249,6 +247,23 @@ class Baltix::CLI
    end
 
    private
+
+   # Decodes a literal source name or a command-line regular expression.
+   # @param value [String] literal name, /pattern/, or legacy /pattern syntax
+   # @return [String, Regexp] unchanged literal name or the compiled pattern
+   # If the value starts with a slash, an unescaped final slash is a delimiter;
+   # an escaped final slash remains part of the expression. Without a leading
+   # slash the value stays literal, including any regexp metacharacters.
+   # @raise [RegexpError] when the supplied expression is invalid
+   def name_pattern value
+      return value unless value.start_with?('/')
+
+      expression = value[1..]
+      if expression.end_with?('/') && expression[0...-1][/\\*\z/].length.even?
+         expression = expression[0...-1]
+      end
+      Regexp.new(expression)
+   end
 
    # Finds project Rakefiles and runs the task list attached to the next action.
    # @param task_names [Array<String, Symbol>] ordered names, including legacy @ markers

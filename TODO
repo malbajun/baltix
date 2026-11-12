@@ -9,8 +9,6 @@ lost runtime deps
 
 + generate spec for:
 
- - coveralls with %ruby_use_gem_dependency, 0.8.23-alt2 -> 0.8.23.1-alt0.1 (увеличение версии с помоїью командной строки или анализа git),and Epoch =1
- - protobuf - noarch with so packages
  - grpc - deferred: custom root - grpc, and not gem-grpc
  - google-api-ruby-client: correct spec, filter by regexp to ignore-names, validate build
 
@@ -54,6 +52,7 @@ detect tag - rubocop-lts 24.0.2
 
 
 analyze.
+- derive prerelease version/release from git patch count (coveralls)
 fake-version-increase (like turn gem to 1.0.0): cond: no-bump(in git), no-tag, no-pushlish-rubygems
 force-change-version-required: context: source, val:[true/false]
 prefix: context: git/tag - prefix for current tag: examp: v for v@tag, branch/v for branch/v@tag, :nil for @tag
@@ -84,6 +83,7 @@ dev/ - +dev
 
 EXTFILE
 (call to gem from within) - +build
+- google-protobuf 4.38.0: Rakefile extension requires rake/extensiontask (rake-compiler), currently listed only under check; track with deferred GROUP_MAPPING/EXTFILE task #41
 
 ---
 devel.
