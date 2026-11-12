@@ -23,7 +23,6 @@ BuildRequires: gem(appbundler) >= 0
 BuildRequires: gem(aws-sdk-s3) >= 1.91
 BuildRequires: gem(aws-sdk-secretsmanager) >= 1.46
 BuildRequires: gem(bcrypt_pbkdf) >= 1.0
-BuildRequires: gem(chef-cli) >= 0
 BuildRequires: gem(chef-licensing) >= 1.3
 BuildRequires: gem(chef-ruby-shadow) >= 3.0.0
 BuildRequires: gem(chef-vault) >= 0
@@ -42,12 +41,8 @@ BuildRequires: gem(ffi-libarchive) >= 1.0.3
 BuildRequires: gem(ffi-yajl) > 3.0.0
 BuildRequires: gem(fuzzyurl) >= 0
 BuildRequires: gem(iniparse) >= 1.4
-BuildRequires: gem(inspec) >= 7.1.7
 BuildRequires: gem(inspec-core) >= 7.1.7
 BuildRequires: gem(inspec-core-bin) >= 7.1.7
-BuildRequires: gem(kitchen-dokken) >= 2.0
-BuildRequires: gem(kitchen-inspec) >= 3.1.0
-BuildRequires: gem(kitchen-vagrant) >= 1.0
 BuildRequires: gem(license-acceptance) >= 1.0.5
 BuildRequires: gem(mixlib-archive) >= 0.4
 BuildRequires: gem(mixlib-authentication) >= 2.1
@@ -72,7 +67,6 @@ BuildRequires: gem(rest-client) >= 0
 BuildRequires: gem(rspec) >= 0
 BuildRequires: gem(syslog) >= 0
 BuildRequires: gem(syslog-logger) >= 1.6
-BuildRequires: gem(test-kitchen) >= 0
 BuildRequires: gem(tomlrb) >= 1.2
 BuildRequires: gem(train-core) >= 3.13.4
 BuildRequires: gem(train-rest) >= 0.4.1
@@ -414,108 +408,6 @@ management to your entire infrastructure.
 %endif
 
 
-%package       -n kitchen-tests
-Version:       20261111
-Release:       alt1
-Summary:       A systems integration framework, built to bring the benefits of configuration management to your entire infrastructure
-Group:         Other
-BuildArch:     noarch
-
-Requires:      gem(addressable) >= 2.9.0
-Requires:      gem(aws-sdk-s3) >= 1.91
-Requires:      gem(aws-sdk-secretsmanager) >= 1.46
-Requires:      gem(bcrypt_pbkdf) >= 1.0
-Requires:      gem(chef-bin) = 19.4.12
-Requires:      gem(chef-config) = 19.4.12
-Requires:      gem(chef-licensing) >= 1.3
-Requires:      gem(chef-utils) = 19.4.12
-Requires:      gem(chef-vault) >= 0
-Requires:      gem(chef-zero) >= 15.1.0
-Requires:      gem(corefoundation) >= 0.3.19
-Requires:      gem(csv) >= 3.3.5
-Requires:      gem(diff-lcs) >= 1.6.0
-Requires:      gem(ed25519) >= 1.2
-Requires:      gem(erubis) >= 2.7
-Requires:      gem(ffi) >= 1.15.5
-Requires:      gem(ffi-libarchive) >= 1.0.3
-Requires:      gem(ffi-yajl) > 3.0.0
-Requires:      gem(iniparse) >= 1.4
-Requires:      gem(inspec-core) >= 7.1.7
-Requires:      gem(license-acceptance) >= 1.0.5
-Requires:      gem(mixlib-archive) >= 0.4
-Requires:      gem(mixlib-authentication) >= 2.1
-Requires:      gem(mixlib-cli) >= 2.1.1
-Requires:      gem(mixlib-log) >= 2.0.3
-Requires:      gem(mixlib-shellout) >= 3.3.8
-Requires:      gem(net-ftp) >= 0
-Requires:      gem(net-sftp) >= 2.1.2
-Requires:      gem(ohai) >= 19.0
-Requires:      gem(plist) >= 3.2
-Requires:      gem(proxifier2) >= 1.1
-Requires:      gem(syslog) >= 0
-Requires:      gem(syslog-logger) >= 1.6
-Requires:      gem(train-core) >= 3.13.4
-Requires:      gem(train-rest) >= 0.4.1
-Requires:      gem(train-winrm) >= 0.2.17
-Requires:      gem(unf_ext) >= 0.0.9.1
-Requires:      gem(uri) >= 1.0.4
-Requires:      gem(vault) >= 0.18.2
-Conflicts:     gem(aws-sdk-s3) >= 2
-Conflicts:     gem(aws-sdk-secretsmanager) >= 2
-Conflicts:     gem(bcrypt_pbkdf) >= 2
-Conflicts:     gem(chef-licensing) >= 2
-Conflicts:     gem(chef-zero) >= 15.2
-Conflicts:     gem(corefoundation) >= 0.4
-Conflicts:     gem(csv) >= 3.4
-Conflicts:     gem(diff-lcs) >= 1.7
-Conflicts:     gem(ed25519) >= 2
-Conflicts:     gem(erubis) >= 3
-Conflicts:     gem(ffi) >= 1.18.0
-Conflicts:     gem(ffi-libarchive) >= 2
-Conflicts:     gem(ffi-yajl) >= 4.0
-Conflicts:     gem(iniparse) >= 2
-Conflicts:     gem(inspec-core) >= 7.2
-Conflicts:     gem(license-acceptance) >= 3
-Conflicts:     gem(mixlib-archive) >= 2.0
-Conflicts:     gem(mixlib-authentication) >= 4
-Conflicts:     gem(mixlib-cli) >= 3.0
-Conflicts:     gem(mixlib-log) >= 4.0
-Conflicts:     gem(mixlib-shellout) >= 3.5.0
-Conflicts:     gem(net-sftp) >= 5.0
-Conflicts:     gem(ohai) >= 20
-Conflicts:     gem(plist) >= 4
-Conflicts:     gem(proxifier2) >= 2
-Conflicts:     gem(syslog-logger) >= 2
-Conflicts:     gem(train-core) >= 4
-Conflicts:     gem(unf_ext) >= 0.0.10
-Conflicts:     gem(uri) >= 1.2.0
-Conflicts:     gem(vault) >= 0.21.0
-
-%description   -n kitchen-tests
-A systems integration framework, built to bring the benefits of configuration
-management to your entire infrastructure.
-
-
-%if_enabled    devel
-%package       -n gem-kitchen-tests-devel
-Version:       20261111
-Release:       alt1
-Summary:       A systems integration framework, built to bring the benefits of configuration management to your entire infrastructure development package
-Summary(ru_RU.UTF-8): Файлы для разработки самоцвета kitchen-tests
-Group:         Development/Ruby
-BuildArch:     noarch
-
-Requires:      kitchen-tests = 20261111-alt1
-
-%description   -n gem-kitchen-tests-devel
-A systems integration framework, built to bring the benefits of configuration
-management to your entire infrastructure development package.
-
-%description   -n gem-kitchen-tests-devel -l ru_RU.UTF-8
-Файлы для разработки самоцвета kitchen-tests.
-%endif
-
-
 %if_enabled    doc
 %package       -n gem-chef-doc
 Version:       19.4.12
@@ -649,12 +541,6 @@ management to your entire infrastructure development package.
 %if_enabled    devel
 %files         -n gem-chef-config-devel
 %doc LICENSE
-%endif
-
-%files         -n kitchen-tests
-
-%if_enabled    devel
-%files         -n gem-kitchen-tests-devel
 %endif
 
 %if_enabled    doc

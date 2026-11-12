@@ -144,6 +144,18 @@ module Baltix::Spec::Rpm::SpecCore
       name.class.default_prefix
    end
 
+   # Applies the configured name exclusion policy to a source or dependency.
+   # @param name [String] literal gem or source name to check
+   # @return [Boolean] whether the name is excluded from packages and requirements
+   # If regard matches, it overrides ignore. Ignore entries include options and
+   # parsed spec settings. Strings match whole names; regexps retain their pattern
+   # matching behavior. With no matching ignore entry, the name stays enabled.
+   def ignored_name? name
+      return false if doc.space.regarded_names.any? { |pattern| pattern === name }
+
+      doc.ignored_names.any? { |pattern| pattern === name }
+   end
+
    protected
 
    def change_list
@@ -763,11 +775,14 @@ module Baltix::Spec::Rpm::SpecCore
    # internal conflicts are omitted. Capability rendering preserves its own bounds.
    # External equality requirements become inclusive minimums. Strict external
    # minimums and conflict boundaries retain >; provided capabilities and non-gem
-   # constraints retain their normal bound conversion.
+   # constraints retain their normal bound conversion. Requirements and conflicts
+   # on ignored gem names are omitted unless regard overrides that exclusion.
    def render_deps deps_in, mode = :debound
       func = mode == :negate ? :upper_negate_to_rpm : :lower_to_rpm
 
       deps_in.reduce([]) do |deps, dep|
+         next deps if mode != :provide && dep.is_a?(Gem::Dependency) && ignored_name?(dep.name)
+
          deps |
             if dep.is_a?(Gem::Dependency)
                supplied_version = provided_gem_versions[dep.name] unless mode == :provide

@@ -4,6 +4,13 @@ Then('source {string} has status {string}') do |name, status|
    expect(source.last).to eql(status.to_sym)
 end
 
+Then('the source at repository path {string} has status {string}') do |path, status|
+   file = File.expand_path(path, space.rootdir)
+   entry = space.send(:stat_sources).find { |source, _| source.source_file == file }
+   expect(entry).to_not be_nil
+   expect(entry.last).to eql(status.to_sym)
+end
+
 Then('the generated library package names are:') do |table|
    names = @spec.scan(/^(?:Name:\s+|%package\s+-n\s+)(gem-\S+)/).flatten
    names = names.reject { |name| name.match?(/-(?:doc|devel)\z/) }

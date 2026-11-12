@@ -42,9 +42,11 @@ class Baltix::Space
    }
 
    DEFAULT_IGNORE_PATH_TOKES =
-      %w(templates example examples sample samples spec test features
+      %w(templates example examples sample samples spec test tests testdata features
          fixtures doc docs contrib demo acceptance conformance myapp website benchmarks benchmark
-         gemfiles misc steep)
+         gemfiles misc steep) |
+      # Also match compound directory names, e.g. kitchen-tests and ruby-testdata.
+      [/(?<![[:alnum:]])(?:tests|testdata)(?![[:alnum:]])/]
 
    PLATFORMS = {
       ruby: true,
