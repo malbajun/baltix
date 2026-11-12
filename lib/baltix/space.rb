@@ -332,8 +332,13 @@ class Baltix::Space
 #         !ignored_path_tokens.any? {|t| /\/#{t}\// =~ source.source_file }
 #   end
 
+   # Collects source name exclusions from options and the input spec.
+   # Takes no parameters.
+   # @return [Array<String, Regexp>] configured and persisted name filters
+   # If the input spec carries exclusions, they supplement the option list;
+   # otherwise only explicitly configured exclusions are returned.
    def ignored_names
-      @ignored_names ||= (read_attribute(:ignored_names) || [])
+      @ignored_names ||= (read_attribute(:ignored_names) || []) | Array(spec&.ignored_names)
    end
 
    def regarded_names
@@ -430,11 +435,26 @@ class Baltix::Space
          end
    end
 
+   # Tests source name exclusions while retaining repository-level metadata.
+   # @param source [Baltix::Source::Base] discovered gem or repository metadata
+   # @return [Boolean] whether a name filter disables this source
+   # Regard overrides ignore. If a root source is not a gem, only explicit
+   # options can disable it: stored package exclusions must not hide the root
+   # Rakefile/Gemfile that supplies the collection's version and package names.
+   # Other sources also use exclusions restored from the input spec.
+   def is_source_name_ignored? source
+      return false if regarded_names.any? { |pattern| pattern === source.name }
+
+      root_metadata = !source.is_a?(Baltix::Source::Gem) && source.source_file &&
+         File.dirname(source.source_file) == rootdir
+      names = root_metadata ? options.ignored_names : ignored_names
+      names.any? { |pattern| pattern === source.name }
+   end
+
    def is_disabled? source
       !is_platform_allowed?(source.platform) || !is_version_allowed?(source.version) ||
          is_source_path_ignored?(source.source_file) ||
-         options.regarded_names.all? { |i| !i.match?(source.name) } &&
-         options.ignored_names.any? { |i| i === source.name }
+         is_source_name_ignored?(source)
    end
 
    def store filename = '.space'

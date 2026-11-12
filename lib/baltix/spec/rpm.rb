@@ -292,7 +292,7 @@ class Baltix::Spec::Rpm
          default: []
       },
       ignored_names: {
-         seq: %w(of_options |of_state),
+         seq: %w(of_options |of_state >_ignored_names),
          default: []
       },
       aliased_names: {
@@ -893,6 +893,15 @@ class Baltix::Spec::Rpm
                sec.name.alias_for(sec.name.kind)
             end
          end.compact.flatten
+   end
+
+   # Deduplicates ignored names after configured and saved lists are merged.
+   # @param value_in [Array<String, Regexp>, nil] merged source name filters
+   # @return [Array<String, Regexp>] first filter for each canonical string form
+   # Regexp objects retain their matching behavior; only the comparison key is
+   # converted to a string. A missing list produces an empty array.
+   def _ignored_names value_in
+      Array(value_in).uniq(&:to_s)
    end
 
    def _ruby_alias_names value_in

@@ -33,3 +33,18 @@ Then('the generated references to gem {string} are {string}') do |name, expectat
       expect(overrides.size).to eql(1)
    end
 end
+
+When('he configures ignored names through CLI {string}') do |pattern|
+   command = Baltix::CLI.new(["--ignore-names=#{pattern}"])
+   command.parse!
+   space.options.ignored_names = command.options.ignored_names
+end
+
+When('the generated spec is refreshed without name options') do
+   options = space.options.deep_dup
+   options.ignored_names = []
+   options.regarded_names = []
+   @space = Baltix::Space.new(options: options)
+   @space.spec = Baltix::Spec.load_from(source: @spec, options: options, space: @space)
+   @spec = Baltix::Actor.for('spec', @space).apply_to(@space)
+end

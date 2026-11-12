@@ -10,7 +10,7 @@ lost runtime deps
 + generate spec for:
 
  - grpc - deferred: custom root - grpc, and not gem-grpc
- - google-api-ruby-client: correct spec, filter by regexp to ignore-names, validate build
+ - google-api-ruby-client: validate RPM build of the generated spec
 
 + generate relative symlinks instead of absolute for execs
 + filter out desc and summary char to other like "’" -> "'"
