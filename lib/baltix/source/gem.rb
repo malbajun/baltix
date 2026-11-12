@@ -38,6 +38,13 @@ class Baltix::Source::Gem < Baltix::Source::Base
 
    INC_FILTER  = ->(s, f, dir) { s.spec.files.include?(File.join(dir, f)) }
 
+   # Library documentation follows the gem's packaged file list. Root entries
+   # come only from explicit extra_rdoc_files, including standalone Ruby guides.
+   DOCSRC_FILTER = ->(source, file, directory) do
+      directory == '.' ? source.spec.extra_rdoc_files.include?(file) :
+         source.spec.files.include?(File.join(directory, file))
+   end
+
    OPTIONS_IN = {
       spec: true,
    }

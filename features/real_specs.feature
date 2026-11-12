@@ -35,6 +35,27 @@ Feature: Spec actor
       And the generated spec is refreshed 2 times
       Then the generated spec is unchanged
 
+   # Reuse Ruby Rake metadata: only the declared library files are documentation inputs.
+   @scratch @main_is_gem @documentation_source
+   Scenario: Exclude undeclared Ruby library files from documentation input
+      - retain explicitly packaged Ruby libraries and root documentation sources
+      - skip a local Ruby helper absent from the gemspec file list
+      - retain the existing generated Rake spec without adding another fixture
+      Given blank space
+      When developer locks the time to "11.11.2026"
+      And he imports fixture "rake" with documentation paths:
+         | lib/rake/application.rb        |
+         | lib/rake/development_only.rb   |
+         | doc/rake.1                     |
+         | README.rdoc                    |
+      Then the gem documentation inputs include:
+         | lib/rake/application.rb  |
+         | lib/rake/version.rb      |
+      And the gem documentation inputs exclude:
+         | lib/rake/development_only.rb   |
+      When he applies "spec" actor to the baltix setup
+      Then the generated documentation lines match "gem.spec" from fixture "rake"
+
    # ruby-rc4 upstream 0.1.5: requires Ruby >= 1.9.3 and RubyGems >= 1.8.11.
    @scratch @main_is_gem
    Scenario: Keep generated Ruby and RubyGems requirements stable on the first update
