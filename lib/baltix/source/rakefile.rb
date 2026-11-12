@@ -14,6 +14,8 @@ class Baltix::Source::Rakefile < Baltix::Source::Base
       @dsl ||=
          Baltix::DSL.new(source_file,
          replace_list: replace_list,
+         dependency_platforms: (@dependency_platforms ||= {}),
+         skip_platforms: @skip_platforms || [],
          skip_list: (options[:gem_skip_list] || []) | [self.name],
          append_list: options[:gem_append_list])
    end
