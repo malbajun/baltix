@@ -181,6 +181,36 @@ Feature: RPM Spec
       And developer sets the space option "rootdir" to "features/fixtures/blank"
       Then property "vcs" of space is "https://path/to/vcs/rpm.git"
 
+   # Historical raindrops Vcs from the ALT spec; also repair previously duplicated suffixes.
+   Scenario Outline: Keep a single Git suffix across legacy Vcs updates
+      - normalize the old bogomips repository URL without appending another .git
+      - keep the entire spec, release and changelog stable on repeated updates
+      Given blank space
+      And RPM spec file:
+         """
+         Name:          gem-raindrops
+         Version:       0.20.1
+         Release:       alt1.1
+         Summary:       real-time stats for preforking Rack servers
+         License:       LGPL-2.1+
+         Vcs:           <url>
+         """
+      When developer locks the time to "12.11.2026"
+      And developer sets the space option "rootdir" to "features/fixtures/blank"
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains the lines:
+         | Vcs:           https://bogomips.org/raindrops.git   |
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
+      Examples:
+         | url                                     |
+         | git://bogomips.org/raindrops.git        |
+         | https://bogomips.org/raindrops.git      |
+         | https://bogomips.org/raindrops.git.git  |
+
    Scenario: Parse RPM Spec for a packager
       Given RPM spec file:
          """

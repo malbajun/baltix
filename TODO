@@ -24,7 +24,6 @@ gem-nokogiri - crop changelog, fix gem deps on the file  (example for mini_porti
 ffi - 1. git describe --tags command to fix in gemspec; 2. update to 1.15.5 add the wrnog tag
 add default-license and license-replacement-list options
 
-?raindrops
 ?capybara ^ -> 3.37.1
 
 vcs_url for snaky_hash gem
