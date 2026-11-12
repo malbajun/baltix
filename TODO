@@ -12,7 +12,6 @@ lost runtime deps
  - grpc - deferred: custom root - grpc, and not gem-grpc
  - google-api-ruby-client: validate RPM build of the generated spec
 
-+ generate relative symlinks instead of absolute for execs
 + ignore by part: example: update-rubygems[doc,lib] to ignore when detecting and processing
 
 gem-lemon update stable ver to unstable
