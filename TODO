@@ -20,13 +20,9 @@ lost runtime deps
 
 gem-lemon update stable ver to unstable
 
-gem-nokogiri - crop changelog, fix gem deps on the file  (example for mini_portile2, see patch)
-ffi - 1. git describe --tags command to fix in gemspec; 2. update to 1.15.5 add the wrnog tag
 add default-license and license-replacement-list options
 
-?capybara ^ -> 3.37.1
 
-vcs_url for snaky_hash gem
 
 определение жемов для руби и жемов в ruby_version напрмер
 [setup.rb][INFO]> X *RubyGems:3.3.7 [./Rakefile]
