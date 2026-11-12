@@ -61,6 +61,16 @@ BuildArch:     noarch
 %description   -n gem-ms-rest
 Client Library for Ruby.
 
+%package       -n gem-ms-rest-doc
+Version:       0.11.2
+Release:       alt1.6
+Summary:       Documentation files for %gemname gem
+Group:         Development/Documentation
+BuildArch:     noarch
+
+%description   -n gem-ms-rest-doc
+Documentation files for %gemname gem.
+
 %prep
 %setup
 
@@ -83,6 +93,9 @@ Client Library for Ruby.
 %files -n gem-ms-rest-azure
 %ruby_gemspecdir/ms_rest_azure-0.11.2.gemspec
 %ruby_gemslibdir/ms_rest_azure-0.11.2
+
+%files         -n gem-ms-rest-doc
+%ruby_gemsdocdir/ms_rest-0.7.6
 
 %changelog
 * Thu Jun 13 2024 Pavel Skrylev <majioa@altlinux.org> 20200316-alt1.6

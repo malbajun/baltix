@@ -40,6 +40,7 @@ Feature: Spec actor
    Scenario: Preserve an aggregate package version above its component gem versions
       - retain the existing Azure package date version when its root metadata is a Gemfile
       - keep independent runtime gem versions and their provided capabilities
+      - retain a higher historical documentation RPM version while using the host gem directory
       - preserve the complete generated spec and changelog through repeated updates
       Given blank space
       And a spec from fixture "azure-sdk-for-ruby"
@@ -55,6 +56,9 @@ Feature: Spec actor
          | Version:       20200316                    |
          | Provides:      gem(ms_rest) = 0.7.6        |
          | Provides:      gem(ms_rest_azure) = 0.12.0 |
+         | Version:       0.11.2                      |
+         | Requires:      gem(ms_rest) = 0.7.6        |
+         | %ruby_gemsdocdir/ms_rest-0.7.6             |
       And he acquires an "azure-sdk-for-ruby" fixture spec for the baltix setup
       When he keeps the generated spec for comparison
       And the generated spec is refreshed 2 times
