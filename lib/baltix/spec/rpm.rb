@@ -529,7 +529,7 @@ class Baltix::Spec::Rpm
    def sources
       @sources ||=
          space&.valid_sources.reject do |source_in|
-            ignored_names.any? { |x| x === source_in.name }
+            ignored_name?(source_in.name)
          end
    end
 
@@ -756,11 +756,12 @@ class Baltix::Spec::Rpm
    # inline comments do not introduce additional gem names.
    # Historical names select the override policy only. A gem absent from current
    # source/discovery metadata is omitted; old RPM tags and macro bounds never
-   # create dependencies or supply their minimums.
+   # create dependencies or supply their minimums. Ignored dependency names do
+   # not produce override macros unless an explicit regard match enables them.
    def _versioned_gem_list _value_in
       packaged_sources = Array(sources) | [source].compact
       packaged_names = packaged_sources.grep(Baltix::Source::Gem).map(&:name)
-      dependencies = packaged_sources.flat_map(&:all_dependencies)
+      dependencies = packaged_sources.flat_map(&:all_dependencies).reject { |dependency| ignored_name?(dependency.name) }
 
       excluded_names = dependencies.select do |dependency|
          dependency.requirement.requirements.any? { |operator, _| operator == '!=' }
@@ -978,7 +979,7 @@ class Baltix::Spec::Rpm
       main_name = source && Name.for_gem(source.name)
       secondaries = valid_sources.reject do |source_in|
          candidate_name = source_in.is_a?(Baltix::Source::Gem) ? Name.for_gem(source_in.name) : source_in.name
-         main_name === candidate_name || ignored_names.any? { |ignored| ignored === source_in.name }
+         main_name === candidate_name || ignored_name?(source_in.name)
       end.map do |source|
          state =
             secondaries_in.find do |osec|

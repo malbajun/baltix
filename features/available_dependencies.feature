@@ -3,6 +3,37 @@ Feature: Available gem versions and dependency override macros
    Existing interval examples exercise regular dependency bounds explicitly.
    Mode-selection examples override that setting; an unset option selects redep.
 
+   Scenario Outline: Remove references to ignored gem names while respecting regard
+      - apply the name policy to runtime and check requirements and conflicts
+      - omit the same ignored name from dependency override macros
+      - retain the input gemspec requirements and the policy through spec updates
+      Given blank space
+      And a spec from fixture "rbvmomi"
+      When he sets the space options as:
+         | options            | value                       |
+         | rootdir            | features/fixtures/rbvmomi   |
+         | ignored_names      | [nokogiri]                  |
+         | regarded_names     | <regarded>                  |
+         | available_gem_list | {nokogiri: '3.0'}           |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated references to gem "nokogiri" are "<references>"
+      And the source "rbvmomi" dependency "nokogiri" has version compatibility:
+         | version   | allowed   |
+         | 1.5.9     | yes       |
+         | 2.0       | no        |
+      When he sets the space option "ignored_names" to:
+         """
+         []
+         """
+      And the generated spec is refreshed 2 times
+      Then the generated references to gem "nokogiri" are "<references>"
+
+      Examples:
+         | regarded     | references   |
+         | []           | absent       |
+         | [nokogiri]   | present      |
+
    Scenario: Preserve strict external dependency boundaries in RPM tags
       - external equality is an inclusive minimum, while > remains strict
       - source < becomes Conflicts >= and source <= becomes Conflicts >

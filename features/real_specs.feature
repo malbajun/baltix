@@ -1394,6 +1394,7 @@ Feature: Spec actor
       - since the top source is an application / group, so it doesn't parse a prefix, and use no prefix then
       - retain explicit header-package build requirements without the cairo-devel dependency cycle
       - preserve source dependency groups and runtime/development requirements across repeated updates
+      - remove references to ignored rake from main and development requirements
       - blank packager
       Given blank space
       And a spec from fixture "ruby-gnome2"
@@ -1411,6 +1412,8 @@ Feature: Spec actor
       And he loads the spec into the space
       And he applies "spec" actor to the baltix setup
       Then he acquires an "ruby-gnome2" fixture spec for the baltix setup
+      And the generated spec has no gem dependencies named:
+         | rake   |
       When the generated spec is refreshed 2 times
       Then the generated spec contains the lines:
          | BuildRequires: gem-cairo-headers-devel  |

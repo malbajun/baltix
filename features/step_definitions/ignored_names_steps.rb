@@ -19,3 +19,17 @@ Then('the parsed ignored names are:') do |table|
    parsed = Baltix::Spec.load_from(source: @spec, options: space.options, space: space)
    expect(parsed.ignored_names).to eql(table.raw.flatten)
 end
+
+Then('the generated references to gem {string} are {string}') do |name, expectation|
+   tags = @spec.scan(/^((?:Build)?(?:Requires|Conflicts)):\s+gem\(#{Regexp.escape(name)}\)(?:\s|$)/).flatten
+   overrides = @spec.lines.grep(/^%ruby_use_gem_dependency /).select do |line|
+      line.split(' ', 2).last.match?(/(?:\A|,)#{Regexp.escape(name)}\s/)
+   end
+   if expectation == 'absent'
+      expect(tags).to be_empty
+      expect(overrides).to be_empty
+   else
+      expect(tags.uniq.sort).to eql(%w(BuildConflicts BuildRequires Conflicts Requires))
+      expect(overrides.size).to eql(1)
+   end
+end
