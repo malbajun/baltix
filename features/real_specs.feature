@@ -841,6 +841,42 @@ Feature: Spec actor
          | legacy macro |
          | build option |
 
+   # cucumber/common dd772f4: retain the two interdependent gemspecs and VERSION inputs.
+   @scratch @documentation_source
+   Scenario: Populate synthetic Cucumber repository metadata without borrowing a child title
+      - keep the repository root while packaging its Gherkin and Messages gems
+      - read the repository title and prose while skipping README badges
+      - use the explicit repository origin rather than a component homepage
+      - retain all metadata and unique package names through repeated updates
+      Given blank space
+      When developer locks the time to "12.11.2026"
+      And he imports fixture "cucumber-common" with documentation paths:
+         | README.md |
+      And the repository README is:
+         """
+         [![CircleCI](https://circleci.com/gh/cucumber/common.svg)](https://circleci.com/gh/cucumber/common)
+
+         # Cucumber Common Components
+
+         This repo contains the libraries/modules for behaviour that's common between
+         the various Cucumber implementations. These include:
+         """
+      And the repository origin is "https://github.com/cucumber/common.git"
+      And he sets the space options as:
+         | options            | value                 |
+         | maintainer.name    | Pavel Skrylev         |
+         | maintainer.email   | majioa@altlinux.org   |
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains each line once:
+         | Summary:       Cucumber Common Components              |
+         | Url:           https://github.com/cucumber/common      |
+         | Vcs:           https://github.com/cucumber/common.git  |
+      And the generated package names are unique
+      And he acquires an "cucumber-common" fixture spec for the baltix setup
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
    # ruby/rake 3f29d39: keep original metadata and its direct version import only.
    @scratch @main_is_gem @documentation_source @rake_manpages
    Scenario: Include the installed Rake manual in its executable package

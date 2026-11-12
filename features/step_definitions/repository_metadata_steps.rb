@@ -1,0 +1,7 @@
+When('the repository README is:') do |text|
+   File.write(File.join(space.rootdir, 'README.md'), text + "\n")
+end
+
+When('the repository origin is {string}') do |url|
+   system('git', '-C', space.rootdir, 'remote', 'add', 'origin', url, exception: true)
+end
