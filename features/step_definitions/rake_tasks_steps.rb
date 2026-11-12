@@ -83,3 +83,26 @@ After do
    end
    FileUtils.remove_entry(@rake_project) if @rake_project && File.directory?(@rake_project)
 end
+
+When('the project Rake metadata is read') do
+   @metadata_previous_rake_application = ::Rake.application
+   @caller_rake_application = ::Rake::Application.new
+   @caller_rake_directory = Dir.pwd
+   ::Rake.application = @caller_rake_application
+   ::Rake::Task.define_task(:baltix_metadata_caller_marker)
+   @rake_metadata = Baltix::Rake.new(File.join(@rake_project, 'Rakefile'))
+end
+
+Then("the caller's metadata marker task is retained") do
+   expect(::Rake.application.lookup('baltix_metadata_caller_marker')).to_not be_nil
+end
+
+Then('the imported Rake metadata contains its own task') do
+   expect(@rake_metadata.app).to_not be_nil
+   expect(@rake_metadata.app.lookup('imported_metadata')).to_not be_nil
+   expect(@rake_metadata.app).to_not equal(@caller_rake_application)
+end
+
+After do
+   ::Rake.application = @metadata_previous_rake_application if @metadata_previous_rake_application
+end

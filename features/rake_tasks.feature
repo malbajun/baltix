@@ -1,5 +1,25 @@
 Feature: Execute complete Rake tasks inside Baltix's Ruby process
 
+   Scenario Outline: Restore the caller's Rake context after metadata import
+      - retain the application's tasks when source Rakefiles are inspected, as in Rails
+      - restore the caller even when the imported metadata raises an exception
+      - keep the imported application's tasks available to the metadata reader
+      Given a temporary Rake project
+      And the Rake project file "Rakefile" is:
+         """
+         Rake::Task.define_task(:imported_metadata)
+         <finish>
+         """
+      When the project Rake metadata is read
+      Then the caller's Rake application and directory are restored
+      And the caller's metadata marker task is retained
+      And the imported Rake metadata contains its own task
+
+      Examples:
+         | finish                   |
+         | nil                      |
+         | raise 'metadata failure' |
+
    Scenario Outline: Execute imported task prerequisites with the correct application and directory
       Given a temporary Rake project
       And the Rake project file "Rakefile" is:
