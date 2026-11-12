@@ -800,6 +800,7 @@ Feature: Spec actor
       - restore generated regexp option wrappers rather than treating them as literal names
       - retain end anchors and case-insensitive matching without evaluating Ruby code
       - avoid duplicate macro entries with CLI options and retain filtering without them
+      - preserve explicit regard exceptions to broader ignore patterns after CLI options are cleared
       Given blank space
       When developer locks the time to "12.11.2026"
       And he sets the space options as:
@@ -808,6 +809,7 @@ Feature: Spec actor
          | maintainer.name    | Pavel Skrylev                  |
          | maintainer.email   | majioa@altlinux.org            |
       And he configures ignored names through CLI "<pattern>"
+      And he configures regarded names through CLI "<regard>"
       And he applies "spec" actor to the baltix setup
       Then the generated library package names are:
          | gem-mustermann  |
@@ -822,10 +824,13 @@ Feature: Spec actor
       Then the generated spec is unchanged
 
       Examples:
-         | pattern                     |
-         | /mustermann-contrib/        |
-         | /^mustermann-contrib$/      |
-         | /(?i:mustermann-CONTRIB)/   |
+         | pattern                     | regard                |
+         | /mustermann-contrib/        |                       |
+         | /^mustermann-contrib$/      |                       |
+         | /(?i:mustermann-CONTRIB)/   |                       |
+         | /mustermann/                | mustermann            |
+         | /mustermann/                | /^mustermann$/        |
+         | /mustermann/                | /(?i:^MUSTERMANN$)/   |
 
    # bryanp/llhttp, ALT 60d6f26; preserve its existing gem-llhttp-ffi ignore entry.
    @scratch

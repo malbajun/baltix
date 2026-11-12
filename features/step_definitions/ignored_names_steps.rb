@@ -48,3 +48,9 @@ When('the generated spec is refreshed without name options') do
    @space.spec = Baltix::Spec.load_from(source: @spec, options: options, space: @space)
    @spec = Baltix::Actor.for('spec', @space).apply_to(@space)
 end
+
+When('he configures regarded names through CLI {string}') do |pattern|
+   command = Baltix::CLI.new(["--regard-names=#{pattern}"])
+   command.parse!
+   space.options.regarded_names = command.options.regarded_names
+end

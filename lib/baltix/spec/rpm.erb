@@ -75,6 +75,9 @@ BuildConflicts: <%= dep %>
 <% if has_ignored_names? -%>
 %ruby_ignore_names <%= ignored_names.join(",") %>
 <% end -%>
+<% if has_regarded_names? -%>
+%ruby_regard_names <%= regarded_names.join(",") %>
+<% end -%>
 <% if has_ignored_path_tokens? -%>
 %ruby_ignore_path_tokens <%= path_tokens_for_macro(ignored_path_tokens) %>
 <% end -%>
