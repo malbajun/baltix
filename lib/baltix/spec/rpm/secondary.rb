@@ -30,7 +30,7 @@ class Baltix::Spec::Rpm::Secondary
          default: "noarch",
       },
       summaries: {
-         seq: %w(of_options of_state of_source of_default >_summaries),
+         seq: %w(of_options of_state of_source of_default >_summaries >_normalize_text),
          # Match RPM inheritance when a source and its parsed state have no summary.
          # @param this [Secondary] current subpackage
          # @return [OpenStruct] host summaries indexed by locale
@@ -77,7 +77,7 @@ class Baltix::Spec::Rpm::Secondary
          default: [],
       },
       descriptions: {
-         seq: %w(of_options of_state of_source of_default >_proceed_description >_descriptions >_format_descriptions),
+         seq: %w(of_options of_state of_source of_default >_proceed_description >_descriptions >_normalize_text >_format_descriptions),
          default: {}
       },
       readme: {

@@ -35,6 +35,30 @@ Feature: Spec actor
       And the generated spec is refreshed 2 times
       Then the generated spec is unchanged
 
+   @scratch @main_is_gem
+   Scenario: Normalize typographic quotes in localized package text
+      - turn curly apostrophes and quotation marks into their plain equivalents
+      - normalize non-breaking spaces while retaining non-Latin letters
+      - apply the same text policy to the main and auxiliary packages
+      Given blank space
+      When developer locks the time to "12.11.2026"
+      And he sets the space options as:
+         | options      | value                                                                                                     |
+         | rootdir      | features/fixtures/ruby-rc4                                                                                |
+         | summaries    | {en_US.UTF-8: "Ruby’s “library”", ru_RU.UTF-8: "Русская ‘библиотека’"}                                    |
+         | descriptions | {en_US.UTF-8: "Ruby’s “library” uses quoted names.", ru_RU.UTF-8: "Русская ‘библиотека’ хранит имена."}   |
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains the lines:
+         | Summary:       Ruby's "library"                     |
+         | Summary(ru_RU.UTF-8): Русская 'библиотека'          |
+         | Ruby's "library" uses quoted names.                 |
+         | Русская 'библиотека' хранит имена.                  |
+         | Summary:       Ruby's "library" documentation files |
+         | Summary:       Ruby's "library" development package |
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
    # ruby-rc4 upstream 0.1.5: requires Ruby >= 1.9.3 and RubyGems >= 1.8.11.
    @scratch @main_is_gem
    Scenario: Keep generated Ruby and RubyGems requirements stable on the first update

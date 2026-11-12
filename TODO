@@ -13,7 +13,6 @@ lost runtime deps
  - google-api-ruby-client: validate RPM build of the generated spec
 
 + generate relative symlinks instead of absolute for execs
-+ filter out desc and summary char to other like "’" -> "'"
 + ignore by part: example: update-rubygems[doc,lib] to ignore when detecting and processing
 
 gem-lemon update stable ver to unstable
