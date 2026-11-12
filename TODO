@@ -3,7 +3,6 @@ fix:
 lost runtime deps
 ---
 - add disable source (for ruby-rubygems-update)
-- add return to common space on load (for ruby-rails)
 - add doc compilation only over included lib files
 - validate provides/requires detection speed on gem-google-api-client , azure-sdk
 

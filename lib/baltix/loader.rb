@@ -213,8 +213,11 @@ module Baltix::Loader
    # @return [OpenStruct] captured objects and logs, or empty object data on failure
    # Matching preloaders run before evaluation. The underlying IO is duplicated
    # so garbage collection of a temporary wrapper cannot close the original log.
-   # Failures are reported and the original global streams are always restored.
+   # Failures are reported and the original global streams and Rake application
+   # are always restored. Metadata keeps its captured application, while the
+   # caller's tasks remain attached to the caller's original application.
    def load_file file, dir
+      previous_rake_application = ::Rake.instance_variable_get(:@application)
       debug("Loading file: #{file}")
       stdout = $stdout
       stderr = $stderr
@@ -257,6 +260,7 @@ module Baltix::Loader
    ensure
       $stderr = stderr
       $stdout = stdout
+      ::Rake.application = previous_rake_application
    end
 
    def app_file file, dir = Dir.pwd, &block
