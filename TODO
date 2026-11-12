@@ -22,9 +22,6 @@ add default-license and license-replacement-list options
 
 
 
-определение жемов для руби и жемов в ruby_version напрмер
-[setup.rb][INFO]> X *RubyGems:3.3.7 [./Rakefile]
-[setup.rb][INFO]> X *Ruby:3.1.1.18 [./Rakefile]
 
 
 uwsgi - deferred: parse Python modules in Ruby, generate Python-subsystem subpackages and use main package name uwsgi (PR #65 WIP)

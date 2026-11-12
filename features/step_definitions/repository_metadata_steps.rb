@@ -5,3 +5,9 @@ end
 When('the repository origin is {string}') do |url|
    system('git', '-C', space.rootdir, 'remote', 'add', 'origin', url, exception: true)
 end
+
+When('the repository root metadata is {string}') do |layout|
+   if layout == 'Gemfile'
+      File.write(File.join(space.rootdir, 'Gemfile'), "source 'https://rubygems.org'\n")
+   end
+end
