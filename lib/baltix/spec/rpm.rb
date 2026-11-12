@@ -733,12 +733,27 @@ class Baltix::Spec::Rpm
       value_in
    end
 
+   # Selects a component version for an aggregate Gemfile package without downgrades.
+   # @param value_in [String, Gem::Version] version selected by earlier pipeline stages
+   # @return [String, Gem::Version] component candidate, retained package version, or input
+   # If the main source is a Gemfile, its component candidate must not be lower
+   # than the main Version parsed from the existing spec. Without a candidate,
+   # or for another source type, the earlier pipeline value is retained.
+   # Component package versions are not changed by this main-package guard.
    def _version_of_secondaries value_in
       vers = secondaries.group_by { |sec| sec.source&.version }.select {|k,_| k}.map {|v, arr| [v, arr.size] }.to_h
 
       if source.is_a?(Baltix::Source::Gemfile)
-         vers.sort {|(_, sizes)| sizes }.last&.first
-      end || value_in
+         candidate = vers.sort {|(_, sizes)| sizes }.last&.first
+         previous = of_state(:version)
+         if candidate && previous && Gem::Version.new(candidate.to_s) < Gem::Version.new(previous.to_s)
+            previous
+         else
+            candidate || value_in
+         end
+      else
+         value_in
+      end
    end
 
    # Selects dependency overrides required by any packaged source.

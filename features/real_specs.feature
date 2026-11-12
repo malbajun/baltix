@@ -35,6 +35,31 @@ Feature: Spec actor
       And the generated spec is refreshed 2 times
       Then the generated spec is unchanged
 
+   # Azure SDK 20200316-alt1.6: retain only its two runtime gemspecs and direct version inputs.
+   @policy2_0
+   Scenario: Preserve an aggregate package version above its component gem versions
+      - retain the existing Azure package date version when its root metadata is a Gemfile
+      - keep independent runtime gem versions and their provided capabilities
+      - preserve the complete generated spec and changelog through repeated updates
+      Given blank space
+      And a spec from fixture "azure-sdk-for-ruby"
+      When developer locks the time to "12.11.2026"
+      And he sets the space options as:
+         | options            | value                                |
+         | rootdir            | features/fixtures/azure-sdk-for-ruby |
+         | maintainer.name    | Pavel Skrylev                        |
+         | maintainer.email   | majioa@altlinux.org                  |
+      And he loads the spec into the space
+      And he applies "spec" actor to the baltix setup
+      Then the generated spec contains the lines:
+         | Version:       20200316                    |
+         | Provides:      gem(ms_rest) = 0.7.6        |
+         | Provides:      gem(ms_rest_azure) = 0.12.0 |
+      And he acquires an "azure-sdk-for-ruby" fixture spec for the baltix setup
+      When he keeps the generated spec for comparison
+      And the generated spec is refreshed 2 times
+      Then the generated spec is unchanged
+
    # ruby-rc4 upstream 0.1.5: requires Ruby >= 1.9.3 and RubyGems >= 1.8.11.
    @scratch @main_is_gem
    Scenario: Keep generated Ruby and RubyGems requirements stable on the first update
