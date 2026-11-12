@@ -4,7 +4,6 @@ lost runtime deps
 ---
 - add disable source (for ruby-rubygems-update)
 - add return to common space on load (for ruby-rails)
-- finish setup-rb RDoc traversal using only included files (Baltix documentation inputs filtered)
 - validate provides/requires detection speed on gem-google-api-client , azure-sdk
 
 + generate spec for:
