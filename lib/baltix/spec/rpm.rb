@@ -14,7 +14,7 @@ class Baltix::Spec::Rpm
 
    OPTIONS = %w(source conflicts uri vcs maintainer
                 source_files patches build_pre_requires context comment
-                readme executables ignored_names ignored_path_tokens regarded_path_tokens main_source dependencies
+                readme executables ignored_names regarded_names ignored_path_tokens regarded_path_tokens main_source dependencies
                 valid_sources available_gem_list rootdir aliased_names
                 time_stamp devel_dep_setup use_gem_version_list use_gem_obsolete_list)
 
@@ -292,7 +292,11 @@ class Baltix::Spec::Rpm
          default: []
       },
       ignored_names: {
-         seq: %w(of_options |of_state >_ignored_names),
+         seq: %w(of_options |of_state >_name_filters),
+         default: []
+      },
+      regarded_names: {
+         seq: %w(of_options |of_state >_name_filters),
          default: []
       },
       aliased_names: {
@@ -895,12 +899,12 @@ class Baltix::Spec::Rpm
          end.compact.flatten
    end
 
-   # Deduplicates ignored names after configured and saved lists are merged.
+   # Deduplicates name filters after configured and saved lists are merged.
    # @param value_in [Array<String, Regexp>, nil] merged source name filters
    # @return [Array<String, Regexp>] first filter for each canonical string form
    # Regexp objects retain their matching behavior; only the comparison key is
    # converted to a string. A missing list produces an empty array.
-   def _ignored_names value_in
+   def _name_filters value_in
       Array(value_in).uniq(&:to_s)
    end
 

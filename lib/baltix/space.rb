@@ -342,7 +342,7 @@ class Baltix::Space
    end
 
    def regarded_names
-      @regarded_names ||= read_attribute(:regarded_names) || []
+      @regarded_names ||= (read_attribute(:regarded_names) || []) | Array(spec&.regarded_names)
    end
 
    # Collects source path exclusions from options, the input spec and defaults.
