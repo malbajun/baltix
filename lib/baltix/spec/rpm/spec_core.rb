@@ -8,6 +8,12 @@ module Baltix::Spec::Rpm::SpecCore
       '>=' => '<', '>' => '<=', '<=' => '>', '<' => '>=', '=' => '!=', '!=' => '='
    }.freeze
 
+   TEXT_CHARACTERS = {
+      "‘" => "'", "’" => "'", "“" => '"', "”" => '"',
+      "\u00A0" => ' ', "\u202F" => ' '
+   }.freeze
+   TEXT_CHARACTER_RE = Regexp.union(TEXT_CHARACTERS.keys).freeze
+
    URL_MATCHER = {
       /(?<proto>https?:\/\/)?(?<user>[^\.]+).github.io\/(?<page>[^\/#]+)/ => ->(m) do
          "https://github.com/#{m["user"]}/#{m["page"]}.git"
@@ -252,6 +258,16 @@ module Baltix::Spec::Rpm::SpecCore
 
    def _docs _in = nil
       of_source(:docs) || of_default(:docs)
+   end
+
+   # Normalizes typographic punctuation in localized RPM package text.
+   # @param value_in [OpenStruct] summaries or descriptions indexed by locale
+   # @return [OpenStruct] text with plain quotes and ordinary interword spaces
+   # Language-specific letters and other Unicode characters remain unchanged.
+   # Nil locale values are retained. Normalization runs before description wrapping
+   # so non-breaking spaces do not join separate words into an oversized token.
+   def _normalize_text value_in
+      value_in.map { |_locale, text| text&.gsub(TEXT_CHARACTER_RE, TEXT_CHARACTERS) }
    end
 
    # Formats package summaries without reapplying labels to stored auxiliary text.

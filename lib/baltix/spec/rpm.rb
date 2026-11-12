@@ -65,7 +65,7 @@ class Baltix::Spec::Rpm
          default: "noarch",
       },
       summaries: {
-         seq: %w(of_options of_state of_source of_default >_summaries),
+         seq: %w(of_options of_state of_source of_default >_summaries >_normalize_text),
          default: ""
       },
       group: {
@@ -219,7 +219,7 @@ class Baltix::Spec::Rpm
          default: [],
       },
       descriptions: {
-         seq: %w(of_options of_state of_source of_default >_proceed_description >_descriptions >_format_descriptions),
+         seq: %w(of_options of_state of_source of_default >_proceed_description >_descriptions >_normalize_text >_format_descriptions),
          default: {}.to_os
       },
       valid_sources: {
