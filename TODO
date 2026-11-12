@@ -8,7 +8,7 @@ lost runtime deps
 - validate provides/requires detection speed on gem-google-api-client , azure-sdk
 
 + generate spec for:
- - app:cucumber_common - blank root (Fake Source) / Url, Vsc, summary, description, filters for blank packages, dedup packages by name
+ - app:cucumber_common - filters for blank Gemfile-only auxiliary packages
 
  - rubyzip  old -> new
  - coveralls with %ruby_use_gem_dependency, 0.8.23-alt2 -> 0.8.23.1-alt0.1 (увеличение версии с помоїью командной строки или анализа git),and Epoch =1

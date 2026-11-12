@@ -2,7 +2,7 @@ require "json"
 require "pathname"
 
 module Baltix::Spec::Rpm::SpecCore
-   README_FILE_RE = /\Areadme(?:\.(?:md|markdown|rdoc|txt|rst|adoc|asciidoc|textile))?\z/i
+   README_FILE_RE = Baltix::Source::Base::README_FILE_RE
 
    RUBY_CONFLICT_OPERATORS = {
       '>=' => '<', '>' => '<=', '<=' => '>', '<' => '>=', '=' => '!=', '!=' => '='

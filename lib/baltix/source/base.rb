@@ -6,6 +6,7 @@ class Baltix::Source::Base
 
    OPTION_KEYS = %i(source_file source_names replace_list aliases alias_names loader)
    DEFAULT_FILES = %i(readme contrib history changelog license copying code_of_conduct)
+   README_FILE_RE = /\Areadme(?:\.(?:md|markdown|rdoc|txt|rst|adoc|asciidoc|textile))?\z/i
 
    DL_DIRS     = ->(s) { ".so.#{s.name}#{RbConfig::CONFIG['sitearchdir']}" }
    RI_DIRS     = ->(s) { [ s.default_ridir, 'ri' ] }
