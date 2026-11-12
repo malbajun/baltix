@@ -56,12 +56,10 @@ Feature: Spec actor
 
    # chef/chef v19.4.12 kitchen-tests/Gemfile; reuse the existing minimal Chef metadata.
    @scratch @main_is_gem @temporary_project
-   Scenario: Fill missing Gemfile subpackage summaries without replacing date versions
-      - retain the repository root while importing the nested upstream Gemfile
-      - inherit the main summary while a subproject without a version uses YYYYMMDD
-      - retain an already packaged date version when refreshing on a later day
-      - use a single packaging prefix for the nested Gemfile development package
-      - keep every release and the whole generated spec unchanged through updates
+   Scenario: Keep Chef integration-test directories out of package sources
+      - keep kitchen-tests disabled through the default source path exclusions
+      - omit its packages and dependencies while retaining the root Chef gem
+      - preserve the complete generated spec through repeated updates
       Given blank space
       When developer locks the time to "11.11.2026"
       And he imports fixture "chef" with the "chef-kitchen-tests" Gemfile at "kitchen-tests/Gemfile"
@@ -69,27 +67,25 @@ Feature: Spec actor
          | options            | value                 |
          | maintainer.name    | Pavel Skrylev         |
          | maintainer.email   | majioa@altlinux.org   |
-      And he applies "spec" actor to the baltix setup
-      Then package "kitchen-tests" inherits the main summary
+      Then the source at repository path "kitchen-tests/Gemfile" has status "disabled"
+      And the main source is the "chef" gem
+      When he applies "spec" actor to the baltix setup
+      Then the generated spec excludes the lines:
+         | %package       -n kitchen-tests            |
+         | %package       -n gem-kitchen-tests-devel  |
       And the generated spec has no gem dependencies named:
          | kitchen-tests   |
-      And package "gem-chef" contains dependency lines:
-         | Version:       19.4.12   |
-      And package "kitchen-tests" contains dependency lines:
-         | Version:       20261111  |
-      And package "gem-kitchen-tests-devel" contains dependency lines:
-         | Version:       20261111                       |
-         | Requires:      kitchen-tests = 20261111-alt1  |
+         | chef-cli        |
+         | kitchen-dokken  |
+         | kitchen-vagrant |
+         | kitchen-inspec  |
+         | inspec          |
+         | test-kitchen    |
       And he acquires an "chef-kitchen-tests" fixture spec for the baltix setup
       When he keeps the generated spec for comparison
-      And developer locks the time to "12.11.2026"
       And the generated spec is refreshed 2 times
       Then the generated spec is unchanged
-      And package "kitchen-tests" inherits the main summary
-      And package "kitchen-tests" contains dependency lines:
-         | Version:       20261111  |
-      And package "gem-kitchen-tests-devel" contains dependency lines:
-         | Version:       20261111  |
+      And the source at repository path "kitchen-tests/Gemfile" has status "disabled"
 
    # googleapis/gapic-generator-ruby 58a40fa: shared/Gemfile, no base summary.
    @scratch @summaryless_gemfile
@@ -847,6 +843,7 @@ Feature: Spec actor
       - keep the repository root while packaging its Gherkin and Messages gems
       - read the repository title and prose while skipping README badges
       - use the explicit repository origin rather than a component homepage
+      - ignore the ruby-testdata Gemfile and its unrelated cucumber dependency
       - retain all metadata and unique package names through repeated updates
       Given blank space
       When developer locks the time to "12.11.2026"
@@ -866,16 +863,23 @@ Feature: Spec actor
          | options            | value                 |
          | maintainer.name    | Pavel Skrylev         |
          | maintainer.email   | majioa@altlinux.org   |
-      And he applies "spec" actor to the baltix setup
-      Then the generated spec contains each line once:
+      Then the source at repository path "json-to-messages/ruby-testdata/Gemfile" has status "disabled"
+      When he applies "spec" actor to the baltix setup
+      Then the generated spec contains the lines:
          | Summary:       Cucumber Common Components              |
          | Url:           https://github.com/cucumber/common      |
          | Vcs:           https://github.com/cucumber/common.git  |
       And the generated package names are unique
+      And the generated spec excludes the lines:
+         | %package       -n ruby-testdata            |
+         | %package       -n gem-ruby-testdata-devel  |
+      And the generated spec has no gem dependencies named:
+         | cucumber  |
       And he acquires an "cucumber-common" fixture spec for the baltix setup
       When he keeps the generated spec for comparison
       And the generated spec is refreshed 2 times
       Then the generated spec is unchanged
+      And the source at repository path "json-to-messages/ruby-testdata/Gemfile" has status "disabled"
 
    # ruby/rake 3f29d39: keep original metadata and its direct version import only.
    @scratch @main_is_gem @documentation_source @rake_manpages
