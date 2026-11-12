@@ -41,7 +41,6 @@ oauth-tty - deferred: fix deps for devel/bin/runtime
 opennebula - deferred: complex project; analyze after smaller projects
 foreman - deferred: complex project; analyze after smaller projects
 
-azure-for.ruby - compare old spec and newly generated, to ensure no avoid manual fixes
 
 detect tag - rubocop-lts 24.0.2
 

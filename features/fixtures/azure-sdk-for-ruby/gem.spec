@@ -68,7 +68,7 @@ Client Library for Ruby.
 
 %if_enabled    doc
 %package       -n gem-ms-rest-doc
-Version:       0.7.6
+Version:       0.11.2
 Release:       alt1.7
 Summary:       Client Library for Ruby documentation files
 Summary(ru_RU.UTF-8): Файлы сведений для самоцвета ms_rest

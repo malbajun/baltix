@@ -210,11 +210,7 @@ Provides:      <%= dep %>
 <% end -%>
 <% end -%>
 <% if secondary.is_doc? -%>
-<% if secondary.doc.is_same_source?(secondary.source) -%>
-%ruby_gemdocdir
-<% else -%>
-%ruby_gemsdocdir/<%= secondary.source&.name || secondary.name %>-<%= secondary.version %>
-<% end -%>
+<%= secondary.documentation_directory %>
 <% end -%>
 <% if secondary.is_devel? -%>
 <% if secondary.has_devel_sources? -%>

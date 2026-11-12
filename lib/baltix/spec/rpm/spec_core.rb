@@ -384,6 +384,8 @@ module Baltix::Spec::Rpm::SpecCore
    # @return [Gem::Version] package version, including explicit packaging suffixes
    # Main and library packages retain the selected version. Auxiliary packages
    # inherit their host's version; source-less secondaries inherit the document's.
+   # If a documentation package already has a higher RPM version, preserve it
+   # without changing its dependency on the host gem's actual version.
    def _version value_in
       v =
          case value_in
@@ -397,30 +399,52 @@ module Baltix::Spec::Rpm::SpecCore
             Gem::Version.new(value_in.to_s)
          end
 
-      if name.support_name.blank? # || name.support_name == name
-         if is_dochost?
-            (count, (version, sources_tmp)) =
-               sources.group_by do |s|
-                  s.version ? Gem::Version.new(s.version) : v
-               end.map do |(x, y)|
-                  [y.count, [x, y]]
-               end.sort do |(x1, (v1, _)), (x2, (v2, _))|
-                  s = x1 <=> x2
+      selected =
+         if name.support_name.blank? # || name.support_name == name
+            if is_dochost?
+               (count, (version, sources_tmp)) =
+                  sources.group_by do |s|
+                     s.version ? Gem::Version.new(s.version) : v
+                  end.map do |(x, y)|
+                     [y.count, [x, y]]
+                  end.sort do |(x1, (v1, _)), (x2, (v2, _))|
+                     s = x1 <=> x2
 
-                  s == 0 ? v1 <=> v2 : s
-               end.last
+                     s == 0 ? v1 <=> v2 : s
+                  end.last
 
+               v
+            elsif source.respond_to?(:spec)
+               v
+            elsif doc
+               doc.version # TODO как отличить?
+            end
+         elsif is_aux?
+            # name.support_name == name
+            host.version
+         else
             v
-         elsif source.respond_to?(:spec)
-            v
-         elsif doc
-            doc.version # TODO как отличить?
          end
-      elsif is_aux?
-         # name.support_name == name
-         host.version
+
+      previous = of_state(:version)
+      if is_doc? && previous && selected && Gem::Version.new(previous.to_s) > selected
+         Gem::Version.new(previous.to_s)
       else
-         v
+         selected
+      end
+   end
+
+   # Resolves a documentation package's directory from its host gem version.
+   # Takes no parameters.
+   # @return [String] RPM macro or explicit path to the installed gem documentation
+   # If this is the main gem and the RPM and host versions agree, use the main
+   # directory macro. Otherwise use the host version explicitly, even when an
+   # older spec assigned a different RPM version to the documentation package.
+   def documentation_directory
+      if doc.is_same_source?(source) && version == host.version
+         '%ruby_gemdocdir'
+      else
+         "%ruby_gemsdocdir/#{source&.name || name}-#{host.version}"
       end
    end
 
